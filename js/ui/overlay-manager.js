@@ -433,29 +433,33 @@ export function renderOverlays(handlers) {
             label.style.textOverflow = "ellipsis";
 
             if (f.type === "staticText") {
-                const textContent = f.defaultValue || f.label || f.value || "Heading Text";
-                label.textContent = textContent;
-                label.style.color = f.color || "#0f172a";
-                label.style.fontStyle = (style === "italic") ? "italic" : "normal";
+                const textContent = f.defaultValue || f.label || f.value || "";
+                label.textContent = textContent || "Click to type...";
+                label.style.color = textContent ? (f.color || "#0f172a") : "#94a3b8";
+                label.style.fontStyle = textContent ? ((style === "italic") ? "italic" : "normal") : "italic";
                 label.style.fontWeight = weight || "600";
-                label.style.opacity = "1.0";
+                label.style.opacity = textContent ? "1.0" : "0.75";
                 label.style.fontSize = `${Number(f.fontSize) || 14}px`;
                 label.style.whiteSpace = "pre-wrap";
                 label.style.wordBreak = "break-word";
                 label.style.lineHeight = "1.35";
                 label.style.textAlign = f.textAlignment || "left";
+                label.style.width = "100%";
 
-                if (f.height > (Number(f.fontSize) || 14) * 2.2) {
-                    div.style.alignItems = "flex-start";
-                    label.style.paddingTop = "2px";
-                }
+                div.style.alignItems = "flex-start";
+                label.style.paddingTop = "2px";
 
                 if (f.fillStyle && f.fillStyle !== "transparent") {
                     div.style.background = f.fillStyle;
+                } else {
+                    div.style.background = "transparent";
                 }
                 if (f.borderStyle && f.borderStyle !== "none") {
                     div.style.border = `${f.borderWidth || 1}px solid ${f.borderColor || "#cbd5e1"}`;
+                } else {
+                    div.style.border = "none";
                 }
+                div.style.boxShadow = "none";
 
                 div.appendChild(label);
             } else if (f.type === "dropdown") {
@@ -1219,21 +1223,22 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
         const textarea = document.createElement("textarea");
         textarea.className = "inline-text-editor";
         textarea.value = field.defaultValue || field.label || "";
+        textarea.placeholder = "Type text, heading, or list...";
         textarea.style.fontFamily = fam;
         textarea.style.fontWeight = weight || "600";
         textarea.style.fontStyle = fontStyle === "italic" ? "italic" : "normal";
         textarea.style.fontSize = `${fontSize}px`;
         textarea.style.textAlign = field.textAlignment || "left";
         textarea.style.color = field.color || "#0f172a";
-        textarea.style.lineHeight = "1.25";
+        textarea.style.lineHeight = "1.35";
 
+        const minH = Math.max(26, Math.round(fontSize * 1.5));
         const syncDimensions = () => {
             textarea.style.height = "auto";
-            const newH = Math.max(field.height, textarea.scrollHeight + 4);
-            if (newH > field.height) {
-                field.height = newH;
-                overlay.style.height = `${newH}px`;
-            }
+            const contentH = Math.max(minH, textarea.scrollHeight);
+            field.height = contentH;
+            overlay.style.height = `${contentH}px`;
+            textarea.style.height = `${contentH}px`;
         };
 
         let committed = false;
@@ -1241,6 +1246,21 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
             if (committed) return;
             committed = true;
             const finalVal = textarea.value;
+
+            // Discard empty text field on blur/exit so no residual artifacts remain
+            if (!finalVal.trim()) {
+                const idx = state.fields.findIndex(f => f.id === field.id);
+                if (idx !== -1) {
+                    state.fields.splice(idx, 1);
+                    state.selectedFieldIds.delete(field.id);
+                }
+                overlay.remove();
+                if (shouldSave) saveHistory(true);
+                if (handlers?.onUpdated) handlers.onUpdated(null);
+                renderOverlays(handlers);
+                return;
+            }
+
             field.defaultValue = finalVal;
             field.label = finalVal;
 
@@ -1248,7 +1268,7 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
             textarea.remove();
             if (label) {
                 label.style.display = "";
-                label.textContent = finalVal || "Heading Text";
+                label.textContent = finalVal;
             }
 
             const propDef = document.getElementById("fieldDefaultValue");
@@ -1261,7 +1281,71 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
             renderOverlays(handlers);
         };
 
-        textarea.addEventListener("input", () => {
+        textarea.addEventListener("input", (e) => {
+            const cursorPos = textarea.selectionStart;
+            const text = textarea.value;
+            const lineStart = text.lastIndexOf("\n", cursorPos - 1) + 1;
+            const lineUpToCursor = text.slice(lineStart, cursorPos);
+
+            // Markdown shortcut expansion when space is typed
+            if (e.inputType === "insertText" && e.data === " ") {
+                if (lineUpToCursor === "# ") {
+                    const newText = text.slice(0, lineStart) + text.slice(cursorPos);
+                    textarea.value = newText;
+                    textarea.selectionStart = textarea.selectionEnd = lineStart;
+                    field.fontSize = 24;
+                    field.fontWeight = "bold";
+                    textarea.style.fontSize = "24px";
+                    textarea.style.fontWeight = "bold";
+                    const propFont = document.getElementById("fieldFontSize");
+                    if (propFont) propFont.value = 24;
+                    const propWeight = document.getElementById("fieldFontWeight");
+                    if (propWeight) propWeight.value = "bold";
+                    syncDimensions();
+                    return;
+                } else if (lineUpToCursor === "## ") {
+                    const newText = text.slice(0, lineStart) + text.slice(cursorPos);
+                    textarea.value = newText;
+                    textarea.selectionStart = textarea.selectionEnd = lineStart;
+                    field.fontSize = 18;
+                    field.fontWeight = "bold";
+                    textarea.style.fontSize = "18px";
+                    textarea.style.fontWeight = "bold";
+                    const propFont = document.getElementById("fieldFontSize");
+                    if (propFont) propFont.value = 18;
+                    const propWeight = document.getElementById("fieldFontWeight");
+                    if (propWeight) propWeight.value = "bold";
+                    syncDimensions();
+                    return;
+                } else if (lineUpToCursor === "### ") {
+                    const newText = text.slice(0, lineStart) + text.slice(cursorPos);
+                    textarea.value = newText;
+                    textarea.selectionStart = textarea.selectionEnd = lineStart;
+                    field.fontSize = 15;
+                    field.fontWeight = "600";
+                    textarea.style.fontSize = "15px";
+                    textarea.style.fontWeight = "600";
+                    const propFont = document.getElementById("fieldFontSize");
+                    if (propFont) propFont.value = 15;
+                    const propWeight = document.getElementById("fieldFontWeight");
+                    if (propWeight) propWeight.value = "600";
+                    syncDimensions();
+                    return;
+                } else if (lineUpToCursor === "* " || lineUpToCursor === "- ") {
+                    const newText = text.slice(0, lineStart) + "• " + text.slice(cursorPos);
+                    textarea.value = newText;
+                    textarea.selectionStart = textarea.selectionEnd = lineStart + 2;
+                    syncDimensions();
+                    return;
+                } else if (lineUpToCursor === "[] " || lineUpToCursor === "[ ] ") {
+                    const newText = text.slice(0, lineStart) + "[ ] " + text.slice(cursorPos);
+                    textarea.value = newText;
+                    textarea.selectionStart = textarea.selectionEnd = lineStart + 4;
+                    syncDimensions();
+                    return;
+                }
+            }
+
             field.defaultValue = textarea.value;
             field.label = textarea.value;
             const propDef = document.getElementById("fieldDefaultValue");
@@ -1323,7 +1407,7 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                 if (bulletMatch) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const marker = bulletMatch[1];
+                    const marker = bulletMatch[1] === "*" || bulletMatch[1] === "-" ? "•" : bulletMatch[1];
                     const content = bulletMatch[2];
                     if (!content.trim()) {
                         const newText = text.slice(0, lineStart) + text.slice(cursorPos);
@@ -1387,7 +1471,9 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
         overlay.appendChild(textarea);
         syncDimensions();
         textarea.focus?.();
-        textarea.select?.();
+        if (textarea.value) {
+            textarea.select?.();
+        }
     } else {
         const input = document.createElement("input");
         input.type = "text";

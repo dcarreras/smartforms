@@ -409,7 +409,35 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
 
                 const textColor = hexToPdfRgb(f.color, rgb(0.06, 0.09, 0.16));
                 const lineHeight = fontSize * (f.lineHeight || 1.35);
-                const lines = String(textContent).split(/\r?\n/);
+                const maxW = Math.max(20, f.width - 8);
+                const rawLines = String(textContent).split(/\r?\n/);
+                const lines = [];
+                for (const rawLine of rawLines) {
+                    if (!rawLine) {
+                        lines.push("");
+                        continue;
+                    }
+                    const words = rawLine.split(" ");
+                    let currentLine = words[0];
+                    for (let i = 1; i < words.length; i++) {
+                        const word = words[i];
+                        const testLine = currentLine + " " + word;
+                        let width = 0;
+                        try {
+                            width = font.widthOfTextAtSize(testLine, fontSize);
+                        } catch (e) {
+                            width = testLine.length * fontSize * 0.55;
+                        }
+                        if (width <= maxW) {
+                            currentLine = testLine;
+                        } else {
+                            lines.push(currentLine);
+                            const isBullet = rawLine.trim().startsWith("•");
+                            currentLine = (isBullet ? "  " : "") + word;
+                        }
+                    }
+                    lines.push(currentLine);
+                }
                 const isMultiLine = lines.length > 1 || (f.height > fontSize * 2.2);
 
                 if (isMultiLine) {

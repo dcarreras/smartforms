@@ -500,28 +500,59 @@ body.is-panning,body.is-panning *{cursor:grabbing !important;user-select:none !i
 }
 .fill-input-text::placeholder,.fill-input-textarea::placeholder{color:#475569}
 .fill-sign-prompt:hover{background:rgba(224,242,254,0.95) !important}
-.field-overlay.is-editing-text{
-  border:1.5px dashed #2563eb !important;
-  background:rgba(255,255,255,0.95) !important;
-  box-shadow:0 0 0 3px rgba(37,99,235,0.25) !important;
-  z-index:200 !important;
+/* ── Word Processing & Document Typography ───────────────────────── */
+.field-overlay.type-staticText {
+  border: 1.5px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: text !important;
+  border-radius: 2px !important;
 }
-.inline-text-editor{
-  width:100%;
-  height:100%;
-  border:none;
-  outline:none;
-  background:transparent;
-  resize:none;
-  padding:0;
-  margin:0;
-  font-family:inherit;
-  font-size:inherit;
-  font-weight:inherit;
-  color:inherit;
-  line-height:inherit;
-  box-sizing:border-box;
-  overflow:hidden;
+
+.field-overlay.type-staticText:not(.selected):not(.is-editing-text):hover {
+  border: 1px dashed rgba(37, 99, 235, 0.45) !important;
+  background: rgba(239, 246, 255, 0.15) !important;
+  box-shadow: none !important;
+}
+
+.field-overlay.type-staticText.selected:not(.is-editing-text) {
+  border: 1px solid #2563eb !important;
+  background: transparent !important;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25) !important;
+}
+
+.field-overlay.is-editing-text,
+.field-overlay.type-staticText.is-editing-text {
+  border: 1px solid #2563eb !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+  z-index: 200 !important;
+  border-radius: 4px !important;
+}
+
+.inline-text-editor {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  padding: 2px 4px;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: inherit;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.inline-text-editor::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+  font-style: italic;
 }
 .vernier-hud{
   position:fixed;
