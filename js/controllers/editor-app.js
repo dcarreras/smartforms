@@ -317,7 +317,7 @@ export function initEditorSubsystems() {
         });
     }
 
-    const insertTablePreset = (presetKey) => {
+    const insertTableGridWithConfig = (configOrPreset, title = "Table") => {
         const startX = 54;
         let startY = 120;
         const pageFields = (state.fields || []).filter(f => (f.page || 1) === state.currentPageNum);
@@ -325,10 +325,10 @@ export function initEditorSubsystems() {
             const maxY = Math.max(...pageFields.map(f => f.y + f.height));
             if (maxY < 600) startY = maxY + 20;
         }
-        const grid = createTableGrid(presetKey || "invoice", startX, startY, { pageNum: state.currentPageNum });
+        const grid = createTableGrid(configOrPreset, startX, startY, { pageNum: state.currentPageNum });
         state.fields.push(...grid.fields);
         setSelectedFields(grid.fields.map(f => f.id));
-        saveHistory(true, `Insert ${presetKey.charAt(0).toUpperCase() + presetKey.slice(1)} Table`);
+        saveHistory(true, `Insert ${title}`);
 
         if (tablePopover) tablePopover.style.display = "none";
         state.activeTool = "select";
@@ -340,10 +340,61 @@ export function initEditorSubsystems() {
         if (typeof populateProperties === "function") populateProperties(grid.fields[0]);
     };
 
+    // ── Interactive Word Processor Table Matrix ──────────────────
+    const matrixContainer = document.getElementById("tableGridMatrix");
+    const dimBadge = document.getElementById("tableGridDimBadge");
+    const MATRIX_COLS = 6;
+    const MATRIX_ROWS = 5;
+
+    if (matrixContainer) {
+        matrixContainer.innerHTML = "";
+        for (let r = 1; r <= MATRIX_ROWS; r++) {
+            for (let c = 1; c <= MATRIX_COLS; c++) {
+                const cell = document.createElement("div");
+                cell.className = "table-matrix-cell";
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+                
+                cell.addEventListener("mouseenter", () => {
+                    if (dimBadge) dimBadge.textContent = `${c} × ${r} Table`;
+                    matrixContainer.querySelectorAll(".table-matrix-cell").forEach(el => {
+                        const cellR = parseInt(el.dataset.row, 10);
+                        const cellC = parseInt(el.dataset.col, 10);
+                        el.classList.toggle("highlighted", cellR <= r && cellC <= c);
+                    });
+                });
+
+                cell.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    insertTableGridWithConfig({ cols: c, rows: r }, `${c}×${r} Table`);
+                });
+
+                matrixContainer.appendChild(cell);
+            }
+        }
+
+        matrixContainer.addEventListener("mouseleave", () => {
+            if (dimBadge) dimBadge.textContent = "3 × 3 Table";
+            matrixContainer.querySelectorAll(".table-matrix-cell").forEach(el => {
+                const cellR = parseInt(el.dataset.row, 10);
+                const cellC = parseInt(el.dataset.col, 10);
+                el.classList.toggle("highlighted", cellR <= 3 && cellC <= 3);
+            });
+        });
+
+        // Initialize default highlight at 3x3
+        matrixContainer.querySelectorAll(".table-matrix-cell").forEach(el => {
+            const cellR = parseInt(el.dataset.row, 10);
+            const cellC = parseInt(el.dataset.col, 10);
+            el.classList.toggle("highlighted", cellR <= 3 && cellC <= 3);
+        });
+    }
+
     safeQuerySelectorAll(".table-preset-item, .menu-table-preset").forEach(btn => {
         btn.addEventListener("click", e => {
             e.stopPropagation();
-            insertTablePreset(btn.dataset.preset);
+            const presetKey = btn.dataset.preset;
+            insertTableGridWithConfig(presetKey, `${presetKey.charAt(0).toUpperCase() + presetKey.slice(1)} Table`);
         });
     });
 

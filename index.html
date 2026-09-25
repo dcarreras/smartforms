@@ -1166,7 +1166,15 @@
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
                         </button>
                         <div class="table-preset-popover" id="tablePresetPopover" style="display: none;" role="menu" aria-label="Table Presets">
-                            <div class="table-preset-header">Insert Table Form</div>
+                            <div class="table-grid-picker-container">
+                                <div class="table-grid-picker-header">
+                                    <span class="table-picker-title">Insert Table</span>
+                                    <span class="table-dim-badge" id="tableGridDimBadge">3 × 3 Table</span>
+                                </div>
+                                <div class="table-grid-matrix" id="tableGridMatrix" role="grid" aria-label="Table dimension picker"></div>
+                            </div>
+                            <div class="table-preset-divider"></div>
+                            <div class="table-preset-header">Quick Presets</div>
                             <button type="button" class="table-preset-item" data-preset="invoice">
                                 <span class="preset-name">Invoice Breakdown</span>
                                 <span class="preset-desc">Description, Qty, Price, Amount</span>
@@ -1182,10 +1190,6 @@
                             <button type="button" class="table-preset-item" data-preset="checklist">
                                 <span class="preset-name">Inspection Checklist</span>
                                 <span class="preset-desc">Check, Item, Status, Notes</span>
-                            </button>
-                            <button type="button" class="table-preset-item" data-preset="custom">
-                                <span class="preset-name">Custom 3×3 Grid</span>
-                                <span class="preset-desc">Standard blank tabular grid</span>
                             </button>
                         </div>
                     </div>

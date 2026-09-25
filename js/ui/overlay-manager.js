@@ -5,7 +5,7 @@ import { openSignatureModal } from "./signature-pad.js";
 import { makeScrubbableAndScrollable, distributeSelectedFields, isPickingCalcField, updateCanvasPickModeUI } from "./properties-panel.js";
 import { saveHistory } from "../core/storage-manager.js";
 import { goToPage } from "../engines/pdf-engine.js";
-import { toggleListFormat, addRowToTable, removeRowFromTable } from "../engines/text-engine.js";
+import { toggleListFormat, addRowToTable, removeRowFromTable, addColumnToTable, removeColumnFromTable, deleteTable } from "../engines/text-engine.js";
 
 export function getFieldCssFont(field) {
     let fam = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -80,6 +80,10 @@ export function renderOverlays(handlers) {
         const isSelected = state.selectedFieldIds.has(f.id);
         const isMultiSelected = isSelected && state.selectedFieldIds.size > 1;
         div.className = "field-overlay" + (isSelected ? (isMultiSelected ? " selected multi-selected" : " selected") : "");
+        if (f.tableId) {
+            div.classList.add("is-table-cell");
+            if (f.tableRole === "header") div.classList.add("is-table-header");
+        }
         div.id = `overlay_${f.id}`;
         div.style.left = f.x + "px";
         div.style.top = f.y + "px";
@@ -902,7 +906,7 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
             bar.appendChild(markBtn);
         }
 
-        // Table Grid specific row controls (+ Row, − Row)
+        // Table Grid specific row & col controls (+ Row, − Row, + Col, − Col, 🗑️ Table)
         if (primaryField.tableId) {
             const addRowBtn = document.createElement("button");
             addRowBtn.className = "quick-bar-btn quick-bar-btn-accent";
@@ -938,6 +942,54 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
                 else renderOverlays(handlers);
             });
             bar.appendChild(delRowBtn);
+
+            const addColBtn = document.createElement("button");
+            addColBtn.className = "quick-bar-btn quick-bar-btn-accent";
+            addColBtn.title = "Insert Column to Table Right";
+            addColBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="12" y1="12" x2="18" y2="12"/><line x1="15" y1="9" x2="15" y2="15"/></svg><span>+ Col</span>`;
+            addColBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const newCols = addColumnToTable(primaryField.tableId, state.fields || []);
+                if (newCols.length > 0) {
+                    state.fields.push(...newCols);
+                    setSelectedFields(newCols.map(c => c.id));
+                    saveHistory(true, "Add Table Column");
+                    if (handlers?.onUpdated) handlers.onUpdated();
+                    else renderOverlays(handlers);
+                }
+            });
+            bar.appendChild(addColBtn);
+
+            const delColBtn = document.createElement("button");
+            delColBtn.className = "quick-bar-btn quick-bar-btn-danger";
+            delColBtn.title = "Delete Column from Table";
+            delColBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="12" y1="12" x2="18" y2="12"/></svg><span>− Col</span>`;
+            delColBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const targetCol = primaryField.tableCol !== undefined ? primaryField.tableCol : 0;
+                const { updatedFields } = removeColumnFromTable(primaryField.tableId, targetCol, state.fields || []);
+                state.fields = updatedFields;
+                setSelectedField(null);
+                saveHistory(true, "Delete Table Column");
+                if (handlers?.onUpdated) handlers.onUpdated();
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(delColBtn);
+
+            const delTableBtn = document.createElement("button");
+            delTableBtn.className = "quick-bar-btn quick-bar-btn-danger";
+            delTableBtn.title = "Delete Entire Table";
+            delTableBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>Delete Table</span>`;
+            delTableBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const { updatedFields } = deleteTable(primaryField.tableId, state.fields || []);
+                state.fields = updatedFields;
+                setSelectedField(null);
+                saveHistory(true, "Delete Table");
+                if (handlers?.onUpdated) handlers.onUpdated();
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(delTableBtn);
         }
 
         const lockBtn = document.createElement("button");
@@ -1092,6 +1144,54 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
                 else renderOverlays(handlers);
             });
             bar.appendChild(delRowBtn);
+
+            const addColBtn = document.createElement("button");
+            addColBtn.className = "quick-bar-btn quick-bar-btn-accent";
+            addColBtn.title = "Insert Column to Table Right";
+            addColBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="12" y1="12" x2="18" y2="12"/><line x1="15" y1="9" x2="15" y2="15"/></svg><span>+ Col</span>`;
+            addColBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const newCols = addColumnToTable(tableField.tableId, state.fields || []);
+                if (newCols.length > 0) {
+                    state.fields.push(...newCols);
+                    setSelectedFields(newCols.map(c => c.id));
+                    saveHistory(true, "Add Table Column");
+                    if (handlers?.onUpdated) handlers.onUpdated();
+                    else renderOverlays(handlers);
+                }
+            });
+            bar.appendChild(addColBtn);
+
+            const delColBtn = document.createElement("button");
+            delColBtn.className = "quick-bar-btn quick-bar-btn-danger";
+            delColBtn.title = "Delete Column from Table";
+            delColBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="12" y1="12" x2="18" y2="12"/></svg><span>− Col</span>`;
+            delColBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const targetCol = tableField.tableCol !== undefined ? tableField.tableCol : 0;
+                const { updatedFields } = removeColumnFromTable(tableField.tableId, targetCol, state.fields || []);
+                state.fields = updatedFields;
+                setSelectedField(null);
+                saveHistory(true, "Delete Table Column");
+                if (handlers?.onUpdated) handlers.onUpdated();
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(delColBtn);
+
+            const delTableBtn = document.createElement("button");
+            delTableBtn.className = "quick-bar-btn quick-bar-btn-danger";
+            delTableBtn.title = "Delete Entire Table";
+            delTableBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>Delete Table</span>`;
+            delTableBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const { updatedFields } = deleteTable(tableField.tableId, state.fields || []);
+                state.fields = updatedFields;
+                setSelectedField(null);
+                saveHistory(true, "Delete Table");
+                if (handlers?.onUpdated) handlers.onUpdated();
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(delTableBtn);
         }
 
         if (selectedFieldsOnPage.length >= 3) {
@@ -1361,6 +1461,46 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                 e.stopPropagation();
                 commitEdit(true);
 
+                if (field.tableId) {
+                    const tableCells = (state.fields || [])
+                        .filter(item => item.tableId === field.tableId && !item.hidden && !item.locked)
+                        .sort((a, b) => (a.tableRow - b.tableRow) || (a.tableCol - b.tableCol));
+
+                    const currentIdx = tableCells.findIndex(item => item.id === field.id);
+                    if (e.shiftKey) {
+                        if (currentIdx > 0) {
+                            const prevField = tableCells[currentIdx - 1];
+                            setSelectedField(prevField.id);
+                            if (handlers?.onSelect) handlers.onSelect(prevField);
+                            renderOverlays(handlers);
+                            startInlineTextEdit(prevField.id, handlers);
+                            return;
+                        }
+                    } else {
+                        if (currentIdx !== -1 && currentIdx < tableCells.length - 1) {
+                            const nextField = tableCells[currentIdx + 1];
+                            setSelectedField(nextField.id);
+                            if (handlers?.onSelect) handlers.onSelect(nextField);
+                            renderOverlays(handlers);
+                            startInlineTextEdit(nextField.id, handlers);
+                            return;
+                        } else if (currentIdx === tableCells.length - 1) {
+                            // At the very end of table -> auto append new row!
+                            const newCells = addRowToTable(field.tableId, state.fields || []);
+                            if (newCells.length > 0) {
+                                state.fields.push(...newCells);
+                                saveHistory(true, "Add Table Row");
+                                const firstNewCell = newCells[0];
+                                setSelectedField(firstNewCell.id);
+                                if (handlers?.onSelect) handlers.onSelect(firstNewCell);
+                                renderOverlays(handlers);
+                                startInlineTextEdit(firstNewCell.id, handlers);
+                                return;
+                            }
+                        }
+                    }
+                }
+
                 const activeFields = sortFieldsByReadingOrder(state.fields.filter(item => !item.hidden && !item.locked));
                 if (activeFields.length > 0) {
                     const currentIdx = activeFields.findIndex(item => item.id === field.id);
@@ -1547,6 +1687,46 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                 e.stopPropagation();
                 commitEdit(true);
 
+                if (field.tableId) {
+                    const tableCells = (state.fields || [])
+                        .filter(item => item.tableId === field.tableId && !item.hidden && !item.locked)
+                        .sort((a, b) => (a.tableRow - b.tableRow) || (a.tableCol - b.tableCol));
+
+                    const currentIdx = tableCells.findIndex(item => item.id === field.id);
+                    if (e.shiftKey) {
+                        if (currentIdx > 0) {
+                            const prevField = tableCells[currentIdx - 1];
+                            setSelectedField(prevField.id);
+                            if (handlers?.onSelect) handlers.onSelect(prevField);
+                            renderOverlays(handlers);
+                            startInlineTextEdit(prevField.id, handlers);
+                            return;
+                        }
+                    } else {
+                        if (currentIdx !== -1 && currentIdx < tableCells.length - 1) {
+                            const nextField = tableCells[currentIdx + 1];
+                            setSelectedField(nextField.id);
+                            if (handlers?.onSelect) handlers.onSelect(nextField);
+                            renderOverlays(handlers);
+                            startInlineTextEdit(nextField.id, handlers);
+                            return;
+                        } else if (currentIdx === tableCells.length - 1) {
+                            // At the very end of table -> auto append new row!
+                            const newCells = addRowToTable(field.tableId, state.fields || []);
+                            if (newCells.length > 0) {
+                                state.fields.push(...newCells);
+                                saveHistory(true, "Add Table Row");
+                                const firstNewCell = newCells[0];
+                                setSelectedField(firstNewCell.id);
+                                if (handlers?.onSelect) handlers.onSelect(firstNewCell);
+                                renderOverlays(handlers);
+                                startInlineTextEdit(firstNewCell.id, handlers);
+                                return;
+                            }
+                        }
+                    }
+                }
+
                 const activeFields = sortFieldsByReadingOrder(state.fields.filter(item => !item.hidden && !item.locked));
                 if (activeFields.length > 0) {
                     const currentIdx = activeFields.findIndex(item => item.id === field.id);
@@ -1570,6 +1750,34 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                         }
                     }
                 }
+            } else if (e.key === "Enter" && field.tableId) {
+                e.preventDefault();
+                e.stopPropagation();
+                commitEdit(true);
+
+                const tableCells = (state.fields || [])
+                    .filter(item => item.tableId === field.tableId && !item.hidden && !item.locked);
+                const nextRowCell = tableCells.find(item => item.tableRow === field.tableRow + 1 && item.tableCol === field.tableCol);
+                if (nextRowCell) {
+                    setSelectedField(nextRowCell.id);
+                    if (handlers?.onSelect) handlers.onSelect(nextRowCell);
+                    renderOverlays(handlers);
+                    startInlineTextEdit(nextRowCell.id, handlers);
+                    return;
+                } else if (field.tableRole === "cell") {
+                    const newCells = addRowToTable(field.tableId, state.fields || []);
+                    if (newCells.length > 0) {
+                        state.fields.push(...newCells);
+                        saveHistory(true, "Add Table Row");
+                        const targetCell = newCells.find(c => c.tableCol === field.tableCol) || newCells[0];
+                        setSelectedField(targetCell.id);
+                        if (handlers?.onSelect) handlers.onSelect(targetCell);
+                        renderOverlays(handlers);
+                        startInlineTextEdit(targetCell.id, handlers);
+                        return;
+                    }
+                }
+                overlay.focus();
             } else if (e.key === "Enter" || e.key === "Escape") {
                 e.preventDefault();
                 e.stopPropagation();

@@ -318,8 +318,34 @@ export function createTableGrid(presetOrConfig, startX = 40, startY = 100, optio
     let config;
     if (typeof presetOrConfig === "string") {
         config = TABLE_PRESETS[presetOrConfig] || TABLE_PRESETS.custom;
+    } else if (presetOrConfig && typeof presetOrConfig === "object") {
+        if (presetOrConfig.cols && !presetOrConfig.columns) {
+            const numCols = Math.max(1, Math.min(12, Number(presetOrConfig.cols) || 3));
+            const numRows = Math.max(1, Math.min(30, Number(presetOrConfig.rows) || 3));
+            const availableWidth = options.totalWidth || 450;
+            const colWidth = Math.round(availableWidth / numCols);
+            const generatedCols = [];
+            for (let i = 0; i < numCols; i++) {
+                generatedCols.push({
+                    id: `col_${i + 1}`,
+                    label: `Header ${i + 1}`,
+                    width: colWidth,
+                    type: "textField"
+                });
+            }
+            config = {
+                id: "custom",
+                title: `${numCols}×${numRows} Table`,
+                rowHeight: 22,
+                headerHeight: 24,
+                columns: generatedCols,
+                defaultRowCount: numRows
+            };
+        } else {
+            config = presetOrConfig;
+        }
     } else {
-        config = presetOrConfig || TABLE_PRESETS.custom;
+        config = TABLE_PRESETS.custom;
     }
 
     const columns = config.columns || [];
@@ -499,3 +525,146 @@ export function removeRowFromTable(tableId, rowIndex, allFields) {
 
     return { updatedFields, removedIds: Array.from(removedIds) };
 }
+
+/**
+ * Appends a new column to an existing table on the canvas.
+ * 
+ * @param {string} tableId - Target table ID
+ * @param {Array<object>} allFields - Current fields list
+ * @param {number|null} targetCol - Target col index (defaults to rightmost column)
+ * @returns {Array<object>} Newly created column cells
+ */
+export function addColumnToTable(tableId, allFields, targetCol = null) {
+    const tableFields = allFields.filter(f => f.tableId === tableId);
+    if (tableFields.length === 0) return [];
+
+    const headerFields = tableFields.filter(f => f.tableRole === "header").sort((a, b) => a.tableCol - b.tableCol);
+    if (headerFields.length === 0) return [];
+
+    const maxCol = Math.max(...headerFields.map(f => f.tableCol || 0));
+    const insertCol = targetCol !== null ? targetCol : maxCol + 1;
+    const refCol = headerFields[headerFields.length - 1];
+    const colWidth = refCol.width || 100;
+    const newX = refCol.x + colWidth;
+
+    const newCells = [];
+    const pageNum = refCol.page || 1;
+
+    // Header cell
+    const newHeader = {
+        id: generateFieldId(),
+        type: "staticText",
+        name: `${tableId}_hdr_${insertCol}`,
+        label: `Header ${insertCol + 1}`,
+        defaultValue: `Header ${insertCol + 1}`,
+        x: Math.round(newX),
+        y: Math.round(refCol.y),
+        width: Math.round(colWidth),
+        height: Math.round(refCol.height || 24),
+        page: pageNum,
+        fontSize: refCol.fontSize || 10,
+        fontWeight: "bold",
+        color: "#0f172a",
+        textAlignment: "left",
+        borderStyle: "solid",
+        borderColor: "#cbd5e1",
+        borderWidth: 1,
+        fillStyle: "#f1f5f9",
+        tableId,
+        tableRole: "header",
+        tableRow: 0,
+        tableCol: insertCol
+    };
+    newCells.push(newHeader);
+
+    // Data row cells
+    const cellRows = {};
+    tableFields.filter(f => f.tableRole === "cell").forEach(cell => {
+        if (!cellRows[cell.tableRow]) cellRows[cell.tableRow] = [];
+        cellRows[cell.tableRow].push(cell);
+    });
+
+    Object.keys(cellRows).forEach(rowStr => {
+        const rowNum = parseInt(rowStr, 10);
+        const rowCells = cellRows[rowNum];
+        const templateCell = rowCells[rowCells.length - 1] || rowCells[0];
+        const cellY = templateCell.y;
+        const cellH = templateCell.height || 22;
+
+        const newCell = {
+            id: generateFieldId(),
+            type: "textField",
+            name: `${tableId}_r${rowNum}_c${insertCol}`,
+            x: Math.round(newX),
+            y: Math.round(cellY),
+            width: Math.round(colWidth),
+            height: Math.round(cellH),
+            page: pageNum,
+            borderStyle: "solid",
+            borderColor: "#e2e8f0",
+            borderWidth: 1,
+            fillStyle: (rowNum % 2 === 0) ? "#f8fafc" : "#ffffff",
+            fontSize: 10,
+            tableId,
+            tableRole: "cell",
+            tableRow: rowNum,
+            tableCol: insertCol,
+            value: "",
+            defaultValue: ""
+        };
+        newCells.push(newCell);
+    });
+
+    return newCells;
+}
+
+/**
+ * Deletes the specified column from a table and shifts subsequent columns left.
+ * 
+ * @param {string} tableId - Target table ID
+ * @param {number} colIndex - Column index to delete
+ * @param {Array<object>} allFields - Current fields list
+ * @returns {{ updatedFields: Array<object>, removedIds: Array<string> }}
+ */
+export function removeColumnFromTable(tableId, colIndex, allFields) {
+    const tableFields = allFields.filter(f => f.tableId === tableId);
+    const colToDelete = tableFields.filter(f => f.tableCol === colIndex);
+    const totalCols = new Set(tableFields.map(f => f.tableCol)).size;
+
+    // Do not delete if only 1 column remains
+    if (colToDelete.length === 0 || totalCols <= 1) {
+        return { updatedFields: allFields, removedIds: [] };
+    }
+
+    const removedIds = new Set(colToDelete.map(f => f.id));
+    const colWidth = colToDelete[0].width || 100;
+
+    const updatedFields = allFields
+        .filter(f => !removedIds.has(f.id))
+        .map(f => {
+            if (f.tableId === tableId && f.tableCol > colIndex) {
+                return {
+                    ...f,
+                    x: Math.round(f.x - colWidth),
+                    tableCol: f.tableCol - 1
+                };
+            }
+            return f;
+        });
+
+    return { updatedFields, removedIds: Array.from(removedIds) };
+}
+
+/**
+ * Deletes all cells associated with a table.
+ * 
+ * @param {string} tableId - Target table ID
+ * @param {Array<object>} allFields - Current fields list
+ * @returns {{ updatedFields: Array<object>, removedIds: Array<string> }}
+ */
+export function deleteTable(tableId, allFields) {
+    const removedIds = allFields.filter(f => f.tableId === tableId).map(f => f.id);
+    const updatedFields = allFields.filter(f => f.tableId !== tableId);
+    return { updatedFields, removedIds };
+}
+
