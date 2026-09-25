@@ -1686,7 +1686,9 @@
                         <div class="prop-section-heading">Typography</div>
                         
                         <div class="prop-field">
-                            <label class="prop-label" for="fieldFontFamily">Font family</label>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <label class="prop-label" for="fieldFontFamily">Font family</label>
+                            </div>
                             <select id="fieldFontFamily" class="prop-select">
                                 <optgroup label="Standard PDF Core Fonts">
                                     <option value="helvetica">Helvetica / Arial (Sans-Serif)</option>
@@ -1695,7 +1697,26 @@
                                     <option value="helvetica-bold">Helvetica Bold</option>
                                     <option value="times-italic">Times Italic</option>
                                 </optgroup>
-                                <optgroup label="Modern Non-AcroForm Fonts">
+                                <optgroup label="Device &amp; System Fonts" id="deviceFontsGroup">
+                                    <option value="device:system-ui">System Default (San Francisco / Segoe / Roboto)</option>
+                                    <option value="device:Arial">Arial</option>
+                                    <option value="device:Arial Black">Arial Black</option>
+                                    <option value="device:Verdana">Verdana</option>
+                                    <option value="device:Tahoma">Tahoma</option>
+                                    <option value="device:Trebuchet MS">Trebuchet MS</option>
+                                    <option value="device:Impact">Impact</option>
+                                    <option value="device:Georgia">Georgia (Serif)</option>
+                                    <option value="device:Palatino">Palatino (Serif)</option>
+                                    <option value="device:Garamond">Garamond (Serif)</option>
+                                    <option value="device:Times New Roman">Times New Roman (Serif)</option>
+                                    <option value="device:Menlo">Menlo (macOS Monospace)</option>
+                                    <option value="device:Monaco">Monaco (macOS Monospace)</option>
+                                    <option value="device:Consolas">Consolas (Windows Monospace)</option>
+                                    <option value="device:Courier New">Courier New (Monospace)</option>
+                                    <option value="device:Comic Sans MS">Comic Sans MS</option>
+                                    <option value="device:Copperplate">Copperplate</option>
+                                </optgroup>
+                                <optgroup label="Modern Typography">
                                     <option value="inter">Inter (Clean Modern Sans)</option>
                                     <option value="carlito">Carlito / Calibri (Sans)</option>
                                     <option value="roboto-mono">Roboto Mono (Clean Mono)</option>
@@ -1704,6 +1725,10 @@
                                     <option value="cedarville">Cedarville Cursive (Signature Script)</option>
                                 </optgroup>
                             </select>
+                            <button type="button" class="btn-load-device-fonts" id="btnLoadDeviceFonts" title="Scan and load all installed fonts from this device">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                                <span>Scan Device Fonts...</span>
+                            </button>
                         </div>
 
                         <div class="prop-grid-2">

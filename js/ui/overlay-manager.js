@@ -41,6 +41,23 @@ export function getFieldCssFont(field) {
         weight = "600";
     } else if (family === "cedarville") {
         fam = "'Cedarville Cursive', cursive";
+    } else if (typeof family === "string" && (family.startsWith("device:") || family.startsWith("local:"))) {
+        const rawName = family.replace(/^(device|local):/, "").trim();
+        if (rawName === "system-ui") {
+            fam = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif";
+        } else if (/mono|code|consolas|courier|menlo|monaco/i.test(rawName)) {
+            fam = `"${rawName}", Menlo, Monaco, Consolas, 'Courier New', monospace`;
+            letterSpacing = "0.3px";
+        } else if (/serif|georgia|palatino|garamond|times|didot|cambria/i.test(rawName)) {
+            fam = `"${rawName}", Georgia, 'Times New Roman', serif`;
+        } else if (/black|impact/i.test(rawName)) {
+            fam = `"${rawName}", 'Arial Black', Impact, sans-serif`;
+            weight = "800";
+        } else {
+            fam = `"${rawName}", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+        }
+    } else if (family && family !== "helvetica") {
+        fam = `"${family}", -apple-system, BlinkMacSystemFont, sans-serif`;
     }
 
     return { fam, weight, style, letterSpacing };

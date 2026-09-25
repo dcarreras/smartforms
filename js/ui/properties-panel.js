@@ -911,6 +911,61 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
         }
     }, true, "Set Default Value"));
     fieldFontFamily?.addEventListener("change", e => syncChange(f => f.fontFamily = e.target.value, true, "Change Font Family"));
+
+    const btnLoadDeviceFonts = document.getElementById("btnLoadDeviceFonts");
+    btnLoadDeviceFonts?.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (typeof window !== "undefined" && typeof window.queryLocalFonts === "function") {
+            try {
+                btnLoadDeviceFonts.disabled = true;
+                btnLoadDeviceFonts.innerHTML = `<span>Scanning device fonts...</span>`;
+
+                const fonts = await window.queryLocalFonts();
+                const uniqueFamilies = Array.from(new Set(fonts.map(f => f.family))).sort();
+
+                if (uniqueFamilies.length > 0 && fieldFontFamily) {
+                    let localGroup = document.getElementById("localInstalledFontsGroup");
+                    if (!localGroup) {
+                        localGroup = document.createElement("optgroup");
+                        localGroup.id = "localInstalledFontsGroup";
+                        localGroup.label = `Installed on Device (${uniqueFamilies.length})`;
+                        fieldFontFamily.appendChild(localGroup);
+                    } else {
+                        localGroup.innerHTML = "";
+                    }
+
+                    uniqueFamilies.forEach(fam => {
+                        const opt = document.createElement("option");
+                        opt.value = `local:${fam}`;
+                        opt.textContent = fam;
+                        localGroup.appendChild(opt);
+                    });
+
+                    btnLoadDeviceFonts.innerHTML = `<span>✓ ${uniqueFamilies.length} Device Fonts Loaded</span>`;
+                    setTimeout(() => {
+                        btnLoadDeviceFonts.disabled = false;
+                        btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Rescan Device Fonts...</span>`;
+                    }, 3000);
+                } else {
+                    btnLoadDeviceFonts.disabled = false;
+                    btnLoadDeviceFonts.innerHTML = `<span>Device Fonts Available Above</span>`;
+                }
+            } catch (err) {
+                btnLoadDeviceFonts.disabled = false;
+                btnLoadDeviceFonts.innerHTML = `<span>Device Fonts Available Above</span>`;
+                setTimeout(() => {
+                    btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Scan Device Fonts...</span>`;
+                }, 2500);
+            }
+        } else {
+            btnLoadDeviceFonts.innerHTML = `<span>Device Fonts Ready Above</span>`;
+            setTimeout(() => {
+                btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Scan Device Fonts...</span>`;
+            }, 2500);
+        }
+    });
     
     fontSizeInput?.addEventListener("input", e => {
         const raw = e.target.value.trim();
@@ -1937,7 +1992,27 @@ export function populateProperties(field) {
     setVal("fieldType", fallbackField.type);
     setVal("fieldName", (fallbackField.type === "radioGroup" || fallbackField.type === "radio") ? getRadioGroupName(fallbackField) : (fallbackField.name || ""));
     setVal("fieldDefaultValue", fallbackField.defaultValue || (fallbackField.type === "staticText" || fallbackField.type === "label" ? fallbackField.label : "") || "");
-    setVal("fieldFontFamily", fallbackField.fontFamily || "helvetica");
+    const targetFont = fallbackField.fontFamily || "helvetica";
+    const fontSelectEl = document.getElementById("fieldFontFamily");
+    if (fontSelectEl && fontSelectEl.options) {
+        let hasOpt = false;
+        for (let i = 0; i < fontSelectEl.options.length; i++) {
+            if (fontSelectEl.options[i].value === targetFont) {
+                hasOpt = true;
+                break;
+            }
+        }
+        if (!hasOpt && targetFont && typeof document !== "undefined" && typeof document.createElement === "function") {
+            const opt = document.createElement("option");
+            opt.value = targetFont;
+            const cleanName = targetFont.replace(/^(device|local):/, "");
+            opt.textContent = `${cleanName} (Device Font)`;
+            if (typeof fontSelectEl.appendChild === "function") {
+                fontSelectEl.appendChild(opt);
+            }
+        }
+    }
+    setVal("fieldFontFamily", targetFont);
     setVal("fontSize", fallbackField.fontSize || "");
     
     const activeSize = (fallbackField.fontSize && fallbackField.fontSize >= 6) ? fallbackField.fontSize : 11;

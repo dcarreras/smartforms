@@ -253,6 +253,24 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
     const courierOblique = await doc.embedFont(StandardFonts.CourierOblique);
 
     const resolveFont = (fam) => {
+        if (!fam) return helvetica;
+        if (typeof fam === "string" && (fam.startsWith("device:") || fam.startsWith("local:"))) {
+            const clean = fam.replace(/^(device|local):/, "").toLowerCase();
+            if (clean.includes("mono") || clean.includes("courier") || clean.includes("menlo") || clean.includes("consolas") || clean.includes("code")) {
+                return courier;
+            }
+            if (clean.includes("times") || clean.includes("georgia") || clean.includes("palatino") || clean.includes("garamond") || clean.includes("serif") || clean.includes("didot") || clean.includes("cambria")) {
+                return times;
+            }
+            if (clean.includes("bold") || clean.includes("black") || clean.includes("impact")) {
+                return helveticaBold;
+            }
+            if (clean.includes("italic") || clean.includes("oblique") || clean.includes("script")) {
+                return helveticaOblique;
+            }
+            return helvetica;
+        }
+
         switch (fam) {
             case "times": return times;
             case "times-bold": return timesBold;
