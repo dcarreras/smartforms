@@ -1,10 +1,11 @@
 // ── Canvas Overlay Rendering & Visual Elements (js/ui/overlay-manager.js) ─
-import { state, getFieldsForCurrentPage, getSelectedField, setSelectedField, duplicateSelectedFields, createGroupForSelected, ungroupSelected, sortFieldsByReadingOrder, evaluateCalculations, getRadioGroupName, getRadioGroupFields, selectRadioOption, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, pasteFormulaRecipeToFields } from "../core/state.js";
+import { state, getFieldsForCurrentPage, getSelectedField, setSelectedField, setSelectedFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, sortFieldsByReadingOrder, evaluateCalculations, getRadioGroupName, getRadioGroupFields, selectRadioOption, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, pasteFormulaRecipeToFields } from "../core/state.js";
 import { FIELD_TYPE_LABELS } from "../core/constants.js";
 import { openSignatureModal } from "./signature-pad.js";
 import { makeScrubbableAndScrollable, distributeSelectedFields, isPickingCalcField, updateCanvasPickModeUI } from "./properties-panel.js";
 import { saveHistory } from "../core/storage-manager.js";
 import { goToPage } from "../engines/pdf-engine.js";
+import { toggleListFormat, addRowToTable, removeRowFromTable } from "../engines/text-engine.js";
 
 export function getFieldCssFont(field) {
     let fam = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -90,17 +91,19 @@ export function renderOverlays(handlers) {
             div.classList.add("fill-mode");
 
             if (f.type === "staticText") {
-                div.style.border = "none";
-                div.style.background = "transparent";
+                const hasBorder = f.borderStyle && f.borderStyle !== "none";
+                const hasFill = f.fillStyle && f.fillStyle !== "transparent";
+                div.style.border = hasBorder ? `${f.borderWidth || 1}px solid ${f.borderColor || "#cbd5e1"}` : "none";
+                div.style.background = hasFill ? f.fillStyle : "transparent";
                 div.style.boxShadow = "none";
                 div.style.display = "flex";
-                div.style.alignItems = "center";
+                div.style.alignItems = (f.height > (Number(f.fontSize) || 14) * 2.2) ? "flex-start" : "center";
                 div.style.justifyContent = f.textAlignment === "center" ? "center" : (f.textAlignment === "right" ? "flex-end" : "flex-start");
                 
                 const span = document.createElement("span");
                 const { fam, weight, style: fontStyle } = getFieldCssFont(f);
                 const fontSize = Number(f.fontSize) || 14;
-                span.style.cssText = `font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; font-size: ${fontSize}px; color: ${f.color || "#0f172a"}; width: 100%; text-align: ${f.textAlignment || 'left'}; line-height: 1.25; word-break: break-word;`;
+                span.style.cssText = `font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; font-size: ${fontSize}px; color: ${f.color || "#0f172a"}; width: 100%; text-align: ${f.textAlignment || 'left'}; line-height: 1.35; white-space: pre-wrap; word-break: break-word;`;
                 span.textContent = f.defaultValue || f.label || f.value || "Sample Text";
                 div.appendChild(span);
                 container.appendChild(div);
@@ -437,9 +440,23 @@ export function renderOverlays(handlers) {
                 label.style.fontWeight = weight || "600";
                 label.style.opacity = "1.0";
                 label.style.fontSize = `${Number(f.fontSize) || 14}px`;
-                label.style.whiteSpace = "normal";
+                label.style.whiteSpace = "pre-wrap";
                 label.style.wordBreak = "break-word";
-                label.style.lineHeight = "1.25";
+                label.style.lineHeight = "1.35";
+                label.style.textAlign = f.textAlignment || "left";
+
+                if (f.height > (Number(f.fontSize) || 14) * 2.2) {
+                    div.style.alignItems = "flex-start";
+                    label.style.paddingTop = "2px";
+                }
+
+                if (f.fillStyle && f.fillStyle !== "transparent") {
+                    div.style.background = f.fillStyle;
+                }
+                if (f.borderStyle && f.borderStyle !== "none") {
+                    div.style.border = `${f.borderWidth || 1}px solid ${f.borderColor || "#cbd5e1"}`;
+                }
+
                 div.appendChild(label);
             } else if (f.type === "dropdown") {
                 const displayText = f.value || f.defaultValue || (f.options && f.options.length ? f.options[0] : "Select...");
@@ -764,7 +781,91 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
 
     if (!isMulti) {
         // Single Field Specifics: Required Toggle & Lock Toggle
-        if (primaryField.type !== "staticText") {
+        if (primaryField.type === "staticText") {
+            // Bold Toggle
+            const isBold = primaryField.fontWeight === "bold" || primaryField.fontWeight === "700" || primaryField.fontWeight >= 700;
+            const boldBtn = document.createElement("button");
+            boldBtn.className = "quick-bar-btn" + (isBold ? " active" : "");
+            boldBtn.title = isBold ? "Unbold Text" : "Bold Text";
+            boldBtn.innerHTML = `<b style="font-size: 12px; font-weight: 800;">B</b>`;
+            boldBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                primaryField.fontWeight = isBold ? "normal" : "bold";
+                saveHistory(true, isBold ? "Remove Bold" : "Apply Bold");
+                if (handlers?.onUpdated) handlers.onUpdated(primaryField);
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(boldBtn);
+
+            // Italic Toggle
+            const isItalic = primaryField.fontStyle === "italic";
+            const italicBtn = document.createElement("button");
+            italicBtn.className = "quick-bar-btn" + (isItalic ? " active" : "");
+            italicBtn.title = isItalic ? "Remove Italic" : "Italicize Text";
+            italicBtn.innerHTML = `<i style="font-size: 12px; font-style: italic; font-weight: 700; font-family: Georgia, serif;">I</i>`;
+            italicBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                primaryField.fontStyle = isItalic ? "normal" : "italic";
+                saveHistory(true, isItalic ? "Remove Italic" : "Apply Italic");
+                if (handlers?.onUpdated) handlers.onUpdated(primaryField);
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(italicBtn);
+
+            // Bullet List Toggle
+            const bulletBtn = document.createElement("button");
+            bulletBtn.className = "quick-bar-btn";
+            bulletBtn.title = "Toggle Bullet List (•)";
+            bulletBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="4" cy="6" r="2" fill="currentColor"/><circle cx="4" cy="12" r="2" fill="currentColor"/><circle cx="4" cy="18" r="2" fill="currentColor"/><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/></svg><span>• List</span>`;
+            bulletBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const cur = primaryField.defaultValue || primaryField.label || "";
+                const formatted = toggleListFormat(cur, "bullet");
+                primaryField.defaultValue = formatted;
+                primaryField.label = formatted;
+                saveHistory(true, "Toggle Bullet List");
+                if (handlers?.onUpdated) handlers.onUpdated(primaryField);
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(bulletBtn);
+
+            // Numbered List Toggle
+            const numBtn = document.createElement("button");
+            numBtn.className = "quick-bar-btn";
+            numBtn.title = "Toggle Numbered List (1. 2. 3.)";
+            numBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h1v4M4 10h2M4 14h2l-2 2h2M4 18h2"/><line x1="10" y1="7" x2="20" y2="7"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="10" y1="17" x2="20" y2="17"/></svg><span>1. List</span>`;
+            numBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const cur = primaryField.defaultValue || primaryField.label || "";
+                const formatted = toggleListFormat(cur, "number");
+                primaryField.defaultValue = formatted;
+                primaryField.label = formatted;
+                saveHistory(true, "Toggle Numbered List");
+                if (handlers?.onUpdated) handlers.onUpdated(primaryField);
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(numBtn);
+
+            // Text Alignment Cycle
+            const align = primaryField.textAlignment || "left";
+            const alignBtn = document.createElement("button");
+            alignBtn.className = "quick-bar-btn";
+            alignBtn.title = `Text Alignment: ${align.toUpperCase()} (Click to Cycle)`;
+            alignBtn.innerHTML = align === "center"
+                ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="5" y1="18" x2="19" y2="18"/></svg><span>Center</span>`
+                : (align === "right"
+                    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="6" y1="18" x2="20" y2="18"/></svg><span>Right</span>`
+                    : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="15" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg><span>Left</span>`);
+            alignBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const nextAlign = align === "left" ? "center" : (align === "center" ? "right" : "left");
+                primaryField.textAlignment = nextAlign;
+                saveHistory(true, `Align Text ${nextAlign}`);
+                if (handlers?.onUpdated) handlers.onUpdated(primaryField);
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(alignBtn);
+        } else {
             const reqBtn = document.createElement("button");
             reqBtn.className = "quick-bar-btn" + (primaryField.required ? " active" : "");
             reqBtn.title = "Toggle Required (*)";
@@ -795,6 +896,44 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
                 else renderOverlays(handlers);
             });
             bar.appendChild(markBtn);
+        }
+
+        // Table Grid specific row controls (+ Row, − Row)
+        if (primaryField.tableId) {
+            const addRowBtn = document.createElement("button");
+            addRowBtn.className = "quick-bar-btn quick-bar-btn-accent";
+            addRowBtn.title = "Insert Row to Table Below";
+            addRowBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span>+ Row</span>`;
+            addRowBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const newCells = addRowToTable(primaryField.tableId, state.fields || []);
+                if (newCells.length > 0) {
+                    state.fields.push(...newCells);
+                    setSelectedFields(newCells.map(c => c.id));
+                    saveHistory(true, "Add Table Row");
+                    if (handlers?.onUpdated) handlers.onUpdated();
+                    else renderOverlays(handlers);
+                }
+            });
+            bar.appendChild(addRowBtn);
+
+            const delRowBtn = document.createElement("button");
+            delRowBtn.className = "quick-bar-btn quick-bar-btn-danger";
+            delRowBtn.title = "Delete Row from Table";
+            delRowBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span>− Row</span>`;
+            delRowBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const targetRow = primaryField.tableRole === "cell" ? primaryField.tableRow : undefined;
+                const tableCells = (state.fields || []).filter(f => f.tableId === primaryField.tableId && f.tableRole === "cell");
+                const rowToDelete = targetRow || Math.max(...tableCells.map(f => f.tableRow || 1));
+                const { updatedFields } = removeRowFromTable(primaryField.tableId, rowToDelete, state.fields || []);
+                state.fields = updatedFields;
+                setSelectedField(null);
+                saveHistory(true, "Delete Table Row");
+                if (handlers?.onUpdated) handlers.onUpdated();
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(delRowBtn);
         }
 
         const lockBtn = document.createElement("button");
@@ -911,6 +1050,44 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
                 }
             });
             bar.appendChild(pasteFormulaBtn);
+        }
+
+        const tableField = selectedFieldsOnPage.find(f => f.tableId);
+        if (tableField) {
+            const addRowBtn = document.createElement("button");
+            addRowBtn.className = "quick-bar-btn quick-bar-btn-accent";
+            addRowBtn.title = "Insert Row to Table Below";
+            addRowBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span>+ Row</span>`;
+            addRowBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const newCells = addRowToTable(tableField.tableId, state.fields || []);
+                if (newCells.length > 0) {
+                    state.fields.push(...newCells);
+                    setSelectedFields(newCells.map(c => c.id));
+                    saveHistory(true, "Add Table Row");
+                    if (handlers?.onUpdated) handlers.onUpdated();
+                    else renderOverlays(handlers);
+                }
+            });
+            bar.appendChild(addRowBtn);
+
+            const delRowBtn = document.createElement("button");
+            delRowBtn.className = "quick-bar-btn quick-bar-btn-danger";
+            delRowBtn.title = "Delete Row from Table";
+            delRowBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span>− Row</span>`;
+            delRowBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                const targetRow = tableField.tableRole === "cell" ? tableField.tableRow : undefined;
+                const tableCells = (state.fields || []).filter(f => f.tableId === tableField.tableId && f.tableRole === "cell");
+                const rowToDelete = targetRow || Math.max(...tableCells.map(f => f.tableRow || 1));
+                const { updatedFields } = removeRowFromTable(tableField.tableId, rowToDelete, state.fields || []);
+                state.fields = updatedFields;
+                setSelectedField(null);
+                saveHistory(true, "Delete Table Row");
+                if (handlers?.onUpdated) handlers.onUpdated();
+                else renderOverlays(handlers);
+            });
+            bar.appendChild(delRowBtn);
         }
 
         if (selectedFieldsOnPage.length >= 3) {
@@ -1133,6 +1310,67 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                 e.stopPropagation();
                 commitEdit(true);
                 overlay.focus();
+            } else if (e.key === "Enter" && !e.shiftKey) {
+                const cursorPos = textarea.selectionStart;
+                const text = textarea.value;
+                const lineStart = text.lastIndexOf("\n", cursorPos - 1) + 1;
+                const currentLine = text.slice(lineStart, cursorPos);
+
+                const bulletMatch = currentLine.match(/^([•·◦▪\-*])\s*(.*)$/);
+                const numMatch = currentLine.match(/^(\d+)[\.\)]\s*(.*)$/);
+                const taskMatch = currentLine.match(/^(\[[ xX]?\])\s*(.*)$/);
+
+                if (bulletMatch) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const marker = bulletMatch[1];
+                    const content = bulletMatch[2];
+                    if (!content.trim()) {
+                        const newText = text.slice(0, lineStart) + text.slice(cursorPos);
+                        textarea.value = newText;
+                        textarea.selectionStart = textarea.selectionEnd = lineStart;
+                    } else {
+                        const insertion = `\n${marker} `;
+                        const newText = text.slice(0, cursorPos) + insertion + text.slice(cursorPos);
+                        textarea.value = newText;
+                        textarea.selectionStart = textarea.selectionEnd = cursorPos + insertion.length;
+                    }
+                    textarea.dispatchEvent(new Event("input"));
+                    return;
+                } else if (numMatch) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const num = parseInt(numMatch[1], 10);
+                    const content = numMatch[2];
+                    if (!content.trim()) {
+                        const newText = text.slice(0, lineStart) + text.slice(cursorPos);
+                        textarea.value = newText;
+                        textarea.selectionStart = textarea.selectionEnd = lineStart;
+                    } else {
+                        const insertion = `\n${num + 1}. `;
+                        const newText = text.slice(0, cursorPos) + insertion + text.slice(cursorPos);
+                        textarea.value = newText;
+                        textarea.selectionStart = textarea.selectionEnd = cursorPos + insertion.length;
+                    }
+                    textarea.dispatchEvent(new Event("input"));
+                    return;
+                } else if (taskMatch) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const content = taskMatch[2];
+                    if (!content.trim()) {
+                        const newText = text.slice(0, lineStart) + text.slice(cursorPos);
+                        textarea.value = newText;
+                        textarea.selectionStart = textarea.selectionEnd = lineStart;
+                    } else {
+                        const insertion = `\n[ ] `;
+                        const newText = text.slice(0, cursorPos) + insertion + text.slice(cursorPos);
+                        textarea.value = newText;
+                        textarea.selectionStart = textarea.selectionEnd = cursorPos + insertion.length;
+                    }
+                    textarea.dispatchEvent(new Event("input"));
+                    return;
+                }
             }
             e.stopPropagation();
         });

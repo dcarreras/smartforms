@@ -86,6 +86,18 @@ export function setSelectedField(fieldOrId) {
     }
 }
 
+export function setSelectedFields(fieldsOrIds = []) {
+    state.selectedFieldIds.clear();
+    const arr = Array.isArray(fieldsOrIds) ? fieldsOrIds : [fieldsOrIds];
+    arr.forEach(item => {
+        if (item) {
+            const id = typeof item === "object" ? item.id : item;
+            state.selectedFieldIds.add(id);
+            state.lastSelectedFieldId = id;
+        }
+    });
+}
+
 export function getFieldsForCurrentPage() {
     return state.fields.filter(f => (f.page || 1) === state.currentPageNum);
 }

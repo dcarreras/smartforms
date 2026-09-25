@@ -958,6 +958,28 @@
                                 <span class="menu-item-left"><i data-lucide="type" class="menu-item-icon"></i> Add Text / Heading</span>
                                 <span class="menu-item-kbd">A</span>
                             </button>
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="table" class="menu-item-icon"></i> Table Grid Form</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="invoice" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="receipt" class="menu-item-icon"></i> Invoice Breakdown</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="timesheet" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="clock" class="menu-item-icon"></i> Weekly Timesheet</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="signoff" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="pen-tool" class="menu-item-icon"></i> Sign-off Matrix</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="checklist" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="check-square" class="menu-item-icon"></i> Inspection Checklist</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="custom" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="grid" class="menu-item-icon"></i> Custom Grid (3x3)</span>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="menu-section-header">Form Fields</div>
                             <button type="button" class="menu-bar-dropdown-item" data-menu-insert="textField" role="menuitem">
                                 <span class="menu-item-left"><i data-lucide="form-input" class="menu-item-icon"></i> Text Field</span>
@@ -1139,6 +1161,34 @@
                     <button class="tool-btn" data-tool="staticText" data-tooltip="Add Text / Heading" data-kbd="A" aria-label="Add Text or Heading tool">
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M6 16l6-12 6 12"/><path d="M8 12h8"/></svg>
                     </button>
+                    <div class="tool-btn-dropdown-wrapper" style="position: relative; display: inline-flex;">
+                        <button class="tool-btn" data-tool="table" id="toolBtnTable" data-tooltip="Table &amp; Grid Form" data-kbd="G" aria-label="Table and Grid Form tool">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+                        </button>
+                        <div class="table-preset-popover" id="tablePresetPopover" style="display: none;" role="menu" aria-label="Table Presets">
+                            <div class="table-preset-header">Insert Table Form</div>
+                            <button type="button" class="table-preset-item" data-preset="invoice">
+                                <span class="preset-name">Invoice Breakdown</span>
+                                <span class="preset-desc">Description, Qty, Price, Amount</span>
+                            </button>
+                            <button type="button" class="table-preset-item" data-preset="timesheet">
+                                <span class="preset-name">Weekly Timesheet</span>
+                                <span class="preset-desc">Day, Start, End, Break, Total Hrs</span>
+                            </button>
+                            <button type="button" class="table-preset-item" data-preset="signoff">
+                                <span class="preset-name">Sign-off Matrix</span>
+                                <span class="preset-desc">Role, Name, Date, Signature</span>
+                            </button>
+                            <button type="button" class="table-preset-item" data-preset="checklist">
+                                <span class="preset-name">Inspection Checklist</span>
+                                <span class="preset-desc">Check, Item, Status, Notes</span>
+                            </button>
+                            <button type="button" class="table-preset-item" data-preset="custom">
+                                <span class="preset-name">Custom 3×3 Grid</span>
+                                <span class="preset-desc">Standard blank tabular grid</span>
+                            </button>
+                        </div>
+                    </div>
 
                     <!-- Form Field Insertion Tools -->
                     <button class="tool-btn" data-tool="textField" data-tooltip="Text Field" data-kbd="T" aria-label="Text Field tool">
@@ -1463,6 +1513,34 @@
                         <div class="prop-field" id="defaultValueGroup">
                             <label class="prop-label" for="fieldDefaultValue">Default Value</label>
                             <input type="text" id="fieldDefaultValue" class="prop-input" placeholder="Placeholder or default text">
+                        </div>
+
+                        <!-- Rich Text & List Quick Format (Static Text Elements) -->
+                        <div class="prop-field" id="richTextToolsGroup" style="display: none;">
+                            <label class="prop-label">Rich Text Presets</label>
+                            <div class="prop-actions-row" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <button type="button" class="btn-secondary btn-xs" id="textFmtTitle" style="flex: 1; min-width: 48px;">Title</button>
+                                <button type="button" class="btn-secondary btn-xs" id="textFmtH1" style="flex: 1; min-width: 36px;">H1</button>
+                                <button type="button" class="btn-secondary btn-xs" id="textFmtH2" style="flex: 1; min-width: 36px;">H2</button>
+                                <button type="button" class="btn-secondary btn-xs" id="textFmtBody" style="flex: 1; min-width: 42px;">Body</button>
+                            </div>
+                            <div class="prop-actions-row" style="display: flex; gap: 4px; margin-top: 4px;">
+                                <button type="button" class="btn-secondary btn-xs" id="textFmtBullets" style="flex: 1;">• Bullets</button>
+                                <button type="button" class="btn-secondary btn-xs" id="textFmtNumbers" style="flex: 1;">1. Numbers</button>
+                            </div>
+                        </div>
+
+                        <!-- Table Grid Cell & Structure Controls -->
+                        <div class="prop-field" id="tableGridControlsGroup" style="display: none;">
+                            <div class="prop-label-row">
+                                <label class="prop-label">Table Grid</label>
+                                <span id="tableCellLocationBadge" class="prop-meta-badge">Row 1, Col 1</span>
+                            </div>
+                            <div class="prop-actions-row" style="display: flex; gap: 6px; margin-top: 4px;">
+                                <button type="button" class="btn-primary btn-xs" id="tableAddRowBtn" style="flex: 1;">+ Add Row</button>
+                                <button type="button" class="btn-danger btn-xs" id="tableDeleteRowBtn" style="flex: 1;">− Delete Row</button>
+                            </div>
+                            <button type="button" class="btn-secondary btn-xs btn-block" id="tableSelectAllBtn" style="margin-top: 6px;">Select Entire Table</button>
                         </div>
 
                         <!-- Radio Group & Choice Relation Settings -->

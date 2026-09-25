@@ -1,5 +1,6 @@
 // ── Canvas Interaction, Drag, Resize, Snap & Zoom (js/ui/canvas-controller.js) ─
-import { state, setSelectedField, getSelectedField, getFieldsForCurrentPage, generateFieldId, createGroupForSelected, ungroupSelected, copySelectedFields, pasteClipboardFields, getRadioGroupName } from "../core/state.js";
+import { state, setSelectedField, setSelectedFields, getSelectedField, getFieldsForCurrentPage, generateFieldId, createGroupForSelected, ungroupSelected, copySelectedFields, pasteClipboardFields, getRadioGroupName } from "../core/state.js";
+import { createTableGrid } from "../engines/text-engine.js";
 import { DEFAULT_FIELD_SIZES, FIELD_TYPE_LABELS, SNAP_THRESHOLD } from "../core/constants.js";
 import { setTransformScale, getPageTextBlocks, updateCanvasTransform } from "../engines/pdf-engine.js";
 import { saveHistory } from "../core/storage-manager.js";
@@ -397,6 +398,31 @@ async function createFieldAt(type, x, y, handlers, customWidth, customHeight, cu
     const pageHeight = container?.offsetHeight || 800;
     targetX = Math.max(0, Math.min(pageWidth - width, targetX));
     targetY = Math.max(0, Math.min(pageHeight - height, targetY));
+
+    if (type === "table") {
+        const presetKey = state.tablePreset || "invoice";
+        const grid = createTableGrid(presetKey, targetX, targetY, { pageNum: state.currentPageNum });
+        state.fields.push(...grid.fields);
+        setSelectedFields(grid.fields.map(f => f.id));
+        saveHistory(true, `Insert ${presetKey.charAt(0).toUpperCase() + presetKey.slice(1)} Table`);
+
+        hideGuides();
+        if (ghostElement) {
+            ghostElement.classList.remove("is-drawing");
+            ghostElement.style.display = "none";
+        }
+
+        // Auto-switch back to Select tool with table selected
+        state.activeTool = "select";
+        document.body.classList.remove("placing-mode");
+        document.querySelectorAll(".tool-btn[data-tool]").forEach(b => {
+            b.classList.toggle("active", b.dataset.tool === "select");
+        });
+
+        if (handlers?.onSelectionChange) handlers.onSelectionChange();
+        if (handlers?.onFieldUpdated) handlers.onFieldUpdated();
+        return;
+    }
 
     const smartMeta = await inferSmartFieldName(type, targetX, targetY, width, height);
 

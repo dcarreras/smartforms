@@ -898,6 +898,56 @@ body:not(.editor-active) #calcPickerHud {
     display: block;
 }
 
+/* ── Table Grid Tool & Presets Popover ──────────────────────────── */
+.table-preset-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    min-width: 240px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08);
+    border-radius: 8px;
+    padding: 6px;
+    border: 1px solid #e2e8f0;
+    z-index: 3000;
+}
+.table-preset-header {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    padding: 6px 8px 4px;
+}
+.table-preset-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    padding: 7px 9px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease;
+    box-sizing: border-box;
+}
+.table-preset-item:hover {
+    background: #f1f5f9;
+}
+.table-preset-item .preset-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0f172a;
+}
+.table-preset-item .preset-desc {
+    font-size: 10.5px;
+    color: #64748b;
+    margin-top: 1px;
+}
+
 @media (max-width: 767px) {
     .calc-picker-hud {
         bottom: calc(58px + env(safe-area-inset-bottom, 0px));

@@ -8,7 +8,8 @@ export const DEFAULT_FIELD_SIZES = {
     radioGroup: { width: 20,  height: 20 },
     radio:      { width: 20,  height: 20 },
     dateField:  { width: 140, height: 28 },
-    signature:  { width: 200, height: 55 }
+    signature:  { width: 200, height: 55 },
+    table:      { width: 450, height: 110 }
 };
 
 export const FIELD_TYPE_LABELS = {
@@ -19,7 +20,8 @@ export const FIELD_TYPE_LABELS = {
     radioGroup: "Radio Group",
     radio:      "Radio Button",
     dateField:  "Date Field",
-    signature:  "Signature"
+    signature:  "Signature",
+    table:      "Table Grid"
 };
 
 export const SNAP_THRESHOLD = 7; // Constant on-screen pixel radius for magnetic alignment (matching Figma/Sketch standard)

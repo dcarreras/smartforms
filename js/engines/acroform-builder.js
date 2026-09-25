@@ -351,41 +351,112 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
         }
 
         try {
+            // Helper to convert hex colors to pdf-lib rgb
+            const hexToPdfRgb = (hex, defaultColor = rgb(0.06, 0.09, 0.16)) => {
+                if (!hex || typeof hex !== "string" || !hex.startsWith("#")) return defaultColor;
+                const clean = hex.slice(1);
+                if (clean.length === 3) {
+                    return rgb(
+                        parseInt(clean[0] + clean[0], 16) / 255,
+                        parseInt(clean[1] + clean[1], 16) / 255,
+                        parseInt(clean[2] + clean[2], 16) / 255
+                    );
+                } else if (clean.length === 6) {
+                    return rgb(
+                        parseInt(clean.slice(0, 2), 16) / 255,
+                        parseInt(clean.slice(2, 4), 16) / 255,
+                        parseInt(clean.slice(4, 6), 16) / 255
+                    );
+                }
+                return defaultColor;
+            };
+
+            // Draw table cell background shading and borders if part of a table
+            if (f.tableId && f.fillStyle && f.fillStyle !== "transparent") {
+                const cellBg = hexToPdfRgb(f.fillStyle, rgb(1, 1, 1));
+                const cellBorder = hexToPdfRgb(f.borderColor, rgb(0.88, 0.9, 0.94));
+                page.drawRectangle({
+                    x: f.x,
+                    y: pdfY,
+                    width: f.width,
+                    height: f.height,
+                    color: cellBg,
+                    borderColor: cellBorder,
+                    borderWidth: 0.8
+                });
+            }
+
             if (f.type === "staticText" || f.type === "label") {
                 const font = resolveFont(f.fontFamily || (f.fontWeight === "bold" ? "helvetica-bold" : "helvetica"));
                 const fontSize = (f.fontSize && parseInt(f.fontSize) >= 4) ? parseInt(f.fontSize) : 14;
                 const textContent = f.defaultValue || f.label || f.value || f.name || "Text / Heading";
 
-                if (common.backgroundColor) {
+                const hasFill = f.fillStyle && f.fillStyle !== "transparent";
+                const hasBorder = f.borderStyle && f.borderStyle !== "none";
+                if (hasFill || hasBorder || common.backgroundColor) {
+                    const fillColor = hasFill ? hexToPdfRgb(f.fillStyle, rgb(0.95, 0.96, 0.98)) : common.backgroundColor;
+                    const strokeColor = hasBorder ? hexToPdfRgb(f.borderColor, rgb(0.8, 0.83, 0.88)) : common.borderColor;
                     page.drawRectangle({
                         x: f.x,
                         y: pdfY,
                         width: f.width,
                         height: f.height,
-                        color: common.backgroundColor,
-                        borderColor: common.borderColor,
-                        borderWidth: common.borderWidth || 0
+                        color: fillColor,
+                        borderColor: strokeColor,
+                        borderWidth: hasBorder ? (f.borderWidth || 1) : (common.borderWidth || 0)
                     });
                 }
 
-                let textX = f.x + 4;
-                let textY = pdfY + (f.height - fontSize) / 2 + 1;
-                try {
-                    const textWidth = font.widthOfTextAtSize(textContent, fontSize);
-                    if (f.textAlignment === "center") {
-                        textX = f.x + (f.width - textWidth) / 2;
-                    } else if (f.textAlignment === "right") {
-                        textX = f.x + f.width - textWidth - 4;
-                    }
-                } catch (e) {}
+                const textColor = hexToPdfRgb(f.color, rgb(0.06, 0.09, 0.16));
+                const lineHeight = fontSize * (f.lineHeight || 1.35);
+                const lines = String(textContent).split(/\r?\n/);
+                const isMultiLine = lines.length > 1 || (f.height > fontSize * 2.2);
 
-                page.drawText(textContent, {
-                    x: Math.max(f.x, textX),
-                    y: Math.max(pdfY, textY),
-                    size: fontSize,
-                    font: font,
-                    color: rgb(0.06, 0.09, 0.16)
-                });
+                if (isMultiLine) {
+                    let currentY = pdfY + f.height - fontSize - 3;
+                    for (const line of lines) {
+                        if (currentY < pdfY) break;
+                        let textX = f.x + 4;
+                        try {
+                            const textWidth = font.widthOfTextAtSize(line, fontSize);
+                            if (f.textAlignment === "center") {
+                                textX = f.x + (f.width - textWidth) / 2;
+                            } else if (f.textAlignment === "right") {
+                                textX = f.x + f.width - textWidth - 4;
+                            }
+                        } catch (e) {}
+
+                        if (line.trim()) {
+                            page.drawText(line, {
+                                x: Math.max(f.x + 2, textX),
+                                y: currentY,
+                                size: fontSize,
+                                font: font,
+                                color: textColor
+                            });
+                        }
+                        currentY -= lineHeight;
+                    }
+                } else {
+                    let textX = f.x + 4;
+                    let textY = pdfY + (f.height - fontSize) / 2 + 1;
+                    try {
+                        const textWidth = font.widthOfTextAtSize(textContent, fontSize);
+                        if (f.textAlignment === "center") {
+                            textX = f.x + (f.width - textWidth) / 2;
+                        } else if (f.textAlignment === "right") {
+                            textX = f.x + f.width - textWidth - 4;
+                        }
+                    } catch (e) {}
+
+                    page.drawText(textContent, {
+                        x: Math.max(f.x, textX),
+                        y: Math.max(pdfY, textY),
+                        size: fontSize,
+                        font: font,
+                        color: textColor
+                    });
+                }
                 continue;
             }
 

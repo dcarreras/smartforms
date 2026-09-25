@@ -1,5 +1,5 @@
 // ── Formblatt Editor Subsystems & Controller (js/controllers/editor-app.js) ─
-import { state, getSelectedField, setSelectedField, getFieldsForCurrentPage, copySelectedFields, pasteClipboardFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, setEditorMode, clearAllTestValues, toggleGuides, setGuidesEnabled, sortFieldsByReadingOrder, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
+import { state, getSelectedField, setSelectedField, setSelectedFields, getFieldsForCurrentPage, copySelectedFields, pasteClipboardFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, setEditorMode, clearAllTestValues, toggleGuides, setGuidesEnabled, sortFieldsByReadingOrder, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
 import { renderPage, goToPage, setTransformScale, fitToWidth, fitToPage, updateTopBarDocInfo, loadPdfLibraries } from "../engines/pdf-engine.js";
 import { buildPdf, downloadAcroForm } from "../engines/acroform-builder.js";
 import { renderLayers, updateLayerSelectionDOM } from "../ui/layers-panel.js";
@@ -11,6 +11,7 @@ import { initSignaturePad } from "../ui/signature-pad.js";
 import { autoDetectFields } from "../engines/auto-detector.js";
 import { saveHistory, undo, redo, getUndoActionName, getRedoActionName, exportProjectJson, importProjectJson } from "../core/storage-manager.js";
 import { exportFormDataAsJson, exportFormDataAsCsv, importFormData } from "../core/data-exporter.js";
+import { createTableGrid } from "../engines/text-engine.js";
 import { showToast } from "../utils/toast.js";
 import { triggerHaptic } from "../utils/haptics.js";
 
@@ -305,6 +306,51 @@ export function initEditorSubsystems() {
                 document.body.classList.remove("placing-mode");
             }
         });
+    });
+
+    const tableBtn = document.getElementById("toolBtnTable");
+    const tablePopover = document.getElementById("tablePresetPopover");
+    if (tableBtn && tablePopover) {
+        tableBtn.addEventListener("click", (e) => {
+            const isVisible = tablePopover.style.display === "block";
+            tablePopover.style.display = isVisible ? "none" : "block";
+        });
+    }
+
+    const insertTablePreset = (presetKey) => {
+        const startX = 54;
+        let startY = 120;
+        const pageFields = (state.fields || []).filter(f => (f.page || 1) === state.currentPageNum);
+        if (pageFields.length > 0) {
+            const maxY = Math.max(...pageFields.map(f => f.y + f.height));
+            if (maxY < 600) startY = maxY + 20;
+        }
+        const grid = createTableGrid(presetKey || "invoice", startX, startY, { pageNum: state.currentPageNum });
+        state.fields.push(...grid.fields);
+        setSelectedFields(grid.fields.map(f => f.id));
+        saveHistory(true, `Insert ${presetKey.charAt(0).toUpperCase() + presetKey.slice(1)} Table`);
+
+        if (tablePopover) tablePopover.style.display = "none";
+        state.activeTool = "select";
+        document.querySelectorAll(".tool-btn[data-tool]").forEach(b => {
+            b.classList.toggle("active", b.dataset.tool === "select");
+        });
+        updateToolIndicator();
+        renderOverlays(canvasHandlers);
+        if (typeof populateProperties === "function") populateProperties(grid.fields[0]);
+    };
+
+    safeQuerySelectorAll(".table-preset-item, .menu-table-preset").forEach(btn => {
+        btn.addEventListener("click", e => {
+            e.stopPropagation();
+            insertTablePreset(btn.dataset.preset);
+        });
+    });
+
+    safeDocumentAddEventListener("click", e => {
+        if (!e.target.closest(".tool-btn-dropdown-wrapper")) {
+            if (tablePopover) tablePopover.style.display = "none";
+        }
     });
     }
 
@@ -1309,7 +1355,8 @@ export function initEditorSubsystems() {
             d: "dropdown",
             c: "checkBox",
             r: "radioGroup",
-            s: "signature"
+            s: "signature",
+            g: "table"
         };
         const key = e.key.toLowerCase();
         if (toolKeys[key]) {

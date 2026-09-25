@@ -1,7 +1,8 @@
 // ── Right Properties Inspector & Alignment (js/ui/properties-panel.js) ─
-import { state, getSelectedField, setSelectedField, duplicateSelectedFields, createGroupForSelected, ungroupSelected, getRadioGroupName, getRadioGroupFields, selectRadioOption, setRadioGroupMode, generateFieldId, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
+import { state, getSelectedField, setSelectedField, setSelectedFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, getRadioGroupName, getRadioGroupFields, selectRadioOption, setRadioGroupMode, generateFieldId, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
 import { saveHistory } from "../core/storage-manager.js";
 import { openSignatureModal } from "./signature-pad.js";
+import { toggleListFormat, addRowToTable, removeRowFromTable } from "../engines/text-engine.js";
 
 function safeQuerySelectorAll(selector) {
     if (typeof document === "undefined" || typeof document.querySelectorAll !== "function") return [];
@@ -937,6 +938,102 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
             });
         });
     }
+
+    // Rich Text Quick Presets
+    document.getElementById("textFmtTitle")?.addEventListener("click", () => {
+        syncChange(f => {
+            f.fontSize = 22;
+            f.fontWeight = "bold";
+            f.height = Math.max(f.height, 36);
+        }, true, "Format as Title");
+        const activeField = getSelectedField();
+        if (activeField) populateProperties(activeField);
+    });
+    document.getElementById("textFmtH1")?.addEventListener("click", () => {
+        syncChange(f => {
+            f.fontSize = 18;
+            f.fontWeight = "bold";
+            f.height = Math.max(f.height, 30);
+        }, true, "Format as H1");
+        const activeField = getSelectedField();
+        if (activeField) populateProperties(activeField);
+    });
+    document.getElementById("textFmtH2")?.addEventListener("click", () => {
+        syncChange(f => {
+            f.fontSize = 14;
+            f.fontWeight = "bold";
+            f.height = Math.max(f.height, 24);
+        }, true, "Format as H2");
+        const activeField = getSelectedField();
+        if (activeField) populateProperties(activeField);
+    });
+    document.getElementById("textFmtBody")?.addEventListener("click", () => {
+        syncChange(f => {
+            f.fontSize = 11;
+            f.fontWeight = "normal";
+        }, true, "Format as Body");
+        const activeField = getSelectedField();
+        if (activeField) populateProperties(activeField);
+    });
+    document.getElementById("textFmtBullets")?.addEventListener("click", () => {
+        syncChange(f => {
+            const formatted = toggleListFormat(f.defaultValue || f.label || "", "bullet");
+            f.defaultValue = formatted;
+            f.label = formatted;
+            const lines = formatted.split("\n");
+            f.height = Math.max(f.height, lines.length * 20);
+            f.width = Math.max(f.width, 240);
+        }, true, "Toggle Bullet List");
+        const activeField = getSelectedField();
+        if (activeField) populateProperties(activeField);
+    });
+    document.getElementById("textFmtNumbers")?.addEventListener("click", () => {
+        syncChange(f => {
+            const formatted = toggleListFormat(f.defaultValue || f.label || "", "number");
+            f.defaultValue = formatted;
+            f.label = formatted;
+            const lines = formatted.split("\n");
+            f.height = Math.max(f.height, lines.length * 20);
+            f.width = Math.max(f.width, 240);
+        }, true, "Toggle Numbered List");
+        const activeField = getSelectedField();
+        if (activeField) populateProperties(activeField);
+    });
+
+    // Table Grid Controls
+    document.getElementById("tableAddRowBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (field?.tableId) {
+            const newCells = addRowToTable(field.tableId, state.fields || []);
+            if (newCells.length > 0) {
+                state.fields.push(...newCells);
+                setSelectedFields(newCells.map(c => c.id));
+                saveHistory(true, "Add Table Row");
+                if (panelOnFieldUpdated) panelOnFieldUpdated();
+            }
+        }
+    });
+    document.getElementById("tableDeleteRowBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (field?.tableId) {
+            const targetRow = field.tableRole === "cell" ? field.tableRow : undefined;
+            const tableCells = (state.fields || []).filter(f => f.tableId === field.tableId && f.tableRole === "cell");
+            const rowToDelete = targetRow || Math.max(...tableCells.map(f => f.tableRow || 1));
+            const { updatedFields } = removeRowFromTable(field.tableId, rowToDelete, state.fields || []);
+            state.fields = updatedFields;
+            setSelectedField(null);
+            saveHistory(true, "Delete Table Row");
+            if (panelOnFieldUpdated) panelOnFieldUpdated();
+        }
+    });
+    document.getElementById("tableSelectAllBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (field?.tableId) {
+            const allInTable = (state.fields || []).filter(f => f.tableId === field.tableId);
+            setSelectedFields(allInTable.map(f => f.id));
+            if (panelOnFieldUpdated) panelOnFieldUpdated();
+        }
+    });
 
     textAlignmentSelect?.addEventListener("change", e => syncChange(f => f.textAlignment = e.target.value, true, "Change Text Alignment"));
     borderStyleSelect?.addEventListener("change", e => syncChange(f => f.borderStyle = e.target.value, true, "Change Border Style"));
@@ -1964,6 +2061,26 @@ export function populateProperties(field) {
     const defValLabel = document.querySelector('label[for="fieldDefaultValue"]');
     if (defValLabel) {
         defValLabel.textContent = (fallbackField.type === "staticText" || fallbackField.type === "label") ? "Text Content" : "Default Value";
+    }
+
+    const richTextGroup = document.getElementById("richTextToolsGroup");
+    if (richTextGroup) {
+        richTextGroup.style.display = (fallbackField.type === "staticText" || fallbackField.type === "label") ? "block" : "none";
+    }
+
+    const tableGroup = document.getElementById("tableGridControlsGroup");
+    if (tableGroup) {
+        tableGroup.style.display = fallbackField.tableId ? "block" : "none";
+        if (fallbackField.tableId) {
+            const locBadge = document.getElementById("tableCellLocationBadge");
+            if (locBadge) {
+                if (fallbackField.tableRole === "header") {
+                    locBadge.textContent = `Header Col ${(fallbackField.tableCol || 0) + 1}`;
+                } else {
+                    locBadge.textContent = `Row ${fallbackField.tableRow || 1}, Col ${(fallbackField.tableCol || 0) + 1}`;
+                }
+            }
+        }
     }
 
     const multilineGroup = document.getElementById("multilineGroup");
