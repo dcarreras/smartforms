@@ -121,14 +121,14 @@ export function compileFormulaToAcroJs(field, allFields = []) {
 function applyTextFieldAppearance(fieldObj, font, fontSize, textAlignment = "left") {
     if (!fieldObj || !font) return;
 
-    // PDF /DA formatting must be: "0 0 0 rg /FontName size Tf"
     const fontName = font.name || "Helvetica";
     const appearance = `0 0 0 rg /${fontName} ${fontSize} Tf`;
+    const daString = PDFLib.PDFString.of(appearance);
 
     try {
         fieldObj.acroField.dict.set(
             PDFLib.PDFName.of("DA"),
-            PDFLib.PDFString.of(appearance)
+            daString
         );
     } catch (err) {
         console.warn("Could not set field DA explicitly:", err);
@@ -148,12 +148,14 @@ function applyTextFieldAppearance(fieldObj, font, fontSize, textAlignment = "lef
         const widgets = fieldObj.acroField?.getWidgets?.() || [];
         widgets.forEach(widget => {
             try { widget.setDefaultAppearance(appearance); } catch (e) {}
-            try { widget.dict.set(PDFLib.PDFName.of("DA"), PDFLib.PDFString.of(appearance)); } catch (e) {}
+            try { widget.dict.set(PDFLib.PDFName.of("DA"), daString); } catch (e) {}
             try { widget.dict.set(PDFLib.PDFName.of("Q"), PDFLib.PDFNumber.of(qVal)); } catch (e) {}
         });
     } catch (err) {
         console.warn("Could not set widget appearance explicitly:", err);
     }
+
+    try { fieldObj.markAsClean?.(); } catch (e) {}
 }
 
 export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybeOptions = {}) {
@@ -252,8 +254,52 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
     const courierBold = await doc.embedFont(StandardFonts.CourierBold);
     const courierOblique = await doc.embedFont(StandardFonts.CourierOblique);
 
+    // Safely encode text for PDF standard fonts so missing glyphs never cause crashes or blank fields
+    function safeEncodeText(fnt, text) {
+        if (typeof text !== "string") return String(text ?? "");
+        let res = "";
+        for (const ch of text) {
+            try {
+                fnt.encodeText(ch);
+                res += ch;
+            } catch {
+                if (ch === "✓" || ch === "✔" || ch === "☑") res += "[x]";
+                else if (ch === "✗" || ch === "✘" || ch === "☒") res += "[x]";
+                else if (ch === "☐") res += "[ ]";
+                else if (ch === "•" || ch === "·" || ch === "◦" || ch === "▪") res += "•";
+                else if (ch === "“" || ch === "”") res += '"';
+                else if (ch === "‘" || ch === "’") res += "'";
+                else if (ch === "—" || ch === "–") res += "-";
+                else res += " ";
+            }
+        }
+        return res;
+    }
+
+    // Embed any local device fonts whose raw bytes have been captured
+    const localFontCache = (typeof window !== "undefined" && window._localFontBytesCache) ? window._localFontBytesCache : new Map();
+    const embeddedCustomFonts = new Map();
+
+    for (const f of targetFields) {
+        if (f.fontFamily && f.fontFamily.startsWith("local:")) {
+            const fam = f.fontFamily.replace(/^local:/, "");
+            if (!embeddedCustomFonts.has(f.fontFamily) && localFontCache.has(fam)) {
+                try {
+                    const bytes = localFontCache.get(fam);
+                    const embedded = await doc.embedFont(bytes);
+                    embeddedCustomFonts.set(f.fontFamily, embedded);
+                } catch(err) {
+                    console.warn(`Could not embed local font ${fam}:`, err);
+                }
+            }
+        }
+    }
+
     const resolveFont = (fam) => {
         if (!fam) return helvetica;
+        if (embeddedCustomFonts.has(fam)) {
+            return embeddedCustomFonts.get(fam);
+        }
         if (typeof fam === "string" && (fam.startsWith("device:") || fam.startsWith("local:"))) {
             const clean = fam.replace(/^(device|local):/, "").toLowerCase();
             if (clean.includes("mono") || clean.includes("courier") || clean.includes("menlo") || clean.includes("consolas") || clean.includes("code")) {
@@ -292,11 +338,14 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
     };
 
     // Populate AcroForm default resource font dictionary safely
+    let drDict = null;
     try {
         const acroForm = doc.catalog.getOrCreateAcroForm();
         const acroFormDict = acroForm.dict;
+        acroFormDict.set(PDFLib.PDFName.of("NeedAppearances"), PDFLib.PDFBool.True);
+
         let drRaw = acroFormDict.get(PDFLib.PDFName.of("DR"));
-        let drDict = drRaw ? doc.context.lookup(drRaw) : null;
+        drDict = drRaw ? doc.context.lookup(drRaw) : null;
         if (!drDict || !(drDict instanceof PDFLib.PDFDict)) {
             drDict = doc.context.obj({});
             acroFormDict.set(PDFLib.PDFName.of("DR"), drDict);
@@ -307,12 +356,34 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
             fontDict = doc.context.obj({});
             drDict.set(PDFLib.PDFName.of("Font"), fontDict);
         }
-        const embeddedFonts = [helvetica, helveticaBold, helveticaOblique, times, timesBold, timesItalic, courier, courierBold, courierOblique];
-        embeddedFonts.forEach(ef => {
-            if (ef && ef.name && ef.ref) {
-                fontDict.set(PDFLib.PDFName.of(ef.name), ef.ref);
+
+        // Register fonts under BOTH standard Acrobat aliases (/Helv, /TiRo, /Cour)
+        // AND canonical PostScript names (/Helvetica, /Times-Roman, /Courier)
+        const fontRegistrations = [
+            { aliases: ["Helv", "Helvetica"], font: helvetica },
+            { aliases: ["HeBo", "Helvetica-Bold", "HelveticaBold"], font: helveticaBold },
+            { aliases: ["HeOb", "Helvetica-Oblique", "HelveticaOblique"], font: helveticaOblique },
+            { aliases: ["TiRo", "Times", "Times-Roman", "TimesRoman"], font: times },
+            { aliases: ["TiBo", "Times-Bold", "TimesBold"], font: timesBold },
+            { aliases: ["TiIt", "Times-Italic", "TimesItalic"], font: timesItalic },
+            { aliases: ["Cour", "Courier"], font: courier },
+            { aliases: ["CoBo", "Courier-Bold", "CourierBold"], font: courierBold },
+            { aliases: ["CoOb", "Courier-Oblique", "CourierOblique"], font: courierOblique }
+        ];
+
+        fontRegistrations.forEach(({ aliases, font: fObj }) => {
+            if (fObj && fObj.ref) {
+                aliases.forEach(alias => {
+                    fontDict.set(PDFLib.PDFName.of(alias), fObj.ref);
+                });
             }
         });
+
+        for (const [key, cFont] of embeddedCustomFonts.entries()) {
+            if (cFont && cFont.name && cFont.ref) {
+                fontDict.set(PDFLib.PDFName.of(cFont.name), cFont.ref);
+            }
+        }
     } catch (e) {
         console.warn("Could not register fonts in AcroForm DR dictionary:", e);
     }
@@ -460,8 +531,9 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
 
                 if (isMultiLine) {
                     let currentY = pdfY + f.height - fontSize - 3;
-                    for (const line of lines) {
+                    for (const rawLine of lines) {
                         if (currentY < pdfY) break;
+                        const line = safeEncodeText(font, rawLine);
                         let textX = f.x + 4;
                         try {
                             const textWidth = font.widthOfTextAtSize(line, fontSize);
@@ -473,21 +545,34 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
                         } catch (e) {}
 
                         if (line.trim()) {
-                            page.drawText(line, {
-                                x: Math.max(f.x + 2, textX),
-                                y: currentY,
-                                size: fontSize,
-                                font: font,
-                                color: textColor
-                            });
+                            try {
+                                page.drawText(line, {
+                                    x: Math.max(f.x + 2, textX),
+                                    y: currentY,
+                                    size: fontSize,
+                                    font: font,
+                                    color: textColor
+                                });
+                            } catch (drawErr) {
+                                try {
+                                    page.drawText(line, {
+                                        x: Math.max(f.x + 2, textX),
+                                        y: currentY,
+                                        size: fontSize,
+                                        font: helvetica,
+                                        color: textColor
+                                    });
+                                } catch (e) {}
+                            }
                         }
                         currentY -= lineHeight;
                     }
                 } else {
+                    const singleLine = safeEncodeText(font, textContent);
                     let textX = f.x + 4;
                     let textY = pdfY + (f.height - fontSize) / 2 + 1;
                     try {
-                        const textWidth = font.widthOfTextAtSize(textContent, fontSize);
+                        const textWidth = font.widthOfTextAtSize(singleLine, fontSize);
                         if (f.textAlignment === "center") {
                             textX = f.x + (f.width - textWidth) / 2;
                         } else if (f.textAlignment === "right") {
@@ -495,13 +580,25 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
                         }
                     } catch (e) {}
 
-                    page.drawText(textContent, {
-                        x: Math.max(f.x, textX),
-                        y: Math.max(pdfY, textY),
-                        size: fontSize,
-                        font: font,
-                        color: textColor
-                    });
+                    try {
+                        page.drawText(singleLine, {
+                            x: Math.max(f.x, textX),
+                            y: Math.max(pdfY, textY),
+                            size: fontSize,
+                            font: font,
+                            color: textColor
+                        });
+                    } catch (drawErr) {
+                        try {
+                            page.drawText(singleLine, {
+                                x: Math.max(f.x, textX),
+                                y: Math.max(pdfY, textY),
+                                size: fontSize,
+                                font: helvetica,
+                                color: textColor
+                            });
+                        } catch (e) {}
+                    }
                 }
                 continue;
             }
@@ -624,7 +721,8 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
                             textVal = isPrepend ? `${sym}${n.toFixed(dec)}` : `${n.toFixed(dec)} ${sym}`;
                         }
                     }
-                    try { tf.setText(String(textVal)); } catch(e) {}
+                    const safeVal = safeEncodeText(font, String(textVal));
+                    try { tf.setText(safeVal); } catch(e) {}
                 }
 
                 // Add to page and compile vector appearance

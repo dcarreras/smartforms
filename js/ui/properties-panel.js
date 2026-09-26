@@ -910,7 +910,24 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
             f.label = e.target.value;
         }
     }, true, "Set Default Value"));
-    fieldFontFamily?.addEventListener("change", e => syncChange(f => f.fontFamily = e.target.value, true, "Change Font Family"));
+    fieldFontFamily?.addEventListener("change", async e => {
+        const val = e.target.value;
+        if (typeof window !== "undefined" && typeof val === "string" && val.startsWith("local:")) {
+            const fam = val.replace(/^local:/, "");
+            const fontData = window._localFontDataMap?.get(fam);
+            if (fontData && typeof fontData.blob === "function") {
+                try {
+                    const blob = await fontData.blob();
+                    const bytes = await blob.arrayBuffer();
+                    if (!window._localFontBytesCache) window._localFontBytesCache = new Map();
+                    window._localFontBytesCache.set(fam, new Uint8Array(bytes));
+                } catch (err) {
+                    console.warn("Could not load local font bytes:", err);
+                }
+            }
+        }
+        syncChange(f => f.fontFamily = e.target.value, true, "Change Font Family");
+    });
 
     const btnLoadDeviceFonts = document.getElementById("btnLoadDeviceFonts");
     btnLoadDeviceFonts?.addEventListener("click", async (e) => {
@@ -923,6 +940,10 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
                 btnLoadDeviceFonts.innerHTML = `<span>Scanning device fonts...</span>`;
 
                 const fonts = await window.queryLocalFonts();
+                if (!window._localFontDataMap) window._localFontDataMap = new Map();
+                fonts.forEach(f => {
+                    if (f && f.family) window._localFontDataMap.set(f.family, f);
+                });
                 const uniqueFamilies = Array.from(new Set(fonts.map(f => f.family))).sort();
 
                 if (uniqueFamilies.length > 0 && fieldFontFamily) {
