@@ -2,7 +2,7 @@
 import { state, getSelectedField, setSelectedField, setSelectedFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, getRadioGroupName, getRadioGroupFields, selectRadioOption, setRadioGroupMode, generateFieldId, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
 import { saveHistory } from "../core/storage-manager.js";
 import { openSignatureModal } from "./signature-pad.js";
-import { toggleListFormat, addRowToTable, removeRowFromTable } from "../engines/text-engine.js";
+import { toggleListFormat, addRowToTable, removeRowFromTable, addColumnToTable, removeColumnFromTable, deleteTable } from "../engines/text-engine.js";
 
 function safeQuerySelectorAll(selector) {
     if (typeof document === "undefined" || typeof document.querySelectorAll !== "function") return [];
@@ -1147,11 +1147,44 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
             if (panelOnFieldUpdated) panelOnFieldUpdated();
         }
     });
+    document.getElementById("tableAddColBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (field?.tableId) {
+            const newCols = addColumnToTable(field.tableId, state.fields || []);
+            if (newCols.length > 0) {
+                state.fields.push(...newCols);
+                setSelectedFields(newCols.map(c => c.id));
+                saveHistory(true, "Add Table Column");
+                if (panelOnFieldUpdated) panelOnFieldUpdated();
+            }
+        }
+    });
+    document.getElementById("tableDeleteColBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (field?.tableId) {
+            const targetCol = field.tableCol !== undefined ? field.tableCol : 0;
+            const { updatedFields } = removeColumnFromTable(field.tableId, targetCol, state.fields || []);
+            state.fields = updatedFields;
+            setSelectedField(null);
+            saveHistory(true, "Delete Table Column");
+            if (panelOnFieldUpdated) panelOnFieldUpdated();
+        }
+    });
     document.getElementById("tableSelectAllBtn")?.addEventListener("click", () => {
         const field = getSelectedField();
         if (field?.tableId) {
             const allInTable = (state.fields || []).filter(f => f.tableId === field.tableId);
             setSelectedFields(allInTable.map(f => f.id));
+            if (panelOnFieldUpdated) panelOnFieldUpdated();
+        }
+    });
+    document.getElementById("tableDeleteTableBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (field?.tableId) {
+            const { updatedFields } = deleteTable(field.tableId, state.fields || []);
+            state.fields = updatedFields;
+            setSelectedField(null);
+            saveHistory(true, "Delete Table");
             if (panelOnFieldUpdated) panelOnFieldUpdated();
         }
     });

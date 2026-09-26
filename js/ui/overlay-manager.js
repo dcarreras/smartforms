@@ -1304,6 +1304,87 @@ export function updateOverlayPositionsDirectly() {
     }
 }
 
+function escapeHtml(str) {
+    return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+function plainTextToHtml(text) {
+    if (!text) return "";
+    const lines = String(text).split(/\r?\n/);
+    let html = "";
+    let inUl = false;
+    let inOl = false;
+    for (const line of lines) {
+        const bulletMatch = line.match(/^([•·◦▪\-*])\s*(.*)$/);
+        const numMatch = line.match(/^(\d+)[\.\)]\s*(.*)$/);
+        if (bulletMatch) {
+            if (inOl) { html += "</ol>"; inOl = false; }
+            if (!inUl) { html += "<ul>"; inUl = true; }
+            html += `<li>${escapeHtml(bulletMatch[2])}</li>`;
+        } else if (numMatch) {
+            if (inUl) { html += "</ul>"; inUl = false; }
+            if (!inOl) { html += "<ol>"; inOl = true; }
+            html += `<li>${escapeHtml(numMatch[2])}</li>`;
+        } else {
+            if (inUl) { html += "</ul>"; inUl = false; }
+            if (inOl) { html += "</ol>"; inOl = false; }
+            if (line.trim() === "") {
+                html += "<div><br></div>";
+            } else {
+                html += `<div>${escapeHtml(line)}</div>`;
+            }
+        }
+    }
+    if (inUl) html += "</ul>";
+    if (inOl) html += "</ol>";
+    return html || escapeHtml(text);
+}
+
+function htmlToPlainText(element) {
+    if (!element) return "";
+    const lis = element.querySelectorAll ? element.querySelectorAll("li") : [];
+    if (lis && lis.length > 0) {
+        const lines = [];
+        const processNode = (node) => {
+            if (node.nodeType === 3) {
+                const t = node.textContent;
+                if (t && t.trim() && node.parentElement === element) lines.push(t.trim());
+            } else if (node.nodeName === "LI") {
+                const parent = node.parentElement;
+                const isOrdered = parent && parent.nodeName === "OL";
+                const index = Array.from(parent?.children || []).indexOf(node) + 1;
+                const prefix = isOrdered ? `${index}. ` : "• ";
+                lines.push(prefix + (node.textContent || "").trim());
+            } else if (node.nodeName === "DIV" || node.nodeName === "P" || /^H[1-6]$/.test(node.nodeName)) {
+                if (!node.querySelector("li")) {
+                    const text = (node.textContent || "").trim();
+                    if (text) lines.push(text);
+                } else {
+                    Array.from(node.childNodes).forEach(processNode);
+                }
+            } else if (node.childNodes && node.childNodes.length > 0) {
+                Array.from(node.childNodes).forEach(processNode);
+            }
+        };
+        Array.from(element.childNodes).forEach(processNode);
+        if (lines.length > 0) return lines.join("\n");
+    }
+
+    if (typeof element.innerText === "string" && element.innerText.trim()) {
+        return element.innerText.trim();
+    }
+    let html = element.innerHTML || "";
+    html = html.replace(/<li[^>]*>(.*?)<\/li>/gi, "• $1\n");
+    html = html.replace(/<br\s*[\/]?>/gi, "\n");
+    html = html.replace(/<\/p>/gi, "\n");
+    html = html.replace(/<\/div>/gi, "\n");
+    html = html.replace(/<[^>]+>/g, "");
+    return html.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+}
+
 export function startInlineTextEdit(fieldId, handlers = {}) {
     const field = state.fields.find(f => f.id === fieldId);
     if (!field || field.locked || field.hidden) return;
@@ -1336,7 +1417,7 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
     const overlay = document.querySelector(`.field-overlay[data-id="${fieldId}"]`) || document.getElementById(`overlay_${fieldId}`);
     if (!overlay) return;
 
-    const existing = overlay.querySelector(".inline-text-editor, .inline-field-input");
+    const existing = overlay.querySelector(".inline-text-editor, .inline-field-input, .wp-editable");
     if (existing) {
         existing.focus();
         return;
@@ -1352,35 +1433,253 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
         const { fam, weight, style: fontStyle } = getFieldCssFont(field);
         const fontSize = Number(field.fontSize) || 16;
 
-        const textarea = document.createElement("textarea");
-        textarea.className = "inline-text-editor";
-        textarea.value = field.defaultValue || field.label || "";
-        textarea.placeholder = "Type text, heading, or list...";
-        textarea.style.fontFamily = fam;
-        textarea.style.fontWeight = weight || "600";
-        textarea.style.fontStyle = fontStyle === "italic" ? "italic" : "normal";
-        textarea.style.fontSize = `${fontSize}px`;
-        textarea.style.textAlign = field.textAlignment || "left";
-        textarea.style.color = field.color || "#0f172a";
-        textarea.style.lineHeight = "1.35";
+        // ── Word Processor Container ─────────────────────────────────
+        const wpContainer = document.createElement("div");
+        wpContainer.className = "wp-editor-container";
 
-        const minH = Math.max(26, Math.round(fontSize * 1.5));
-        const syncDimensions = () => {
-            textarea.style.height = "auto";
-            const contentH = Math.max(minH, textarea.scrollHeight);
-            field.height = contentH;
-            overlay.style.height = `${contentH}px`;
-            textarea.style.height = `${contentH}px`;
+        // ── Floating Format Toolbar ──────────────────────────────────
+        const toolbar = document.createElement("div");
+        toolbar.className = "wp-format-toolbar";
+        if (field.y < 46) {
+            toolbar.style.bottom = "auto";
+            toolbar.style.top = "calc(100% + 6px)";
+        }
+        if (field.tableId) {
+            toolbar.style.left = "50%";
+            toolbar.style.transform = "translateX(-50%)";
+        }
+        toolbar.addEventListener("mousedown", e => { e.preventDefault(); e.stopPropagation(); });
+
+        // -- Heading / Paragraph Selector --
+        const headingSelect = document.createElement("select");
+        headingSelect.className = "wp-tb-select";
+        headingSelect.title = "Text style";
+        [
+            { val: "p", label: "Paragraph" },
+            { val: "h1", label: "Heading 1" },
+            { val: "h2", label: "Heading 2" },
+            { val: "h3", label: "Heading 3" },
+        ].forEach(opt => {
+            const o = document.createElement("option");
+            o.value = opt.val;
+            o.textContent = opt.label;
+            headingSelect.appendChild(o);
+        });
+        // Set initial heading level based on field state
+        if (field.fontSize >= 22 && field.fontWeight === "bold") headingSelect.value = "h1";
+        else if (field.fontSize >= 16 && field.fontWeight === "bold") headingSelect.value = "h2";
+        else if (field.fontSize >= 14 && (field.fontWeight === "bold" || field.fontWeight === "600")) headingSelect.value = "h3";
+        else headingSelect.value = "p";
+
+        headingSelect.addEventListener("change", () => {
+            editable.focus();
+            const tag = headingSelect.value;
+            if (tag === "p") {
+                document.execCommand("formatBlock", false, "p");
+                field.fontSize = 14;
+                field.fontWeight = "normal";
+            } else if (tag === "h1") {
+                document.execCommand("formatBlock", false, "h1");
+                field.fontSize = 24;
+                field.fontWeight = "bold";
+            } else if (tag === "h2") {
+                document.execCommand("formatBlock", false, "h2");
+                field.fontSize = 18;
+                field.fontWeight = "bold";
+            } else if (tag === "h3") {
+                document.execCommand("formatBlock", false, "h3");
+                field.fontSize = 15;
+                field.fontWeight = "600";
+            }
+            syncDimensions();
+            syncFieldFromEditable();
+        });
+        toolbar.appendChild(headingSelect);
+
+        // -- Divider --
+        const div0 = document.createElement("div");
+        div0.className = "wp-tb-divider";
+        toolbar.appendChild(div0);
+
+        // Helper: create toolbar button
+        const makeBtn = (title, innerHTML, cmd, cmdArg) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "wp-tb-btn";
+            btn.title = title;
+            btn.innerHTML = innerHTML;
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                editable.focus();
+                if (cmd) document.execCommand(cmd, false, cmdArg || null);
+                updateToolbarState();
+                syncFieldFromEditable();
+            });
+            return btn;
         };
 
+        // -- Bold --
+        const boldBtn = makeBtn("Bold (⌘B)", `<b style="font-size:13px;font-weight:800;">B</b>`, "bold");
+        toolbar.appendChild(boldBtn);
+
+        // -- Italic --
+        const italicBtn = makeBtn("Italic (⌘I)", `<i style="font-size:13px;font-style:italic;font-family:Georgia,serif;font-weight:600;">I</i>`, "italic");
+        toolbar.appendChild(italicBtn);
+
+        // -- Underline --
+        const underlineBtn = makeBtn("Underline (⌘U)", `<u style="font-size:13px;font-weight:600;">U</u>`, "underline");
+        toolbar.appendChild(underlineBtn);
+
+        // -- Strikethrough --
+        const strikeBtn = makeBtn("Strikethrough", `<s style="font-size:13px;font-weight:500;">S</s>`, "strikethrough");
+        toolbar.appendChild(strikeBtn);
+
+        // -- Divider --
+        const div1 = document.createElement("div");
+        div1.className = "wp-tb-divider";
+        toolbar.appendChild(div1);
+
+        // -- Bullet List --
+        const bulletBtn = makeBtn("Bullet List", `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="7" r="1.5" fill="currentColor"/><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="5" cy="17" r="1.5" fill="currentColor"/><line x1="10" y1="7" x2="20" y2="7"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="10" y1="17" x2="20" y2="17"/></svg>`, "insertUnorderedList");
+        toolbar.appendChild(bulletBtn);
+
+        // -- Numbered List --
+        const numListBtn = makeBtn("Numbered List", `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="3" y="9" font-size="7" font-weight="700" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="3" y="14.5" font-size="7" font-weight="700" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="3" y="20" font-size="7" font-weight="700" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="10" y1="7" x2="20" y2="7"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="10" y1="17" x2="20" y2="17"/></svg>`, "insertOrderedList");
+        toolbar.appendChild(numListBtn);
+
+        // -- Divider --
+        const div2 = document.createElement("div");
+        div2.className = "wp-tb-divider";
+        toolbar.appendChild(div2);
+
+        // -- Alignment Cycle --
+        const alignIcons = {
+            left: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>`,
+            center: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="5" y1="18" x2="19" y2="18"/></svg>`,
+            right: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="6" y1="18" x2="20" y2="18"/></svg>`,
+        };
+        let currentAlign = field.textAlignment || "left";
+        const alignBtn = document.createElement("button");
+        alignBtn.type = "button";
+        alignBtn.className = "wp-tb-btn";
+        alignBtn.title = `Align: ${currentAlign}`;
+        alignBtn.innerHTML = alignIcons[currentAlign];
+        alignBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            editable.focus();
+            const cycle = { left: "center", center: "right", right: "left" };
+            currentAlign = cycle[currentAlign] || "left";
+            field.textAlignment = currentAlign;
+            editable.style.textAlign = currentAlign;
+            alignBtn.innerHTML = alignIcons[currentAlign];
+            alignBtn.title = `Align: ${currentAlign}`;
+            syncFieldFromEditable();
+        });
+        toolbar.appendChild(alignBtn);
+
+        // -- Color Picker --
+        const colorBtn = document.createElement("button");
+        colorBtn.type = "button";
+        colorBtn.className = "wp-tb-btn";
+        colorBtn.title = "Text Color";
+        colorBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M6 16l6-12 6 12"/><path d="M8 12h8"/></svg>`;
+        const colorInput = document.createElement("input");
+        colorInput.type = "color";
+        colorInput.value = field.color || "#0f172a";
+        colorInput.style.cssText = "position:absolute;opacity:0;width:0;height:0;pointer-events:none;";
+        colorBtn.appendChild(colorInput);
+        colorBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            colorInput.click();
+        });
+        colorInput.addEventListener("input", () => {
+            editable.focus();
+            document.execCommand("foreColor", false, colorInput.value);
+            field.color = colorInput.value;
+            syncFieldFromEditable();
+        });
+        toolbar.appendChild(colorBtn);
+
+        wpContainer.appendChild(toolbar);
+
+        // ── ContentEditable Area ─────────────────────────────────────
+        const editable = document.createElement("div");
+        editable.className = "wp-editable";
+        editable.contentEditable = "true";
+        editable.setAttribute("data-placeholder", "Type text, heading, or list...");
+        editable.style.fontFamily = fam;
+        editable.style.fontWeight = weight || "600";
+        editable.style.fontStyle = fontStyle === "italic" ? "italic" : "normal";
+        editable.style.fontSize = `${fontSize}px`;
+        editable.style.textAlign = field.textAlignment || "left";
+        editable.style.color = field.color || "#0f172a";
+        editable.style.lineHeight = "1.45";
+        editable.spellcheck = true;
+
+        // Convert existing plain text to HTML for the editable
+        const existingText = field.defaultValue || field.label || "";
+        if (existingText) {
+            editable.innerHTML = plainTextToHtml(existingText);
+        }
+
+        wpContainer.appendChild(editable);
+
+        // ── Dimension Syncing ────────────────────────────────────────
+        const minH = Math.max(26, Math.round(fontSize * 1.5));
+        const syncDimensions = () => {
+            const contentH = Math.max(minH, editable.scrollHeight + 8);
+            if (Math.abs(field.height - contentH) > 2) {
+                field.height = contentH;
+                overlay.style.height = `${contentH}px`;
+            }
+        };
+
+        // ── Sync editable HTML → field model ─────────────────────────
+        const syncFieldFromEditable = () => {
+            const plainText = htmlToPlainText(editable);
+            field.defaultValue = plainText;
+            field.label = plainText;
+            const propDef = document.getElementById("fieldDefaultValue");
+            if (propDef && state.selectedFieldIds.has(field.id)) {
+                propDef.value = plainText;
+            }
+            syncDimensions();
+        };
+
+        // ── Toolbar State Updater ────────────────────────────────────
+        const updateToolbarState = () => {
+            if (boldBtn && boldBtn.classList) {
+                boldBtn.classList.toggle("active", document.queryCommandState("bold"));
+            }
+            if (italicBtn && italicBtn.classList) {
+                italicBtn.classList.toggle("active", document.queryCommandState("italic"));
+            }
+            if (underlineBtn && underlineBtn.classList) {
+                underlineBtn.classList.toggle("active", document.queryCommandState("underline"));
+            }
+            if (strikeBtn && strikeBtn.classList) {
+                strikeBtn.classList.toggle("active", document.queryCommandState("strikethrough"));
+            }
+            if (bulletBtn && bulletBtn.classList) {
+                bulletBtn.classList.toggle("active", document.queryCommandState("insertUnorderedList"));
+            }
+            if (numListBtn && numListBtn.classList) {
+                numListBtn.classList.toggle("active", document.queryCommandState("insertOrderedList"));
+            }
+        };
+
+        // ── Commit Edit ──────────────────────────────────────────────
         let committed = false;
         const commitEdit = (shouldSave = true) => {
             if (committed) return;
             committed = true;
-            const finalVal = textarea.value;
+            const plainText = htmlToPlainText(editable);
 
-            // Discard empty text field on blur/exit so no residual artifacts remain
-            if (!finalVal.trim()) {
+            // Discard empty text field
+            if (!plainText.trim()) {
                 const idx = state.fields.findIndex(f => f.id === field.id);
                 if (idx !== -1) {
                     state.fields.splice(idx, 1);
@@ -1393,19 +1692,19 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                 return;
             }
 
-            field.defaultValue = finalVal;
-            field.label = finalVal;
+            field.defaultValue = plainText;
+            field.label = plainText;
 
             overlay.classList.remove("is-editing-text");
-            textarea.remove();
+            wpContainer.remove();
             if (label) {
                 label.style.display = "";
-                label.textContent = finalVal;
+                label.textContent = plainText;
             }
 
             const propDef = document.getElementById("fieldDefaultValue");
             if (propDef && state.selectedFieldIds.has(field.id)) {
-                propDef.value = finalVal;
+                propDef.value = plainText;
             }
 
             if (shouldSave) saveHistory(true);
@@ -1413,81 +1712,76 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
             renderOverlays(handlers);
         };
 
-        textarea.addEventListener("input", (e) => {
-            const cursorPos = textarea.selectionStart;
-            const text = textarea.value;
-            const lineStart = text.lastIndexOf("\n", cursorPos - 1) + 1;
-            const lineUpToCursor = text.slice(lineStart, cursorPos);
-
-            // Markdown shortcut expansion when space is typed
+        // ── Event Listeners ──────────────────────────────────────────
+        editable.addEventListener("input", (e) => {
             if (e.inputType === "insertText" && e.data === " ") {
-                if (lineUpToCursor === "# ") {
-                    const newText = text.slice(0, lineStart) + text.slice(cursorPos);
-                    textarea.value = newText;
-                    textarea.selectionStart = textarea.selectionEnd = lineStart;
-                    field.fontSize = 24;
-                    field.fontWeight = "bold";
-                    textarea.style.fontSize = "24px";
-                    textarea.style.fontWeight = "bold";
-                    const propFont = document.getElementById("fieldFontSize");
-                    if (propFont) propFont.value = 24;
-                    const propWeight = document.getElementById("fieldFontWeight");
-                    if (propWeight) propWeight.value = "bold";
-                    syncDimensions();
+                const sel = window.getSelection?.();
+                if (sel && sel.anchorNode) {
+                    const node = sel.anchorNode;
+                    const text = node.textContent || "";
+                    if (text === "# ") {
+                        node.textContent = "";
+                        document.execCommand("formatBlock", false, "h1");
+                        field.fontSize = 24;
+                        field.fontWeight = "bold";
+                        if (headingSelect) headingSelect.value = "h1";
+                    } else if (text === "## ") {
+                        node.textContent = "";
+                        document.execCommand("formatBlock", false, "h2");
+                        field.fontSize = 18;
+                        field.fontWeight = "bold";
+                        if (headingSelect) headingSelect.value = "h2";
+                    } else if (text === "### ") {
+                        node.textContent = "";
+                        document.execCommand("formatBlock", false, "h3");
+                        field.fontSize = 15;
+                        field.fontWeight = "600";
+                        if (headingSelect) headingSelect.value = "h3";
+                    } else if (text === "* " || text === "- ") {
+                        node.textContent = "";
+                        document.execCommand("insertUnorderedList", false, null);
+                    } else if (/^\d+[\.\)]\s$/.test(text)) {
+                        node.textContent = "";
+                        document.execCommand("insertOrderedList", false, null);
+                    }
+                }
+            }
+            syncFieldFromEditable();
+            updateToolbarState();
+        });
+
+        editable.addEventListener("keyup", () => {
+            updateToolbarState();
+        });
+
+        editable.addEventListener("mouseup", () => {
+            updateToolbarState();
+        });
+
+        editable.addEventListener("keydown", async (e) => {
+            // Formatting shortcuts
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+                if (e.key === "b" || e.key === "B") {
+                    e.preventDefault();
+                    document.execCommand("bold", false, null);
+                    updateToolbarState();
+                    syncFieldFromEditable();
                     return;
-                } else if (lineUpToCursor === "## ") {
-                    const newText = text.slice(0, lineStart) + text.slice(cursorPos);
-                    textarea.value = newText;
-                    textarea.selectionStart = textarea.selectionEnd = lineStart;
-                    field.fontSize = 18;
-                    field.fontWeight = "bold";
-                    textarea.style.fontSize = "18px";
-                    textarea.style.fontWeight = "bold";
-                    const propFont = document.getElementById("fieldFontSize");
-                    if (propFont) propFont.value = 18;
-                    const propWeight = document.getElementById("fieldFontWeight");
-                    if (propWeight) propWeight.value = "bold";
-                    syncDimensions();
+                } else if (e.key === "i" || e.key === "I") {
+                    e.preventDefault();
+                    document.execCommand("italic", false, null);
+                    updateToolbarState();
+                    syncFieldFromEditable();
                     return;
-                } else if (lineUpToCursor === "### ") {
-                    const newText = text.slice(0, lineStart) + text.slice(cursorPos);
-                    textarea.value = newText;
-                    textarea.selectionStart = textarea.selectionEnd = lineStart;
-                    field.fontSize = 15;
-                    field.fontWeight = "600";
-                    textarea.style.fontSize = "15px";
-                    textarea.style.fontWeight = "600";
-                    const propFont = document.getElementById("fieldFontSize");
-                    if (propFont) propFont.value = 15;
-                    const propWeight = document.getElementById("fieldFontWeight");
-                    if (propWeight) propWeight.value = "600";
-                    syncDimensions();
-                    return;
-                } else if (lineUpToCursor === "* " || lineUpToCursor === "- ") {
-                    const newText = text.slice(0, lineStart) + "• " + text.slice(cursorPos);
-                    textarea.value = newText;
-                    textarea.selectionStart = textarea.selectionEnd = lineStart + 2;
-                    syncDimensions();
-                    return;
-                } else if (lineUpToCursor === "[] " || lineUpToCursor === "[ ] ") {
-                    const newText = text.slice(0, lineStart) + "[ ] " + text.slice(cursorPos);
-                    textarea.value = newText;
-                    textarea.selectionStart = textarea.selectionEnd = lineStart + 4;
-                    syncDimensions();
+                } else if (e.key === "u" || e.key === "U") {
+                    e.preventDefault();
+                    document.execCommand("underline", false, null);
+                    updateToolbarState();
+                    syncFieldFromEditable();
                     return;
                 }
             }
 
-            field.defaultValue = textarea.value;
-            field.label = textarea.value;
-            const propDef = document.getElementById("fieldDefaultValue");
-            if (propDef && state.selectedFieldIds.has(field.id)) {
-                propDef.value = textarea.value;
-            }
-            syncDimensions();
-        });
-
-        textarea.addEventListener("keydown", async (e) => {
             if (e.key === "Tab") {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1517,7 +1811,6 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                             startInlineTextEdit(nextField.id, handlers);
                             return;
                         } else if (currentIdx === tableCells.length - 1) {
-                            // At the very end of table -> auto append new row!
                             const newCells = addRowToTable(field.tableId, state.fields || []);
                             if (newCells.length > 0) {
                                 state.fields.push(...newCells);
@@ -1556,6 +1849,64 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                         }
                     }
                 }
+            } else if (field.tableId && e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+                // Table Cell Enter: move to cell below
+                e.preventDefault();
+                e.stopPropagation();
+                commitEdit(true);
+
+                const tableCells = (state.fields || []).filter(item => item.tableId === field.tableId && !item.hidden && !item.locked);
+                const nextRow = field.tableRole === "header" ? 1 : (field.tableRow || 0) + 1;
+                const nextRowCell = tableCells.find(item => item.tableRow === nextRow && item.tableCol === field.tableCol);
+                if (nextRowCell) {
+                    setSelectedField(nextRowCell.id);
+                    if (handlers?.onSelect) handlers.onSelect(nextRowCell);
+                    renderOverlays(handlers);
+                    startInlineTextEdit(nextRowCell.id, handlers);
+                    return;
+                } else if (field.tableRole === "cell") {
+                    const newCells = addRowToTable(field.tableId, state.fields || []);
+                    if (newCells.length > 0) {
+                        state.fields.push(...newCells);
+                        saveHistory(true, "Add Table Row");
+                        const targetCell = newCells.find(c => c.tableCol === field.tableCol) || newCells[0];
+                        setSelectedField(targetCell.id);
+                        if (handlers?.onSelect) handlers.onSelect(targetCell);
+                        renderOverlays(handlers);
+                        startInlineTextEdit(targetCell.id, handlers);
+                        return;
+                    }
+                }
+                overlay.focus();
+            } else if (field.tableId && (e.key === "ArrowDown" || e.key === "ArrowUp") && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                const tableCells = (state.fields || []).filter(item => item.tableId === field.tableId && !item.hidden && !item.locked);
+                if (e.key === "ArrowDown") {
+                    const targetRow = field.tableRole === "header" ? 1 : (field.tableRow || 0) + 1;
+                    const nextRowCell = tableCells.find(item => item.tableRow === targetRow && item.tableCol === field.tableCol);
+                    if (nextRowCell) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        commitEdit(true);
+                        setSelectedField(nextRowCell.id);
+                        if (handlers?.onSelect) handlers.onSelect(nextRowCell);
+                        renderOverlays(handlers);
+                        startInlineTextEdit(nextRowCell.id, handlers);
+                        return;
+                    }
+                } else if (e.key === "ArrowUp" && field.tableRole === "cell") {
+                    const targetRow = (field.tableRow || 0) - 1;
+                    const prevRowCell = tableCells.find(item => (targetRow === 0 ? item.tableRole === "header" : item.tableRow === targetRow) && item.tableCol === field.tableCol);
+                    if (prevRowCell) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        commitEdit(true);
+                        setSelectedField(prevRowCell.id);
+                        if (handlers?.onSelect) handlers.onSelect(prevRowCell);
+                        renderOverlays(handlers);
+                        startInlineTextEdit(prevRowCell.id, handlers);
+                        return;
+                    }
+                }
             } else if (e.key === "Escape") {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1566,86 +1917,43 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                 e.stopPropagation();
                 commitEdit(true);
                 overlay.focus();
-            } else if (e.key === "Enter" && !e.shiftKey) {
-                const cursorPos = textarea.selectionStart;
-                const text = textarea.value;
-                const lineStart = text.lastIndexOf("\n", cursorPos - 1) + 1;
-                const currentLine = text.slice(lineStart, cursorPos);
-
-                const bulletMatch = currentLine.match(/^([•·◦▪\-*])\s*(.*)$/);
-                const numMatch = currentLine.match(/^(\d+)[\.\)]\s*(.*)$/);
-                const taskMatch = currentLine.match(/^(\[[ xX]?\])\s*(.*)$/);
-
-                if (bulletMatch) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const marker = bulletMatch[1] === "*" || bulletMatch[1] === "-" ? "•" : bulletMatch[1];
-                    const content = bulletMatch[2];
-                    if (!content.trim()) {
-                        const newText = text.slice(0, lineStart) + text.slice(cursorPos);
-                        textarea.value = newText;
-                        textarea.selectionStart = textarea.selectionEnd = lineStart;
-                    } else {
-                        const insertion = `\n${marker} `;
-                        const newText = text.slice(0, cursorPos) + insertion + text.slice(cursorPos);
-                        textarea.value = newText;
-                        textarea.selectionStart = textarea.selectionEnd = cursorPos + insertion.length;
-                    }
-                    textarea.dispatchEvent(new Event("input"));
-                    return;
-                } else if (numMatch) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const num = parseInt(numMatch[1], 10);
-                    const content = numMatch[2];
-                    if (!content.trim()) {
-                        const newText = text.slice(0, lineStart) + text.slice(cursorPos);
-                        textarea.value = newText;
-                        textarea.selectionStart = textarea.selectionEnd = lineStart;
-                    } else {
-                        const insertion = `\n${num + 1}. `;
-                        const newText = text.slice(0, cursorPos) + insertion + text.slice(cursorPos);
-                        textarea.value = newText;
-                        textarea.selectionStart = textarea.selectionEnd = cursorPos + insertion.length;
-                    }
-                    textarea.dispatchEvent(new Event("input"));
-                    return;
-                } else if (taskMatch) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const content = taskMatch[2];
-                    if (!content.trim()) {
-                        const newText = text.slice(0, lineStart) + text.slice(cursorPos);
-                        textarea.value = newText;
-                        textarea.selectionStart = textarea.selectionEnd = lineStart;
-                    } else {
-                        const insertion = `\n[ ] `;
-                        const newText = text.slice(0, cursorPos) + insertion + text.slice(cursorPos);
-                        textarea.value = newText;
-                        textarea.selectionStart = textarea.selectionEnd = cursorPos + insertion.length;
-                    }
-                    textarea.dispatchEvent(new Event("input"));
-                    return;
-                }
             }
             e.stopPropagation();
         });
 
-        textarea.addEventListener("mousedown", e => e.stopPropagation());
-        textarea.addEventListener("pointerdown", e => e.stopPropagation());
-        textarea.addEventListener("click", e => e.stopPropagation());
-        textarea.addEventListener("dblclick", e => e.stopPropagation());
+        editable.addEventListener("mousedown", e => e.stopPropagation());
+        editable.addEventListener("pointerdown", e => e.stopPropagation());
+        editable.addEventListener("click", e => e.stopPropagation());
+        editable.addEventListener("dblclick", e => e.stopPropagation());
 
-        textarea.addEventListener("blur", () => {
-            commitEdit(true);
+        editable.addEventListener("blur", (e) => {
+            // Don't commit if focus moved to the toolbar
+            const relatedTarget = e.relatedTarget;
+            if (relatedTarget && wpContainer.contains(relatedTarget)) return;
+            if (relatedTarget && toolbar.contains(relatedTarget)) return;
+            // Small delay to allow toolbar button clicks to fire first
+            setTimeout(() => {
+                if (!editable.parentNode || committed) return;
+                if (document.activeElement && wpContainer.contains(document.activeElement)) return;
+                commitEdit(true);
+            }, 120);
         });
 
-        overlay.appendChild(textarea);
+        overlay.appendChild(wpContainer);
         syncDimensions();
-        textarea.focus?.();
-        if (textarea.value) {
-            textarea.select?.();
+        editable.focus?.();
+
+        // Place cursor at end
+        if (editable.childNodes.length > 0) {
+            const sel = window.getSelection?.();
+            if (sel) {
+                sel.selectAllChildren(editable);
+                sel.collapseToEnd();
+            }
         }
+
+        // Initial toolbar state
+        setTimeout(updateToolbarState, 50);
     } else {
         const input = document.createElement("input");
         input.type = "text";
@@ -1810,6 +2118,34 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
                     }
                 }
                 overlay.focus();
+            } else if (field.tableId && (e.key === "ArrowDown" || e.key === "ArrowUp") && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                const tableCells = (state.fields || []).filter(item => item.tableId === field.tableId && !item.hidden && !item.locked);
+                if (e.key === "ArrowDown") {
+                    const nextRowCell = tableCells.find(item => item.tableRow === (field.tableRow || 0) + 1 && item.tableCol === field.tableCol);
+                    if (nextRowCell) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        commitEdit(true);
+                        setSelectedField(nextRowCell.id);
+                        if (handlers?.onSelect) handlers.onSelect(nextRowCell);
+                        renderOverlays(handlers);
+                        startInlineTextEdit(nextRowCell.id, handlers);
+                        return;
+                    }
+                } else if (e.key === "ArrowUp") {
+                    const prevRow = (field.tableRow || 0) - 1;
+                    const prevRowCell = tableCells.find(item => (prevRow === 0 ? item.tableRole === "header" : item.tableRow === prevRow) && item.tableCol === field.tableCol);
+                    if (prevRowCell) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        commitEdit(true);
+                        setSelectedField(prevRowCell.id);
+                        if (handlers?.onSelect) handlers.onSelect(prevRowCell);
+                        renderOverlays(handlers);
+                        startInlineTextEdit(prevRowCell.id, handlers);
+                        return;
+                    }
+                }
             } else if (e.key === "Enter" || e.key === "Escape") {
                 e.preventDefault();
                 e.stopPropagation();

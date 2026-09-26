@@ -555,6 +555,166 @@ body.is-panning,body.is-panning *{cursor:grabbing !important;user-select:none !i
   font-style: italic;
 }
 
+/* ── Modern Word Processor Inline Editor ──────────────────────────── */
+.wp-editor-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.wp-editable {
+  width: 100%;
+  min-height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 4px 6px;
+  margin: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.45;
+  cursor: text;
+  -webkit-user-modify: read-write-plaintext-only;
+  -webkit-user-modify: read-write;
+}
+
+.wp-editable:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  font-weight: 400;
+  font-style: italic;
+  pointer-events: none;
+}
+
+.wp-editable ul, .wp-editable ol {
+  margin: 2px 0;
+  padding-left: 20px;
+}
+
+.wp-editable ul li, .wp-editable ol li {
+  margin: 1px 0;
+}
+
+/* ── Floating Format Toolbar (Google Docs style) ──────────────────── */
+.wp-format-toolbar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 3px 4px;
+  z-index: 9999;
+  pointer-events: auto;
+  user-select: none;
+  animation: wpToolbarPop 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  white-space: nowrap;
+  left: 0;
+  bottom: calc(100% + 6px);
+}
+
+@keyframes wpToolbarPop {
+  from { opacity: 0; transform: translateY(4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wp-format-toolbar .wp-tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Inter', -apple-system, sans-serif;
+  padding: 0;
+  transition: background 0.1s ease, color 0.1s ease;
+  position: relative;
+}
+
+.wp-format-toolbar .wp-tb-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.wp-format-toolbar .wp-tb-btn.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.wp-format-toolbar .wp-tb-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.wp-format-toolbar .wp-tb-divider {
+  width: 1px;
+  height: 20px;
+  background: #e2e8f0;
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+.wp-format-toolbar .wp-tb-select {
+  height: 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  background: #ffffff;
+  font-size: 11.5px;
+  font-weight: 500;
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: #334155;
+  padding: 0 6px;
+  cursor: pointer;
+  outline: none;
+  min-width: 72px;
+  transition: border-color 0.1s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  padding-right: 18px;
+}
+
+.wp-format-toolbar .wp-tb-select:hover,
+.wp-format-toolbar .wp-tb-select:focus {
+  border-color: #93c5fd;
+}
+
+/* ── Floating toolbar for table cells ─────────────────────────────── */
+.wp-table-toolbar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 3px 4px;
+  z-index: 9999;
+  pointer-events: auto;
+  user-select: none;
+  animation: wpToolbarPop 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  white-space: nowrap;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 6px);
+}
+
 /* ── Word Processor Table & Unified Grid Layout ───────────────────── */
 .field-overlay.is-table-cell {
   border-radius: 0 !important;
