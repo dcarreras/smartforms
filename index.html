@@ -1745,6 +1745,25 @@
                                 </select>
                             </div>
                         </div>
+
+                        <div class="prop-grid-2" style="margin-top: 8px;">
+                            <div class="prop-field">
+                                <label class="prop-label" for="fontStyleSelect">Weight / Style</label>
+                                <select id="fontStyleSelect" class="prop-select">
+                                    <option value="regular">Regular</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="italic">Italic</option>
+                                    <option value="bold-italic">Bold Italic</option>
+                                </select>
+                            </div>
+                            <div class="prop-field">
+                                <label class="prop-label">Format</label>
+                                <div class="font-format-btn-group" style="display: flex; gap: 4px;">
+                                    <button type="button" class="btn-font-format" id="btnToggleBold" title="Bold (⌘B)" style="flex: 1; height: 32px; font-weight: 800; font-size: 13px;">B</button>
+                                    <button type="button" class="btn-font-format" id="btnToggleItalic" title="Italic (⌘I)" style="flex: 1; height: 32px; font-style: italic; font-weight: 700; font-family: Georgia, serif; font-size: 13px;">I</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 3. Layout & Appearance -->
@@ -2087,6 +2106,25 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="prop-grid-2" style="margin-top: 8px;">
+                            <div class="prop-field">
+                                <label class="prop-label" for="multiFontStyleSelect">Weight / Style</label>
+                                <select id="multiFontStyleSelect" class="prop-select">
+                                    <option value="" style="color: #64748b; font-style: italic;">Style (Mixed)</option>
+                                    <option value="regular">Regular</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="italic">Italic</option>
+                                    <option value="bold-italic">Bold Italic</option>
+                                </select>
+                            </div>
+                            <div class="prop-field">
+                                <label class="prop-label">Format</label>
+                                <div class="font-format-btn-group" style="display: flex; gap: 4px;">
+                                    <button type="button" class="btn-font-format" id="multiBtnToggleBold" title="Bold (⌘B)" style="flex: 1; height: 32px; font-weight: 800; font-size: 13px;">B</button>
+                                    <button type="button" class="btn-font-format" id="multiBtnToggleItalic" title="Italic (⌘I)" style="flex: 1; height: 32px; font-style: italic; font-weight: 700; font-family: Georgia, serif; font-size: 13px;">I</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 4. Layout & Style -->
@@ -2385,6 +2423,8 @@
                         <div class="shortcut-row"><span class="shortcut-desc">Copy</span><div class="shortcut-keys"><span class="shortcut-kbd">⌘C</span></div></div>
                         <div class="shortcut-row"><span class="shortcut-desc">Paste</span><div class="shortcut-keys"><span class="shortcut-kbd">⌘V</span></div></div>
                         <div class="shortcut-row"><span class="shortcut-desc">Duplicate</span><div class="shortcut-keys"><span class="shortcut-kbd">⌘D</span></div></div>
+                        <div class="shortcut-row"><span class="shortcut-desc">Toggle Bold</span><div class="shortcut-keys"><span class="shortcut-kbd">⌘B</span></div></div>
+                        <div class="shortcut-row"><span class="shortcut-desc">Toggle Italic</span><div class="shortcut-keys"><span class="shortcut-kbd">⌘I</span></div></div>
                         <div class="shortcut-row"><span class="shortcut-desc">Select All Fields</span><div class="shortcut-keys"><span class="shortcut-kbd">⌘A</span></div></div>
                         <div class="shortcut-row"><span class="shortcut-desc">Deselect All</span><div class="shortcut-keys"><span class="shortcut-kbd">Esc</span></div></div>
                     </div>

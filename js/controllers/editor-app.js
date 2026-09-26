@@ -1277,6 +1277,38 @@ export function initEditorSubsystems() {
             return;
         }
 
+        // Toggle Bold Font Style (Ctrl+B / Cmd+B)
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+            const isTextCapableField = f => (f.type === "textField" || f.type === "staticText" || f.type === "label" || f.type === "dropdown" || f.type === "dateField" || f.type === "date" || f.type === "number");
+            const selected = (state.fields || []).filter(f => state.selectedFieldIds && state.selectedFieldIds.has(f.id) && isTextCapableField(f));
+            if (selected.length > 0) {
+                e.preventDefault();
+                const anyNonBold = selected.some(f => f.fontWeight !== "bold" && f.fontWeight !== "700" && f.fontWeight !== 700 && f.fontFamily !== "helvetica-bold");
+                selected.forEach(f => {
+                    f.fontWeight = anyNonBold ? "bold" : "normal";
+                });
+                saveHistory(true, anyNonBold ? "Apply Bold Font Weight" : "Remove Bold Font Weight");
+                refreshUI();
+                return;
+            }
+        }
+
+        // Toggle Italic Font Style (Ctrl+I / Cmd+I)
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "i") {
+            const isTextCapableField = f => (f.type === "textField" || f.type === "staticText" || f.type === "label" || f.type === "dropdown" || f.type === "dateField" || f.type === "date" || f.type === "number");
+            const selected = (state.fields || []).filter(f => state.selectedFieldIds && state.selectedFieldIds.has(f.id) && isTextCapableField(f));
+            if (selected.length > 0) {
+                e.preventDefault();
+                const anyNonItalic = selected.some(f => f.fontStyle !== "italic" && f.fontFamily !== "times-italic");
+                selected.forEach(f => {
+                    f.fontStyle = anyNonItalic ? "italic" : "normal";
+                });
+                saveHistory(true, anyNonItalic ? "Apply Italic Font Style" : "Remove Italic Font Style");
+                refreshUI();
+                return;
+            }
+        }
+
         // Undo / Redo
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
             e.preventDefault();

@@ -60,6 +60,18 @@ export function getFieldCssFont(field) {
         fam = `"${family}", -apple-system, BlinkMacSystemFont, sans-serif`;
     }
 
+    // Apply explicit field fontWeight & fontStyle overrides
+    if (field?.fontWeight === "bold" || field?.fontWeight === "700" || field?.fontWeight >= 700) {
+        weight = (weight === "800") ? "900" : "700";
+    } else if (field?.fontWeight === "normal" || field?.fontWeight === "400") {
+        weight = (weight === "800") ? "800" : "400";
+    }
+    if (field?.fontStyle === "italic") {
+        style = "italic";
+    } else if (field?.fontStyle === "normal") {
+        style = "normal";
+    }
+
     return { fam, weight, style, letterSpacing };
 }
 
@@ -806,12 +818,13 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
 
     if (!isMulti) {
         // Single Field Specifics: Required Toggle & Lock Toggle
-        if (primaryField.type === "staticText") {
+        const isTextCapable = primaryField.type === "staticText" || primaryField.type === "textField" || primaryField.type === "label" || primaryField.type === "dropdown" || primaryField.type === "dateField" || primaryField.type === "date";
+        if (isTextCapable) {
             // Bold Toggle
             const isBold = primaryField.fontWeight === "bold" || primaryField.fontWeight === "700" || primaryField.fontWeight >= 700;
             const boldBtn = document.createElement("button");
             boldBtn.className = "quick-bar-btn" + (isBold ? " active" : "");
-            boldBtn.title = isBold ? "Unbold Text" : "Bold Text";
+            boldBtn.title = isBold ? "Unbold (⌘B)" : "Bold (⌘B)";
             boldBtn.innerHTML = `<b style="font-size: 12px; font-weight: 800;">B</b>`;
             boldBtn.addEventListener("click", e => {
                 e.stopPropagation();
@@ -826,7 +839,7 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
             const isItalic = primaryField.fontStyle === "italic";
             const italicBtn = document.createElement("button");
             italicBtn.className = "quick-bar-btn" + (isItalic ? " active" : "");
-            italicBtn.title = isItalic ? "Remove Italic" : "Italicize Text";
+            italicBtn.title = isItalic ? "Remove Italic (⌘I)" : "Italicize (⌘I)";
             italicBtn.innerHTML = `<i style="font-size: 12px; font-style: italic; font-weight: 700; font-family: Georgia, serif;">I</i>`;
             italicBtn.addEventListener("click", e => {
                 e.stopPropagation();
@@ -836,7 +849,9 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
                 else renderOverlays(handlers);
             });
             bar.appendChild(italicBtn);
+        }
 
+        if (primaryField.type === "staticText") {
             // Bullet List Toggle
             const bulletBtn = document.createElement("button");
             bulletBtn.className = "quick-bar-btn";

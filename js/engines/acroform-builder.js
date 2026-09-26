@@ -243,16 +243,19 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
     });
     const usedNames = new Set();
 
-    // Embed Standard Vector Fonts for razor-sharp vector rendering
+    // Embed Standard Vector Fonts for razor-sharp vector rendering (all 12 standard font variants)
     const helvetica = await doc.embedFont(StandardFonts.Helvetica);
     const helveticaBold = await doc.embedFont(StandardFonts.HelveticaBold);
     const helveticaOblique = await doc.embedFont(StandardFonts.HelveticaOblique);
+    const helveticaBoldOblique = await doc.embedFont(StandardFonts.HelveticaBoldOblique);
     const times = await doc.embedFont(StandardFonts.TimesRoman);
     const timesBold = await doc.embedFont(StandardFonts.TimesRomanBold);
     const timesItalic = await doc.embedFont(StandardFonts.TimesRomanItalic);
+    const timesBoldItalic = await doc.embedFont(StandardFonts.TimesRomanBoldItalic);
     const courier = await doc.embedFont(StandardFonts.Courier);
     const courierBold = await doc.embedFont(StandardFonts.CourierBold);
     const courierOblique = await doc.embedFont(StandardFonts.CourierOblique);
+    const courierBoldOblique = await doc.embedFont(StandardFonts.CourierBoldOblique);
 
     // Safely encode text for PDF standard fonts so missing glyphs never cause crashes or blank fields
     function safeEncodeText(fnt, text) {
@@ -295,46 +298,41 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
         }
     }
 
-    const resolveFont = (fam) => {
-        if (!fam) return helvetica;
+    const resolveFont = (fam, weight, style) => {
+        const isBold = weight === "bold" || weight === "700" || weight >= 700 || fam === "helvetica-bold" || fam === "times-bold" || fam === "courier-bold";
+        const isItalic = style === "italic" || fam === "times-italic" || fam === "courier-oblique" || fam === "helvetica-oblique";
+
         if (embeddedCustomFonts.has(fam)) {
             return embeddedCustomFonts.get(fam);
         }
-        if (typeof fam === "string" && (fam.startsWith("device:") || fam.startsWith("local:"))) {
-            const clean = fam.replace(/^(device|local):/, "").toLowerCase();
-            if (clean.includes("mono") || clean.includes("courier") || clean.includes("menlo") || clean.includes("consolas") || clean.includes("code")) {
-                return courier;
-            }
-            if (clean.includes("times") || clean.includes("georgia") || clean.includes("palatino") || clean.includes("garamond") || clean.includes("serif") || clean.includes("didot") || clean.includes("cambria")) {
-                return times;
-            }
-            if (clean.includes("bold") || clean.includes("black") || clean.includes("impact")) {
-                return helveticaBold;
-            }
-            if (clean.includes("italic") || clean.includes("oblique") || clean.includes("script")) {
-                return helveticaOblique;
-            }
-            return helvetica;
+
+        const lowerFam = typeof fam === "string" ? fam.toLowerCase() : "";
+        const isSerif = lowerFam.includes("times") || lowerFam.includes("georgia") || lowerFam.includes("palatino") || lowerFam.includes("garamond") || lowerFam.includes("serif") || lowerFam.includes("didot") || lowerFam.includes("cambria");
+        const isMono = lowerFam.includes("mono") || lowerFam.includes("courier") || lowerFam.includes("menlo") || lowerFam.includes("consolas") || lowerFam.includes("code");
+
+        if (isSerif) {
+            if (isBold && isItalic) return timesBoldItalic;
+            if (isBold) return timesBold;
+            if (isItalic) return timesItalic;
+            return times;
         }
 
-        switch (fam) {
-            case "times": return times;
-            case "times-bold": return timesBold;
-            case "times-italic": return timesItalic;
-            case "courier": return courier;
-            case "courier-bold": return courierBold;
-            case "courier-oblique": return courierOblique;
-            case "helvetica-bold": return helveticaBold;
-            case "helvetica-oblique": return helveticaOblique;
-            case "roboto-mono":
-            case "ibm-plex-mono": return courier;
-            case "caveat":
-            case "cedarville": return timesItalic;
-            case "inter":
-            case "carlito":
-            case "helvetica":
-            default: return helvetica;
+        if (isMono) {
+            if (isBold && isItalic) return courierBoldOblique;
+            if (isBold) return courierBold;
+            if (isItalic) return courierOblique;
+            return courier;
         }
+
+        if (lowerFam.includes("caveat") || lowerFam.includes("cedarville") || lowerFam.includes("script")) {
+            return isBold ? timesBoldItalic : timesItalic;
+        }
+
+        // Sans-serif / Default
+        if (isBold && isItalic) return helveticaBoldOblique;
+        if (isBold || lowerFam.includes("black") || lowerFam.includes("impact")) return helveticaBold;
+        if (isItalic) return helveticaOblique;
+        return helvetica;
     };
 
     // Populate AcroForm default resource font dictionary safely
@@ -363,12 +361,15 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
             { aliases: ["Helv", "Helvetica"], font: helvetica },
             { aliases: ["HeBo", "Helvetica-Bold", "HelveticaBold"], font: helveticaBold },
             { aliases: ["HeOb", "Helvetica-Oblique", "HelveticaOblique"], font: helveticaOblique },
+            { aliases: ["HeBO", "Helvetica-BoldOblique", "HelveticaBoldOblique"], font: helveticaBoldOblique },
             { aliases: ["TiRo", "Times", "Times-Roman", "TimesRoman"], font: times },
             { aliases: ["TiBo", "Times-Bold", "TimesBold"], font: timesBold },
             { aliases: ["TiIt", "Times-Italic", "TimesItalic"], font: timesItalic },
+            { aliases: ["TiBI", "Times-BoldItalic", "TimesBoldItalic"], font: timesBoldItalic },
             { aliases: ["Cour", "Courier"], font: courier },
             { aliases: ["CoBo", "Courier-Bold", "CourierBold"], font: courierBold },
-            { aliases: ["CoOb", "Courier-Oblique", "CourierOblique"], font: courierOblique }
+            { aliases: ["CoOb", "Courier-Oblique", "CourierOblique"], font: courierOblique },
+            { aliases: ["CoBO", "Courier-BoldOblique", "CourierBoldOblique"], font: courierBoldOblique }
         ];
 
         fontRegistrations.forEach(({ aliases, font: fObj }) => {
@@ -476,7 +477,7 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
             }
 
             if (f.type === "staticText" || f.type === "label") {
-                const font = resolveFont(f.fontFamily || (f.fontWeight === "bold" ? "helvetica-bold" : "helvetica"));
+                const font = resolveFont(f.fontFamily, f.fontWeight, f.fontStyle);
                 const fontSize = (f.fontSize && parseInt(f.fontSize) >= 4) ? parseInt(f.fontSize) : 14;
                 const textContent = f.defaultValue || f.label || f.value || f.name || "Text / Heading";
 
@@ -695,7 +696,7 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
                 f.textAlignment = align;
 
                 // Select font & font size
-                const font = resolveFont(f.fontFamily);
+                const font = resolveFont(f.fontFamily, f.fontWeight, f.fontStyle);
                 const fontSize = (f.fontSize && parseInt(f.fontSize) >= 4) ? parseInt(f.fontSize) : 11;
                 try { tf.setFontSize(fontSize); } catch(e) {}
 
@@ -767,7 +768,7 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
                 try { if (f.required) dd.enableRequired(); } catch(e) {}
                 try { const ddTooltip = resolveAutofillTooltip(f); if (ddTooltip) dd.setToolTip(ddTooltip); } catch(e) {}
                 
-                const font = resolveFont(f.fontFamily);
+                const font = resolveFont(f.fontFamily, f.fontWeight, f.fontStyle);
                 const fontSize = (f.fontSize && parseInt(f.fontSize) >= 4) ? parseInt(f.fontSize) : 11;
                 try { dd.setFontSize(fontSize); } catch(e) {}
                 if (!f.textAlignment) f.textAlignment = "left";

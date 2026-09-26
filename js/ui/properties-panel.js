@@ -1076,6 +1076,51 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
         if (activeField) populateProperties(activeField);
     });
 
+    // Font Weight and Font Style Controls
+    const fontStyleSelect = document.getElementById("fontStyleSelect");
+    fontStyleSelect?.addEventListener("change", e => {
+        const val = e.target.value;
+        syncChange(f => {
+            if (val === "bold-italic") {
+                f.fontWeight = "bold";
+                f.fontStyle = "italic";
+            } else if (val === "bold") {
+                f.fontWeight = "bold";
+                f.fontStyle = "normal";
+            } else if (val === "italic") {
+                f.fontWeight = "normal";
+                f.fontStyle = "italic";
+            } else {
+                f.fontWeight = "normal";
+                f.fontStyle = "normal";
+            }
+        }, true, `Set Font Style to ${val}`);
+        const activeField = getSelectedField();
+        if (activeField) populateProperties(activeField);
+    });
+
+    const btnToggleBold = document.getElementById("btnToggleBold");
+    btnToggleBold?.addEventListener("click", () => {
+        const active = getSelectedField();
+        const willBeBold = active?.fontWeight !== "bold" && active?.fontWeight !== "700" && active?.fontWeight !== 700;
+        syncChange(f => {
+            f.fontWeight = willBeBold ? "bold" : "normal";
+        }, true, willBeBold ? "Apply Bold Font Weight" : "Remove Bold Font Weight");
+        const activeField = getSelectedField();
+        if (activeField) populateProperties(activeField);
+    });
+
+    const btnToggleItalic = document.getElementById("btnToggleItalic");
+    btnToggleItalic?.addEventListener("click", () => {
+        const active = getSelectedField();
+        const willBeItalic = active?.fontStyle !== "italic";
+        syncChange(f => {
+            f.fontStyle = willBeItalic ? "italic" : "normal";
+        }, true, willBeItalic ? "Apply Italic Font Style" : "Remove Italic Font Style");
+        const activeField = getSelectedField();
+        if (activeField) populateProperties(activeField);
+    });
+
     // Table Grid Controls
     document.getElementById("tableAddRowBtn")?.addEventListener("click", () => {
         const field = getSelectedField();
@@ -1868,6 +1913,45 @@ export function populateProperties(field) {
                 }
             }
 
+            // Sync font style/weight in multi-selection panel
+            const multiStyleInput = document.getElementById("multiFontStyleSelect");
+            const multiBtnB = document.getElementById("multiBtnToggleBold");
+            const multiBtnI = document.getElementById("multiBtnToggleItalic");
+            if (multiStyleInput && document.activeElement !== multiStyleInput) {
+                const textFields = selectedFields.filter(f => f.type === "textField" || f.type === "staticText" || f.type === "label" || f.type === "dropdown" || f.type === "dateField" || f.type === "date" || f.type === "number");
+                if (textFields.length > 0) {
+                    const allBold = textFields.every(f => f.fontWeight === "bold" || f.fontWeight === "700" || f.fontWeight >= 700 || f.fontFamily === "helvetica-bold");
+                    const noneBold = textFields.every(f => f.fontWeight !== "bold" && f.fontWeight !== "700" && f.fontWeight !== 700 && f.fontFamily !== "helvetica-bold");
+                    const allItalic = textFields.every(f => f.fontStyle === "italic" || f.fontFamily === "times-italic");
+                    const noneItalic = textFields.every(f => f.fontStyle !== "italic" && f.fontFamily !== "times-italic");
+
+                    if (multiBtnB && multiBtnB.classList) multiBtnB.classList.toggle("active", allBold);
+                    if (multiBtnI && multiBtnI.classList) multiBtnI.classList.toggle("active", allItalic);
+
+                    if (allBold && allItalic) {
+                        multiStyleInput.value = "bold-italic";
+                        multiStyleInput.classList.remove("is-mixed");
+                    } else if (allBold && noneItalic) {
+                        multiStyleInput.value = "bold";
+                        multiStyleInput.classList.remove("is-mixed");
+                    } else if (noneBold && allItalic) {
+                        multiStyleInput.value = "italic";
+                        multiStyleInput.classList.remove("is-mixed");
+                    } else if (noneBold && noneItalic) {
+                        multiStyleInput.value = "regular";
+                        multiStyleInput.classList.remove("is-mixed");
+                    } else {
+                        multiStyleInput.value = "";
+                        multiStyleInput.classList.add("is-mixed");
+                    }
+                } else {
+                    if (multiBtnB && multiBtnB.classList) multiBtnB.classList.remove("active");
+                    if (multiBtnI && multiBtnI.classList) multiBtnI.classList.remove("active");
+                    multiStyleInput.value = "";
+                    multiStyleInput.classList.remove("is-mixed");
+                }
+            }
+
             // Sync width and height inputs if not actively focused
             const wInput = document.getElementById("multiFieldWidth");
             if (wInput && document.activeElement !== wInput) {
@@ -1971,7 +2055,7 @@ export function populateProperties(field) {
 
         [
             "fieldType", "fieldName", "fieldDefaultValue", "fieldFontFamily", "fontSize",
-            "textAlignment", "fieldTooltip", "autofillType", "fieldAutofill",
+            "textAlignment", "fontStyleSelect", "multiFontStyleSelect", "fieldTooltip", "autofillType", "fieldAutofill",
             "fieldBorderStyle", "borderStyleSelect", "fieldFillStyle", "fillStyleSelect",
             "posX", "posY", "width", "height", "dropdownOptions",
             "fieldDataFormat", "fieldCurrencySymbol", "fieldCustomCurrencySymbol", "fieldCurrencyPosition", "fieldCurrencyDecimals"
@@ -1988,6 +2072,7 @@ export function populateProperties(field) {
 
         safeQuerySelectorAll(".quick-size-btn").forEach(btn => btn.classList.remove("active"));
         safeQuerySelectorAll(".multi-quick-size-btn").forEach(btn => btn.classList.remove("active"));
+        safeQuerySelectorAll(".btn-font-format").forEach(btn => btn.classList.remove("active"));
         return;
     }
 
@@ -2038,6 +2123,19 @@ export function populateProperties(field) {
     
     const activeSize = (fallbackField.fontSize && fallbackField.fontSize >= 6) ? fallbackField.fontSize : 11;
     updateQuickSizeButtons(activeSize, "quick-size-btn");
+
+    const isBold = fallbackField.fontWeight === "bold" || fallbackField.fontWeight === "700" || fallbackField.fontWeight >= 700 || fallbackField.fontFamily === "helvetica-bold";
+    const isItalic = fallbackField.fontStyle === "italic" || fallbackField.fontFamily === "times-italic";
+    let styleVal = "regular";
+    if (isBold && isItalic) styleVal = "bold-italic";
+    else if (isBold) styleVal = "bold";
+    else if (isItalic) styleVal = "italic";
+    setVal("fontStyleSelect", styleVal);
+
+    const btnB = document.getElementById("btnToggleBold");
+    if (btnB && btnB.classList) btnB.classList.toggle("active", !!isBold);
+    const btnI = document.getElementById("btnToggleItalic");
+    if (btnI && btnI.classList) btnI.classList.toggle("active", !!isItalic);
 
     setVal("textAlignment", fallbackField.textAlignment || "left");
     setVal("fieldTooltip", fallbackField.tooltip || "");
@@ -2417,12 +2515,14 @@ function initMultiSelectTools(onUpdated) {
         });
     });
 
+    const isTextCapableField = f => (f.type === "textField" || f.type === "staticText" || f.type === "label" || f.type === "dropdown" || f.type === "dateField" || f.type === "date" || f.type === "number");
+
     document.getElementById("multiFontFamily")?.addEventListener("change", e => {
         e.target.classList.remove("is-mixed");
         const val = e.target.value;
         if (val) {
             batchUpdate(f => {
-                if (f.type === "textField" || f.type === "dropdown") {
+                if (isTextCapableField(f)) {
                     f.fontFamily = val;
                 }
             });
@@ -2436,7 +2536,7 @@ function initMultiSelectTools(onUpdated) {
         updateQuickSizeButtons(val, "multi-quick-size-btn");
         if (val === null || (val >= 6 && val <= 120)) {
             batchUpdate(f => {
-                if (f.type === "textField" || f.type === "dropdown") {
+                if (isTextCapableField(f)) {
                     f.fontSize = val;
                 }
             });
@@ -2458,7 +2558,7 @@ function initMultiSelectTools(onUpdated) {
             }
             updateQuickSizeButtons(size, "multi-quick-size-btn");
             batchUpdate(f => {
-                if (f.type === "textField" || f.type === "dropdown") {
+                if (isTextCapableField(f)) {
                     f.fontSize = size;
                 }
             });
@@ -2470,11 +2570,55 @@ function initMultiSelectTools(onUpdated) {
         const val = e.target.value;
         if (val) {
             batchUpdate(f => {
-                if (f.type === "textField" || f.type === "dropdown") {
+                if (isTextCapableField(f)) {
                     f.textAlignment = val;
                 }
             });
         }
+    });
+
+    document.getElementById("multiFontStyleSelect")?.addEventListener("change", e => {
+        e.target.classList.remove("is-mixed");
+        const val = e.target.value;
+        if (val) {
+            batchUpdate(f => {
+                if (isTextCapableField(f)) {
+                    if (val === "bold-italic") {
+                        f.fontWeight = "bold";
+                        f.fontStyle = "italic";
+                    } else if (val === "bold") {
+                        f.fontWeight = "bold";
+                        f.fontStyle = "normal";
+                    } else if (val === "italic") {
+                        f.fontWeight = "normal";
+                        f.fontStyle = "italic";
+                    } else {
+                        f.fontWeight = "normal";
+                        f.fontStyle = "normal";
+                    }
+                }
+            });
+        }
+    });
+
+    document.getElementById("multiBtnToggleBold")?.addEventListener("click", () => {
+        const textFields = selectedFields.filter(isTextCapableField);
+        const anyNonBold = textFields.some(f => f.fontWeight !== "bold" && f.fontWeight !== "700" && f.fontWeight !== 700 && f.fontFamily !== "helvetica-bold");
+        batchUpdate(f => {
+            if (isTextCapableField(f)) {
+                f.fontWeight = anyNonBold ? "bold" : "normal";
+            }
+        });
+    });
+
+    document.getElementById("multiBtnToggleItalic")?.addEventListener("click", () => {
+        const textFields = selectedFields.filter(isTextCapableField);
+        const anyNonItalic = textFields.some(f => f.fontStyle !== "italic" && f.fontFamily !== "times-italic");
+        batchUpdate(f => {
+            if (isTextCapableField(f)) {
+                f.fontStyle = anyNonItalic ? "italic" : "normal";
+            }
+        });
     });
 
     // ── Batch Required Toggle ────────────────────────────────────────
