@@ -486,12 +486,13 @@ body.mode-fill .canvas-docked-footer{display:none !important}
 }
 
 .contextual-quick-bar .quick-bar-btn-accent {
-    color: #86efac;
+    color: #059669;
+    font-weight: 600;
 }
 
 .contextual-quick-bar .quick-bar-btn-accent:hover {
-    background: rgba(16, 185, 129, 0.25);
-    color: #bbf7d0;
+    background: #ecfdf5;
+    color: #047857;
 }
 
 /* Canvas field picking mode: eliminate UI overload and clearly differentiate field states */
