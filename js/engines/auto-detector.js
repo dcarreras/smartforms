@@ -621,7 +621,26 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 pageFields = [...latticeResult.fields, ...boundaryFields, ...geometricFields];
             }
 
+            // 2.5 Optional Local Python LayoutLMv3 Sidecar (http://127.0.0.1:8000)
+            if (options.useSidecar !== false && typeof fetch !== "undefined") {
+                try {
+                    const { isSidecarAvailable, detectFieldsViaSidecar } = await import("./sidecar-detector.js");
+                    const sidecarStatus = await isSidecarAvailable();
+                    if (sidecarStatus && sidecarStatus.available) {
+                        const sidecarFields = await detectFieldsViaSidecar(page, viewport, rawBlocks, pageNum, usedNames);
+                        for (const sf of sidecarFields) {
+                            if (!isOverlapping(sf, pageFields, 0.25)) {
+                                pageFields.push(sf);
+                            }
+                        }
+                    }
+                } catch (sidecarErr) {
+                    // Gracefully continue with client-side detection
+                }
+            }
+
             // 3. Optional In-Browser ONNX Neural Vision Detector (Hybrid Mode)
+
             if (isHybridMode && typeof document !== "undefined") {
                 try {
                     const { detectNeuralFieldsOnCanvas } = await import("./onnx-detector.js");
