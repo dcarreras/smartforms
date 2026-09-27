@@ -604,22 +604,63 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             // 1.5 Drawn Vector Rectangles & Checkboxes (Exact vector geometry)
             const drawnVectorFields = detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNames, [...existingFields, ...widgetFields], { clusterRadios: true });
 
-            let pageFields = [];
-            if (drawnVectorFields.length > 0) {
-                // When explicit vector geometry exists, it is authoritative.
-                // Do not pollute real vector forms with synthetic text heuristics (fake table rows, bullet-point radios, etc.)
-                pageFields = [...drawnVectorFields];
-            } else {
-                // Fallback for un-lined, text-only forms without vector boxes
-                const latticeResult = await detectLatticeTableFields(page, rawBlocks, pageNum, usedNames, boundaryLines);
-                const boundaryFields = boundaryLines[0]
-                    ? detectUnderlineFields(boundaryLines[0], rawBlocks, pageNum, usedNames, [...existingFields, ...widgetFields, ...drawnVectorFields])
-                    : [];
+            let pageFields = [...drawnVectorFields];
 
-                const seedFields = [...widgetFields, ...drawnVectorFields, ...latticeResult.fields, ...boundaryFields];
-                const geometricFields = detectVisualAffordances(rawBlocks, viewport, pageNum, usedNames, seedFields, latticeResult.regions, vectorShapes);
-                pageFields = [...latticeResult.fields, ...boundaryFields, ...geometricFields];
+            // 1.75 Lattice table fields and ruling lines (always evaluated for table grids)
+            const latticeResult = await detectLatticeTableFields(page, rawBlocks, pageNum, usedNames, boundaryLines);
+            for (const lf of (latticeResult.fields || [])) {
+                if (!isOverlapping(lf, pageFields, 0.25)) {
+                    pageFields.push(lf);
+                }
             }
+
+            // 1.8 Underlines (e.g. signature lines, blanks, horizontal rules)
+            if (boundaryLines[0]) {
+                const boundaryFields = detectUnderlineFields(
+                    boundaryLines[0],
+                    rawBlocks,
+                    pageNum,
+                    usedNames,
+                    [...existingFields, ...widgetFields, ...pageFields]
+                );
+                for (const bf of boundaryFields) {
+                    if (!isOverlapping(bf, pageFields, 0.25)) {
+                        pageFields.push(bf);
+                    }
+                }
+            }
+
+            // 2.0 Dotted-Leader & Tax / Financial Schedule Line Affordances
+            const scheduleFields = detectTaxScheduleLineAffordances(
+                rawBlocks,
+                viewport,
+                pageNum,
+                usedNames,
+                [...existingFields, ...widgetFields, ...pageFields]
+            );
+            for (const sf of scheduleFields) {
+                if (!isOverlapping(sf, pageFields, 0.25)) {
+                    pageFields.push(sf);
+                }
+            }
+
+            // 2.2 Visual affordances (unlined text-only prompts & checkboxes)
+            const seedFields = [...widgetFields, ...pageFields];
+            const geometricFields = detectVisualAffordances(
+                rawBlocks,
+                viewport,
+                pageNum,
+                usedNames,
+                seedFields,
+                latticeResult.regions,
+                vectorShapes
+            );
+            for (const gf of geometricFields) {
+                if (!isOverlapping(gf, pageFields, 0.25)) {
+                    pageFields.push(gf);
+                }
+            }
+
 
             // 2.5 Optional Local Python LayoutLMv3 Sidecar (http://127.0.0.1:8000)
             if (options.useSidecar !== false && typeof fetch !== "undefined") {
@@ -2440,6 +2481,114 @@ export function detectUnderlineFields(grid, rawBlocks, pageNum, usedNames, exist
             detectedBy: "boundary_underline"
         });
     }
+    return fields;
+}
+
+/**
+ * Detects financial, tax schedule, and line-item input affordances.
+ * Matches dotted leaders (. . . . .) or line indicator tokens (1a, 1b, 2, 10b, etc.)
+ * ending in empty right-aligned currency/numeric amount columns.
+ */
+export function detectTaxScheduleLineAffordances(rawBlocks, viewport, pageNum, usedNames, existingFields = []) {
+    const fields = [];
+    if (!rawBlocks || rawBlocks.length === 0) return fields;
+
+    const pageWidth = viewport?.width || 612;
+    const pageHeight = viewport?.height || 792;
+
+    // Cluster into horizontal line rows (y tolerance 4pt)
+    const lines = [];
+    const sortedWords = [...rawBlocks].sort((a, b) => a.y - b.y);
+
+    for (const w of sortedWords) {
+        const yCenter = w.y + (w.height || 10) / 2;
+        let matchedLine = null;
+        for (const l of lines) {
+            if (Math.abs(l.yCenter - yCenter) <= 4) {
+                matchedLine = l;
+                break;
+            }
+        }
+        if (!matchedLine) {
+            matchedLine = { yCenter, y: w.y, height: w.height || 12, items: [] };
+            lines.push(matchedLine);
+        }
+        matchedLine.items.push(w);
+    }
+
+    const LINE_TOKEN_REGEX = /^(?:\d{1,2}[a-z]?|[a-z])$/i;
+
+    for (const line of lines) {
+        const rowItems = line.items.sort((a, b) => a.x - b.x);
+        const rowStr = rowItems.map(it => it.str).join(" ");
+
+        // Check if line looks like a tax schedule, invoice line, or dotted leader prompt
+        const hasDots = (rowStr.match(/\./g) || []).length >= 3;
+        const hasSchedulePrompt = /\b(?:line|lines|add|subtract|total|amount|gross|income|tax|wages|deduction|interest|dividends|credit|payment|refund|penalty|balance|due)\b/i.test(rowStr);
+
+        if (!hasDots && !hasSchedulePrompt) continue;
+
+        for (let i = 0; i < rowItems.length; i++) {
+            const item = rowItems[i];
+            const token = item.str.trim();
+
+            if (!LINE_TOKEN_REGEX.test(token)) continue;
+
+            const xEnd = item.x + item.width;
+            const nextItem = i + 1 < rowItems.length ? rowItems[i + 1] : null;
+
+            const slotX1 = xEnd + 3;
+            // Standard right margin boundary is typically around 576pt (pageWidth - 36)
+            const slotX2 = nextItem ? (nextItem.x - 3) : Math.min(576, pageWidth - 36);
+            const slotWidth = slotX2 - slotX1;
+
+            // Slot must have standard currency column width (48 to 135 pt)
+            if (slotWidth >= 48 && slotWidth <= 135) {
+                // Must either be near right margin or followed by an interior column
+                if (slotX2 >= pageWidth * 0.75 || (nextItem && nextItem.x >= 280)) {
+                    // Verify slot does not overlap existing text words
+                    const wordsInSlot = rowItems.some(w => w.x >= slotX1 - 2 && (w.x + w.width) <= slotX2 + 2);
+                    if (wordsInSlot) continue;
+
+                    // Extract label text from words to the left of this token
+                    const labelWords = rowItems.slice(0, i)
+                        .filter(w => !/^[\.\s_—–\-]+$/.test(w.str))
+                        .map(w => w.str)
+                        .join(" ")
+                        .trim();
+
+                    const cleanLabel = (labelWords.length > 0 ? labelWords : `line_${token}`).slice(0, 32);
+                    const sem = resolveSemanticProps(cleanLabel || `line_${token}`, "textField", usedNames);
+
+                    const fieldY = Math.round(line.yCenter - 6);
+                    const fieldH = Math.max(12, Math.round(line.height || 12));
+
+                    const field = {
+                        id: generateFieldId(),
+                        type: "textField",
+                        name: sem.name,
+                        x: Math.round(slotX1),
+                        y: fieldY,
+                        width: Math.round(slotWidth),
+                        height: fieldH,
+                        page: pageNum,
+                        borderStyle: "solid",
+                        fillStyle: "white",
+                        multiline: false,
+                        autofill: "",
+                        dataFormat: "currency",
+                        detectedBy: "tax_schedule_affordance",
+                        confidence: 0.92
+                    };
+
+                    if (!isOverlapping(field, existingFields, 0.25) && !isOverlapping(field, fields, 0.25)) {
+                        fields.push(field);
+                    }
+                }
+            }
+        }
+    }
+
     return fields;
 }
 

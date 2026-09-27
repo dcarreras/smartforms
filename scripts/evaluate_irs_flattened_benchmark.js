@@ -199,7 +199,7 @@ async function runBenchmark() {
     console.log("🏛️ REAL-WORLD IRS FLATTENED PDF BENCHMARK RUNNER");
     console.log("=================================================\n");
 
-    const { detectVectorDrawnFields, detectVisualAffordances, reconstructTableGridBoxes } = await import(path.join(ROOT_DIR, 'js', 'engines', 'auto-detector.js'));
+    const { detectVectorDrawnFields, detectVisualAffordances, detectTaxScheduleLineAffordances, reconstructTableGridBoxes } = await import(path.join(ROOT_DIR, 'js', 'engines', 'auto-detector.js'));
 
     const irsFiles = fs.readdirSync(IRS_DIR).filter(f => f.endsWith('.pdf'));
     const results = [];
@@ -272,10 +272,15 @@ async function runBenchmark() {
         for (let pNum = 1; pNum <= flatPages.length; pNum++) {
             const pageData = extractedPageData[pNum - 1];
             const shapes = pageData?.shapes || parsePdfPageVectorShapes(flatPages[pNum - 1]);
-            if (shapes.hLines && shapes.hLines.length >= 2 && shapes.inputBoxRects.length <= 2) {
+            if (shapes.hLines && shapes.hLines.length >= 2) {
                 const gridBoxes = reconstructTableGridBoxes(shapes.hLines, shapes.vLines || []);
-                shapes.inputBoxRects.push(...gridBoxes);
-                shapes.allRects.push(...gridBoxes);
+                for (const gb of gridBoxes) {
+                    const overlaps = shapes.inputBoxRects.some(ib => calculateBoxIoU(gb, ib) > 0.2);
+                    if (!overlaps) {
+                        shapes.inputBoxRects.push(gb);
+                        shapes.allRects.push(gb);
+                    }
+                }
             }
             const rawBlocks = pageData?.textBlocks || [];
             const usedNames = new Set(detectedFields.map(f => f.name));
@@ -283,9 +288,11 @@ async function runBenchmark() {
             const viewport = { width: p.getWidth(), height: p.getHeight() };
 
             const pDetections = detectVectorDrawnFields(shapes, rawBlocks, pNum, usedNames, [], { clusterRadios: true });
-            const pAffordances = detectVisualAffordances(rawBlocks, viewport, pNum, usedNames, pDetections, [], shapes);
-            detectedFields.push(...pDetections, ...pAffordances);
+            const pSchedules = detectTaxScheduleLineAffordances(rawBlocks, viewport, pNum, usedNames, pDetections);
+            const pAffordances = detectVisualAffordances(rawBlocks, viewport, pNum, usedNames, [...pDetections, ...pSchedules], [], shapes);
+            detectedFields.push(...pDetections, ...pSchedules, ...pAffordances);
         }
+
 
         // 3.5 Export detected fields to .jform project file and reload to verify round-trip
         const codeName = file.split('_')[0].toUpperCase();

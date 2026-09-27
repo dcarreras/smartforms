@@ -205,6 +205,70 @@ def run_vision_heuristic_detection(
             })
             field_counter += 1
 
+    # 2. Tax Schedule & Financial Line-Item QUESTION/ANSWER pairing
+    # Clusters words into rows and detects line indicators (1a, 1b, 2, etc.) followed by empty right slots
+    LINE_TOKEN_REGEX = re.compile(r"^(?:\d{1,2}[a-z]?|[a-z])$", re.I)
+
+    lines_dict: Dict[float, List[Dict[str, Any]]] = {}
+    for tok in parsed_tokens:
+        y_center = (tok["y"] + tok["y2"]) / 2
+        matched_y = None
+        for ey in lines_dict:
+            if abs(ey - y_center) <= 4:
+                matched_y = ey
+                break
+        if matched_y is None:
+            matched_y = y_center
+            lines_dict[matched_y] = []
+        lines_dict[matched_y].append(tok)
+
+    for y_c, row_toks in lines_dict.items():
+        row_sorted = sorted(row_toks, key=lambda t: t["x"])
+        row_str = " ".join(t["text"] for t in row_sorted)
+
+        has_dots = row_str.count(".") >= 3
+        has_tax_keywords = any(kw in row_str.lower() for kw in [
+            "wages", "salaries", "income", "tax", "deduction", "interest", "dividends", "total", "subtract", "add line", "gross"
+        ])
+
+        if not has_dots and not has_tax_keywords:
+            continue
+
+        for idx, tok in enumerate(row_sorted):
+            t_text = tok["text"].strip()
+            if not LINE_TOKEN_REGEX.match(t_text):
+                continue
+
+            x_end = tok["x2"]
+            next_tok = row_sorted[idx + 1] if idx + 1 < len(row_sorted) else None
+            slot_x1 = x_end + 3
+            slot_x2 = (next_tok["x"] - 3) if next_tok else min(576.0, page_width - 36.0)
+            slot_w = slot_x2 - slot_x1
+
+            if 48 <= slot_w <= 135:
+                if slot_x2 >= page_width * 0.75 or (next_tok and next_tok["x"] >= 280):
+                    has_words_in_slot = any(t["x"] >= slot_x1 - 2 and t["x2"] <= slot_x2 + 2 for t in row_sorted)
+                    if has_words_in_slot:
+                        continue
+
+                    label_toks = [t["text"] for t in row_sorted[:idx] if not re.match(r"^[\.\s_—–\-]+$", t["text"])]
+                    label_str = " ".join(label_toks).strip() or f"line_{t_text}"
+                    name_slug = sanitize_field_name(label_str[:32])
+
+                    detected.append({
+                        "id": f"field_{page_num}_{field_counter}",
+                        "name": f"{name_slug}_{t_text.lower()}",
+                        "type": "textField",
+                        "x": round(slot_x1, 1),
+                        "y": round(y_c - 6, 1),
+                        "width": round(slot_w, 1),
+                        "height": 13.0,
+                        "confidence": 0.94,
+                        "detectedBy": "layoutlmv3-token-vision",
+                        "label": label_str[:40]
+                    })
+                    field_counter += 1
+
     return detected
 
 
