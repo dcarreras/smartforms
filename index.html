@@ -813,11 +813,9 @@
     <!-- APP EDITOR SCREEN                                              -->
     <!-- ═════════════════════════════════════════════════════════════ -->
     <div id="appEditorScreen" style="display: none; height: 100vh; flex-direction: column; overflow: hidden;">
-        <header class="toolbar toolbar-two-tier">
-            <!-- Tier 1: Application Bar (Brand, Menus, Document Identity, Mode Switch, Shortcuts, Export) -->
-            <div class="toolbar-tier toolbar-tier-app">
-                <div class="toolbar-tier-left toolbar-left">
-                    <button type="button" class="editor-brand-logo" id="editorBrandLogo" title="Formblatt Dashboard" aria-label="Formblatt Dashboard">
+        <header class="toolbar">
+            <div class="toolbar-left">
+                <button type="button" class="editor-brand-logo" id="editorBrandLogo" title="Formblatt Dashboard" aria-label="Formblatt Dashboard">
                     <span class="editor-brand-icon">
                         <svg viewBox="0 0 100 100" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                             <rect width="100" height="100" rx="22" fill="#0B63CE"/>
@@ -1145,76 +1143,8 @@
                     </div>
                 </nav>
             </div>
-
-            <!-- Tier 1 Center: Document Identity Badge & Local Storage Status -->
-            <div class="toolbar-tier-center">
-                <div class="doc-identity-badge" id="docIdentityBadge" title="Click to rename document">
-                    <div class="doc-title-wrapper">
-                        <i data-lucide="file-text" class="doc-title-icon" style="width: 14px; height: 14px; color: #2563eb;"></i>
-                        <span id="docTitleInline" class="doc-title-text" tabindex="0" role="button" aria-label="Rename document">interactive_form.pdf</span>
-                        <input type="text" id="docTitleInlineInput" class="doc-title-input" style="display: none;" aria-label="Edit document file name" spellcheck="false">
-                    </div>
-                    <div class="doc-meta-pills">
-                        <span class="doc-category-badge" id="docCategoryBadge">Document</span>
-                        <span class="doc-meta-details" id="docMetaDetails">1 Page • 0 KB</span>
-                        <span class="doc-autosave-badge" id="docAutosaveBadge" title="Encrypted client-side browser storage">
-                            <span class="autosave-dot"></span>
-                            <span>Saved</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tier 1 Right: Mode Switcher, Command Palette, Help & Export -->
-            <div class="toolbar-tier-right toolbar-right">
-                <!-- Mode Toggle -->
-                <div class="mode-segmented-toggle" id="modeSegmentedToggle">
-                    <div class="mode-segmented-indicator" id="modeIndicator"></div>
-                    <button id="modeDesignBtn" type="button" class="mode-toggle-btn active" data-tooltip="Design Mode (Build &amp; Arrange Fields)" aria-label="Design Mode">
-                        <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i>
-                        <span>Design</span>
-                    </button>
-                    <button id="modeFillBtn" type="button" class="mode-toggle-btn" data-tooltip="Preview &amp; Test Interactive Form" data-kbd="⌘P" aria-label="Fill &amp; Test Mode">
-                        <i data-lucide="play" style="width: 13px; height: 13px;"></i>
-                        <span>Fill</span>
-                    </button>
-                </div>
-
-                <div class="tool-divider" style="height: 18px; margin: 0 1px;"></div>
-
-                <!-- Secondary Actions -->
-                <button id="commandPaletteToolbarBtn" class="toolbar-action-btn" onclick="window.openCommandPalette?.()" data-tooltip="Command Palette" data-kbd="⌘K" aria-label="Open Command Palette (⌘K)">
-                    <i data-lucide="command" style="width: 15px; height: 15px;"></i>
-                </button>
-                <button id="shortcutsHelpBtn" class="toolbar-action-btn" data-tooltip="Keyboard Shortcuts" data-kbd="?" aria-label="Keyboard Shortcuts &amp; Help">
-                    <i data-lucide="keyboard" style="width: 15px; height: 15px;"></i>
-                </button>
-
-                <!-- Primary CTA Button -->
-                <button id="generatePdfBtn" class="btn-primary toolbar-export-btn" data-tooltip="Export Fillable PDF" data-kbd="⌘E" aria-label="Export PDF">
-                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-                    <span>Export PDF</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Tier 2: Creative Canvas Ribbon (Canvas Tools, History & Layout Helpers) -->
-        <div class="toolbar-tier toolbar-tier-tools">
-            <div class="toolbar-tier-left">
-                <div class="toolbar-quick-actions" aria-label="Edit actions">
-                    <button id="quickUndoBtn" class="toolbar-action-btn" data-tooltip="Undo" data-kbd="⌘Z" aria-label="Undo">
-                        <i data-lucide="undo-2" style="width: 14px; height: 14px;"></i>
-                    </button>
-                    <button id="quickRedoBtn" class="toolbar-action-btn" data-tooltip="Redo" data-kbd="⌘⇧Z" aria-label="Redo">
-                        <i data-lucide="redo-2" style="width: 14px; height: 14px;"></i>
-                    </button>
-                    <button id="quickDeleteBtn" class="toolbar-action-btn toolbar-delete-btn" data-tooltip="Delete Selected" data-kbd="Del" aria-label="Delete selected">
-                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="toolbar-tier-center toolbar-center">
+        
+            <div class="toolbar-center">
                 <div class="segmented-toolbar" role="toolbar" aria-label="Field creation and canvas tools">
                     <div class="segmented-indicator" id="toolIndicator"></div>
                     <!-- Navigation / View Tools -->
@@ -1285,10 +1215,23 @@
                     </button>
                     <button class="tool-btn" data-tool="signature" data-tooltip="Signature Field" data-kbd="S" aria-label="Signature tool">
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L20 7.5V13"/><path d="M12 18s1.5-2 3-2 3 2 4.5 2"/><path d="M7 14s2-3 4-3 3 3 5 3"/></svg>
+                    </button>
+                </div>
+
+                <div class="toolbar-quick-actions" aria-label="Edit actions">
+                    <button id="quickUndoBtn" class="toolbar-action-btn" data-tooltip="Undo" data-kbd="⌘Z" aria-label="Undo">
+                        <i data-lucide="undo-2" style="width: 14px; height: 14px;"></i>
+                    </button>
+                    <button id="quickRedoBtn" class="toolbar-action-btn" data-tooltip="Redo" data-kbd="⌘⇧Z" aria-label="Redo">
+                        <i data-lucide="redo-2" style="width: 14px; height: 14px;"></i>
+                    </button>
+                    <button id="quickDeleteBtn" class="toolbar-action-btn toolbar-delete-btn" data-tooltip="Delete Selected" data-kbd="Del" aria-label="Delete selected">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    </button>
                 </div>
             </div>
             
-            <div class="toolbar-tier-right">
+            <div class="toolbar-right">
                 <!-- Smart Assistants & Canvas Guides -->
                 <div class="toolbar-assistants-group">
                     <button id="toggleGuidesBtn" class="tool-btn active" data-tooltip="Smart Alignment Guides" data-kbd="⌘;" aria-label="Toggle Smart Alignment Guides">
@@ -1299,9 +1242,39 @@
                         <span>Auto-Detect</span>
                     </button>
                 </div>
+
+                <div class="tool-divider" style="height: 18px; margin: 0 1px;"></div>
+
+                <!-- Mode Toggle -->
+                <div class="mode-segmented-toggle" id="modeSegmentedToggle">
+                    <div class="mode-segmented-indicator" id="modeIndicator"></div>
+                    <button id="modeDesignBtn" type="button" class="mode-toggle-btn active" data-tooltip="Design Mode (Build &amp; Arrange Fields)" aria-label="Design Mode">
+                        <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i>
+                        <span>Design</span>
+                    </button>
+                    <button id="modeFillBtn" type="button" class="mode-toggle-btn" data-tooltip="Preview &amp; Test Interactive Form" data-kbd="⌘P" aria-label="Fill &amp; Test Mode">
+                        <i data-lucide="play" style="width: 13px; height: 13px;"></i>
+                        <span>Fill</span>
+                    </button>
+                </div>
+
+                <div class="tool-divider" style="height: 18px; margin: 0 1px;"></div>
+
+                <!-- Secondary Actions -->
+                <button id="commandPaletteToolbarBtn" class="toolbar-action-btn" onclick="window.openCommandPalette?.()" data-tooltip="Command Palette" data-kbd="⌘K" aria-label="Open Command Palette (⌘K)">
+                    <i data-lucide="command" style="width: 15px; height: 15px;"></i>
+                </button>
+                <button id="shortcutsHelpBtn" class="toolbar-action-btn" data-tooltip="Keyboard Shortcuts" data-kbd="?" aria-label="Keyboard Shortcuts &amp; Help">
+                    <i data-lucide="keyboard" style="width: 15px; height: 15px;"></i>
+                </button>
+
+                <!-- Primary CTA Button -->
+                <button id="generatePdfBtn" class="btn-primary toolbar-export-btn" data-tooltip="Export Fillable PDF" data-kbd="⌘E" aria-label="Export PDF">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                    <span>Export PDF</span>
+                </button>
             </div>
-        </div>
-    </header>
+        </header>
 
     <div class="workspace">
         <aside class="left-panel" id="leftPanel">
