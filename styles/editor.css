@@ -1079,3 +1079,275 @@ body:not(.editor-active) #calcPickerHud {
         padding-bottom: env(safe-area-inset-bottom, 0px) !important;
     }
 }
+
+/* ── Two-Tier Studio Header Architecture ────────────────────────────── */
+.toolbar.toolbar-two-tier {
+    min-height: 82px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    gap: 0;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 100;
+}
+
+.toolbar-tier {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 16px;
+    box-sizing: border-box;
+    gap: 12px;
+}
+
+/* Tier 1: Application Bar (Navigation, Identity & Mode) */
+.toolbar-tier-app {
+    height: 38px;
+    min-height: 38px;
+    background: #fbfcfd;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.toolbar-tier-app .editor-brand-logo {
+    padding: 0 2px 0 0;
+    font-size: 1.05rem;
+    gap: 7px;
+}
+
+.toolbar-tier-app .editor-brand-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+}
+
+.toolbar-tier-app .editor-brand-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.toolbar-tier-app .app-menu-bar {
+    height: 28px;
+    padding: 1px;
+}
+
+.toolbar-tier-app .menu-bar-btn {
+    height: 26px;
+    padding: 0 9px;
+    font-size: 12px;
+}
+
+.toolbar-tier-app .mode-segmented-toggle {
+    height: 28px;
+    padding: 2px;
+}
+
+.toolbar-tier-app .mode-toggle-btn {
+    height: 24px;
+    min-width: 66px;
+    width: 66px;
+    padding: 0 8px;
+    font-size: 11.5px;
+    gap: 4px;
+}
+
+.toolbar-tier-app .toolbar-action-btn {
+    height: 28px;
+    min-height: 28px;
+    width: 28px;
+    border-radius: 6px;
+}
+
+.toolbar-tier-app .toolbar-export-btn {
+    height: 28px;
+    min-height: 28px;
+    padding: 0 12px;
+    font-size: 12px;
+    gap: 5px;
+    border-radius: 6px;
+}
+
+/* Document Identity Badge (Center of Tier 1) */
+.doc-identity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 10px 2px 8px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    max-width: 520px;
+    cursor: default;
+    user-select: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.doc-identity-badge:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.doc-title-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.doc-title-icon {
+    flex-shrink: 0;
+}
+
+.doc-title-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 1px 4px;
+    transition: all 0.12s ease;
+}
+
+.doc-title-text:hover {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.doc-title-input {
+    height: 22px;
+    padding: 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #0f172a;
+    background: #ffffff;
+    border: 1.5px solid #2563eb;
+    border-radius: 4px;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    max-width: 200px;
+    box-sizing: border-box;
+}
+
+.doc-meta-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.doc-category-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #3b82f6;
+    background: #eff6ff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+}
+
+.doc-meta-details {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.doc-autosave-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid #a7f3d0;
+    white-space: nowrap;
+}
+
+.autosave-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #059669;
+    display: inline-block;
+    box-shadow: 0 0 4px rgba(5, 150, 105, 0.6);
+}
+
+/* Tier 2: Creative Canvas Ribbon (Tools & Helpers) */
+.toolbar-tier-tools {
+    height: 44px;
+    min-height: 44px;
+    background: #ffffff;
+}
+
+.toolbar-tier-tools .toolbar-tier-left {
+    min-width: 140px;
+}
+
+.toolbar-tier-tools .toolbar-tier-right {
+    min-width: 140px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.toolbar-tier-tools .toolbar-tier-center {
+    display: flex;
+    justify-content: center;
+}
+
+.toolbar-tier-tools .segmented-toolbar {
+    height: 38px;
+    padding: 3px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.toolbar-tier-tools .segmented-toolbar .tool-btn {
+    width: 34px;
+    height: 32px;
+}
+
+.toolbar-tier-tools .toolbar-quick-actions {
+    height: 34px;
+    padding: 2px;
+}
+
+.toolbar-tier-tools .toolbar-quick-actions .toolbar-action-btn {
+    width: 30px;
+    height: 30px;
+}
+
+.toolbar-tier-tools .toolbar-smart-btn {
+    height: 32px;
+}
+
+/* Mobile Media Query Adaptations */
+@media (max-width: 767px) {
+    .toolbar-tier-app,
+    .toolbar-tier-tools,
+    .toolbar-tier-left,
+    .toolbar-tier-center,
+    .toolbar-tier-right {
+        display: contents !important;
+    }
+    .doc-identity-badge {
+        display: none !important;
+    }
+}
