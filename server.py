@@ -226,7 +226,7 @@ def run_vision_heuristic_detection(
         row_sorted = sorted(row_toks, key=lambda t: t["x"])
         row_str = " ".join(t["text"] for t in row_sorted)
 
-        has_dots = row_str.count(".") >= 3
+        has_dots = bool(re.search(r'(?:\.\s*){4,}', row_str) or row_str.count(".") >= 5)
         has_tax_keywords = any(kw in row_str.lower() for kw in [
             "wages", "salaries", "income", "tax", "deduction", "interest", "dividends", "total", "subtract", "add line", "gross"
         ])
@@ -236,7 +236,10 @@ def run_vision_heuristic_detection(
 
         for idx, tok in enumerate(row_sorted):
             t_text = tok["text"].strip()
-            if not LINE_TOKEN_REGEX.match(t_text):
+            is_num_token = bool(re.match(r"^\d{1,2}[a-z]?$", t_text, re.I))
+            is_letter_subline = bool(re.match(r"^[a-z]$", t_text, re.I) and has_dots)
+
+            if not is_num_token and not is_letter_subline:
                 continue
 
             x_end = tok["x2"]

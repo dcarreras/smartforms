@@ -2522,17 +2522,22 @@ export function detectTaxScheduleLineAffordances(rawBlocks, viewport, pageNum, u
         const rowItems = line.items.sort((a, b) => a.x - b.x);
         const rowStr = rowItems.map(it => it.str).join(" ");
 
-        // Check if line looks like a tax schedule, invoice line, or dotted leader prompt
-        const hasDots = (rowStr.match(/\./g) || []).length >= 3;
+        // Strict dotted leader check: at least 4 dots spaced out or 5 total periods
+        const hasDots = /(?:\.\s*){4,}/.test(rowStr) || (rowStr.match(/\./g) || []).length >= 5;
         const hasSchedulePrompt = /\b(?:line|lines|add|subtract|total|amount|gross|income|tax|wages|deduction|interest|dividends|credit|payment|refund|penalty|balance|due)\b/i.test(rowStr);
 
+        // A schedule line must have dotted leaders OR explicit schedule computation prompt keywords
         if (!hasDots && !hasSchedulePrompt) continue;
 
         for (let i = 0; i < rowItems.length; i++) {
             const item = rowItems[i];
             const token = item.str.trim();
 
-            if (!LINE_TOKEN_REGEX.test(token)) continue;
+            const isNumToken = /^\d{1,2}[a-z]?$/i.test(token);
+            // Single letters (e.g. 'a', 'b', 'z') ONLY allowed if there is an explicit dotted leader in the line
+            const isLetterSubline = /^[a-z]$/i.test(token) && hasDots;
+
+            if (!isNumToken && !isLetterSubline) continue;
 
             const xEnd = item.x + item.width;
             const nextItem = i + 1 < rowItems.length ? rowItems[i + 1] : null;
@@ -2556,6 +2561,8 @@ export function detectTaxScheduleLineAffordances(rawBlocks, viewport, pageNum, u
                         .map(w => w.str)
                         .join(" ")
                         .trim();
+
+                    if (!labelWords || isUniversalStaticText(labelWords)) continue;
 
                     const cleanLabel = (labelWords.length > 0 ? labelWords : `line_${token}`).slice(0, 32);
                     const sem = resolveSemanticProps(cleanLabel || `line_${token}`, "textField", usedNames);
@@ -2861,6 +2868,15 @@ export function detectVisualAffordances(rawBlocks, viewport, pageNum, usedNames,
             const hasExplicitVectorElements = (vectorShapes?.inputBoxRects?.length || 0) > 0 || (vectorShapes?.underlines?.length || 0) > 0;
             if (hasExplicitVectorElements && !matchingUnderline && !hasTextPlaceholder) {
                 continue;
+            }
+
+            // On pages without underlines or placeholders, ONLY recognize standard form semantic keys (name, date, ssn, email, phone, etc.)
+            // to suppress section headings and prose titles like "Purpose of Package:", "Exception:", "Important:", "Worksheet:"
+            if (!matchingUnderline && !hasTextPlaceholder) {
+                const isRecognizedFormKey = /^(?:name|first\s*name|last\s*name|full\s*name|address|street|city|state|zip|postal|phone|telephone|mobile|fax|email|e-mail|date|dob|birth|ssn|ein|tin|tax\s*id|title|signature|sign|amount|total|subtotal|quantity|qty|price|rate|company|employer|organization)$/i.test(cleanLabel.replace(/[:_.\s-]+$/, ""));
+                if (!isRecognizedFormKey) {
+                    continue;
+                }
             }
 
             if (matchingUnderline) {
