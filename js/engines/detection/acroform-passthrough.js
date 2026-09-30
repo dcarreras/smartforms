@@ -48,7 +48,7 @@ export async function getExistingWidgetFields(page, viewport, pageNum, usedNames
                 ? w.options.map(o => typeof o === "string" ? o : (o.displayValue || o.exportValue || ""))
                 : ["Select...", "Option 1", "Option 2"];
             defaultValue = w.fieldValue || (options.length > 0 ? options[0] : "Select...");
-        } else if (/date/i.test(w.fieldName || "")) {
+        } else if (/\b(?:date|dob)\b/i.test((w.fieldName || "").replace(/_/g, " ")) || /\b(?:date|dob)\b/i.test((w.alternativeText || "").replace(/_/g, " "))) {
             type = "dateField";
         }
 
@@ -59,6 +59,9 @@ export async function getExistingWidgetFields(page, viewport, pageNum, usedNames
             ? sourceName
             : (usedNames.has(sourceName) ? sem.name : sourceName);
         if (!isRadio) usedNames.add(fieldName);
+
+        const isComb = !!(fieldFlags & 16777216);
+        const maxLen = w.maxLen || undefined;
 
         fields.push({
             id: generateFieldId(),
@@ -74,6 +77,13 @@ export async function getExistingWidgetFields(page, viewport, pageNum, usedNames
                 exportValue: w.buttonValue || w.fieldValue || "",
                 radioValue: w.buttonValue || w.fieldValue || "",
                 defaultChecked: !!(w.fieldValue && w.fieldValue !== "Off")
+            } : {}),
+            ...(isCheckbox ? {
+                defaultChecked: !!(w.fieldValue && w.fieldValue !== "Off")
+            } : {}),
+            ...(isComb ? {
+                isComb: true,
+                ...(maxLen ? { maxLength: maxLen } : {})
             } : {}),
             x: Math.max(0, Math.round(left)),
             y: Math.max(0, Math.round(top)),

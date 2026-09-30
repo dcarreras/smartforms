@@ -714,12 +714,15 @@ export async function loadTemplate(key, onLoaded) {
         state.originalPdfBytes = await createTemplatePdf(key);
         state.pdfDoc = await pdfjs.getDocument({ data: state.originalPdfBytes.slice() }).promise;
         state.totalPages = state.pdfDoc.numPages;
-        state.fields = JSON.parse(JSON.stringify(tpl.fields));
-        state.fields.forEach(f => { f.page = 1; });
+        state.fileName = key + ".pdf";
+
+        const { importExistingAcroFormFields } = await import("../engines/detection/index.js");
+        state.fields = [];
+        await importExistingAcroFormFields("all");
+        state.fields.forEach(f => { f.page = f.page || 1; });
         state.fieldCounter = state.fields.length + 1;
         state.selectedFieldIds.clear();
         state.lastSelectedFieldId = state.fields[0]?.id || null;
-        state.fileName = key + ".pdf";
 
         await analyzePdfDocument();
 
@@ -1349,8 +1352,9 @@ export function initLandingController(onLoaded) {
                 const tpl = STARTER_TEMPLATES[key];
                 pendingTemplateKey = key;
 
+                const count = tpl ? (tpl.fieldCount ?? tpl.fields?.length ?? 0) : 0;
                 if (sampleTitle) sampleTitle.textContent = tpl ? tpl.title : "Sample Document Preview";
-                if (sampleDesc) sampleDesc.textContent = tpl ? `${tpl.description} Includes ${tpl.fields.length} pre-configured interactive fields.` : "Preview this pre-built sample document before editing.";
+                if (sampleDesc) sampleDesc.textContent = tpl ? `${tpl.description} Includes ${count} pre-configured interactive fields.` : "Preview this pre-built sample document before editing.";
 
                 if (sampleModal) {
                     sampleModal.style.display = "flex";

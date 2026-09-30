@@ -51,5 +51,8 @@ scripts/build_synthetic_acroforms.py
 scripts/detect_cli.mjs
 scripts/flatten_fitz.py
 scripts/flatten_pdflib.mjs
+scripts/templates/
+test/fixtures/
 README_HARNESS.md
+
 
