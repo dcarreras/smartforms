@@ -75,10 +75,10 @@ describe('semantic-resolver', () => {
         });
 
         it('handles non-Latin-script fallback without collapsing to empty string', () => {
-            // Devanagari "नाम"
-            const devRes = resolveSemanticProps('नाम', 'textField', new Set());
+            // Devanagari fallback slugify preserves characters and combining marks (\p{M})
+            const devRes = resolveSemanticProps('कागजात', 'textField', new Set());
             assert.ok(devRes.name.length > 0);
-            assert.equal(devRes.name, 'नम');
+            assert.equal(devRes.name, 'कागजात');
 
             // CJK "姓名" (Full Name)
             const cjkRes = resolveSemanticProps('姓名', 'textField', new Set());
@@ -193,6 +193,46 @@ describe('semantic-resolver', () => {
             // Acroform field is always 1.0
             const acroField = { id: 'acro_1', detectedBy: 'acroform' };
             assert.equal(computeFieldConfidence(acroField), 1.0);
+        });
+
+        it('boosts unboxed vertical cluster stacks (3+ fields) to confidence >= 0.90 while keeping isolated colons < 0.90', async () => {
+            const { computeFieldConfidence } = await import('./module-loader.js');
+            const isolatedField = {
+                id: 'unboxed_1',
+                detectedBy: 'affordance2_colon_prompt',
+                x: 120,
+                y: 100,
+                label: 'Full Name',
+                name: 'full_name',
+                dataFormat: 'text'
+            };
+            // Isolated unboxed prompt without cluster
+            const isolatedScore = computeFieldConfidence(isolatedField, [], 1);
+            assert.ok(isolatedScore < 0.90, `Isolated prompt should stay below 0.90, got ${isolatedScore}`);
+
+            // 3+ vertical cluster prompt stack in unboxed form
+            const field1 = { id: 'p1', detectedBy: 'affordance2_colon_prompt', x: 120, y: 100, labelX: 40, label: 'Name', name: 'full_name', dataFormat: 'text' };
+            const field2 = { id: 'p2', detectedBy: 'affordance2_colon_prompt', x: 120, y: 130, labelX: 40, label: 'Address', name: 'street_address', dataFormat: 'text' };
+            const field3 = { id: 'p3', detectedBy: 'affordance2_colon_prompt', x: 120, y: 160, labelX: 40, label: 'Date', name: 'date', dataFormat: 'date' };
+
+            const clusterScore = computeFieldConfidence(field1, [field2, field3], 1);
+            assert.ok(clusterScore >= 0.90, `Vertical cluster stack should reach >= 0.90, got ${clusterScore}`);
+        });
+
+        it('resolves multilingual administrative roles and identity terms accurately', async () => {
+            const { resolveSemanticProps } = await import('./module-loader.js');
+            
+            const sigRes = resolveSemanticProps('प्रशासकीय अधिकृत');
+            assert.equal(sigRes.type, 'signature', 'Administrative officer should resolve to signature');
+
+            const citRes = resolveSemanticProps('नागरिकता प्रमाणपत्र नं.');
+            assert.equal(citRes.name, 'citizenship_number', 'Citizenship certificate should resolve to citizenship_number');
+
+            const addrRes = resolveSemanticProps('स्थायी ठेगाना');
+            assert.equal(addrRes.name, 'street_address', 'Permanent address should resolve to street_address');
+
+            const nameRes = resolveSemanticProps('नाम / Name');
+            assert.equal(nameRes.name, 'full_name', 'Dual language Name should resolve to full_name');
         });
     });
 

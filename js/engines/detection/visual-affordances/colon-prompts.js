@@ -12,28 +12,82 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
 
     for (const line of textLines) {
         const text = line.str.trim();
-        if (/^[_\-=\*#•·—–─━│┃┌┐└┘├┤┬┴┼░▒▓█\s]+$/.test(text) || (text.includes("?") && !text.includes(":"))) continue;
+        if (/^[_\-=\*#•·—–─━│┃┌┐└┘├┤┬┴┼░▒▓█\s]+$/.test(text) && !/(?:\.\s*){4,}|_{4,}/.test(text)) continue;
+        if (text.includes("?") && !text.includes(":") && !text.includes("ः") && !text.includes("：")) continue;
+
+        // ── Sub-affordance A: Standalone typed dotted/underscore line with sub-caption directly below (e.g. signature leader) ──
+        const isStandaloneRule = /^[_\s.\-…·\u2026]{4,}$/.test(text) && (text.match(/[._…]/g) || []).length >= 4;
+        if (isStandaloneRule && line.width >= 40) {
+            const subCaptionLine = textLines.find(other => 
+                other !== line &&
+                other.y > line.y &&
+                (other.y - line.y) <= 30 &&
+                Math.abs(other.x - line.x) <= 50
+            );
+            if (subCaptionLine) {
+                const subText = subCaptionLine.str.replace(/[()]/g, '').trim();
+                if (subText.length >= 2 && !isUniversalStaticText(subText)) {
+                    const subSem = resolveSemanticProps(subText);
+                    const isSigOrDate = subSem.type === "signature" || subSem.type === "dateField" || subSem.id === "job_title";
+                    if (isSigOrDate) {
+                        const fieldType = subSem.type === "dateField" ? "dateField" : "signature";
+                        const targetW = Math.max(60, Math.min(line.width, fieldType === "signature" ? 200 : 120));
+                        const targetH = fieldType === "signature" ? 36 : 22;
+                        const targetY = Math.max(0, Math.round(line.y - (fieldType === "signature" ? 28 : 18)));
+                        const sigField = {
+                            id: generateFieldId(),
+                            type: fieldType,
+                            name: subSem.name || (fieldType === "signature" ? "signature" : "date"),
+                            x: Math.max(10, Math.round(line.x)),
+                            y: targetY,
+                            width: Math.round(targetW),
+                            height: targetH,
+                            page: pageNum,
+                            borderStyle: "solid",
+                            fillStyle: "white",
+                            multiline: false,
+                            autofill: subSem.autofill || "",
+                            dataFormat: fieldType === "dateField" ? "date" : "text",
+                            label: subText,
+                            labelX: line.x,
+                            hasPlaceholder: true,
+                            tooltip: subText,
+                            detectedBy: "affordance2_colon_prompt",
+                            confidence: 0.85
+                        };
+                        if (!isOverlapping(sigField, fields, 0.20)) {
+                            fields.push(sigField);
+                        }
+                        continue;
+                    }
+                }
+            }
+        }
 
         const promptMatches = [
-            ...text.matchAll(/([\p{L}\p{N}][\p{L}\p{N}\s/()[\]'’"«»*.,#$&°º-]*?)(?:[:ः]|(?=\s*_{2,}))/gu)
+            ...text.matchAll(/([\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N}\s/()[\]'’"«»*.,#$&°º-]*?)(?:[:ः：]|(?=\s*_{2,})|(?=\s*(?:\.\s*){5,}))/gu)
         ].filter(m => m[1].trim().length >= 2)
          .sort((a, b) => a.index - b.index);
 
         for (let i = 0; i < promptMatches.length; i++) {
             const m = promptMatches[i];
-            const cleanLabel = m[1].trim();
+            const cleanLabelRaw = m[1].trim();
+            const cleanLabel = cleanLabelRaw
+                .replace(/^[\s\u2022\u25B6\u25BA\u23E9\u25CF\u25AA\u25AB\uF038\uF0A7\uF0B7\uF06E\uF0A8\uF0FE\u27A4\u27A2\u279C\u2794\u2799\u2798\u2714\u2713\u2043\u2219\u25E6\u2023\-\*•>»]+/u, '')
+                .replace(/^\s*(?:\(?\d+[.)]\s*|[a-zA-Z][.)]\s+|[०-९]+[.)]\s*)/u, '')
+                .trim();
+            if (cleanLabel.length < 2) continue;
             if (isUniversalStaticText(cleanLabel)) continue;
 
             // Skip questions, instructional clauses, and long phrases before colons
             const textAfterColon = text.slice(m.index + m[0].length).trim();
-            const hasExplicitPlaceholder = /_{2,}|[\.]{3,}/.test(textAfterColon);
+            const hasExplicitPlaceholder = /_{2,}|(?:\.\s*){5,}|[\.]{5,}|…{2,}/.test(textAfterColon);
             const labelWithoutParentheticals = cleanLabel.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
             const maxLabelLen = hasExplicitPlaceholder ? 65 : 40;
             const maxLabelWords = hasExplicitPlaceholder ? 9 : 5;
             if (cleanLabel.includes("?") || labelWithoutParentheticals.length > maxLabelLen || labelWithoutParentheticals.split(/\s+/).length > maxLabelWords) continue;
             if (/^(?:are|is|was|were|do|does|did|have|has|had|can|could|will|would|should|may|what|where|when|which|why|how|if|please|note|notice|caution|warning|section|part|step|item|for|to|include|includes|including|such|case|report|submit|provide)\b/i.test(cleanLabel)) continue;
             if (/\b(?:include\s+the\s+following|includes?|including|as\s+follows|such\s+as|case\s+if|for\s+example|select\s+one|check\s+only\s+one|choose\s+one)\b/i.test(cleanLabel)) continue;
-            if (/^\s*\d+[\s.)]/.test(cleanLabel)) continue;
 
             // 1. Skip if choices (checkboxes/radios) immediately follow
             if (CHECKBOX_REGEX.test(textAfterColon)) {
@@ -45,7 +99,7 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
             if (/select\s*all|select\s*one|bitte\s*ausw[äa]hlen|veuillez\s*s[eé]lectionner|seleccione/i.test(cleanLabel)) continue;
 
             // 2. Skip if this is already-filled static text (e.g. "REF: FRM-7745", "REVISION: 2.4", "STATUS: BLANK")
-            const nextPromptInLine = textAfterColon.search(/[\p{L}\p{N}\s/()[\]'’"«»*.,#$&_°º-]+?[:ः]/u);
+            const nextPromptInLine = textAfterColon.search(/[\p{L}\p{M}\p{N}\s/()[\]'’"«»*.,#$&_°º-]+?[:ः：]/u);
             const valueChunk = nextPromptInLine !== -1 ? textAfterColon.slice(0, nextPromptInLine).trim() : textAfterColon;
             const isBlankPlaceholder = /^[\s_.\-…·\u2026\u2022]*$/.test(valueChunk);
             const isAlreadyFilledStatic = valueChunk.length > 0 && !isBlankPlaceholder;
@@ -70,7 +124,7 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
                 charOffset += it.str.length + 1;
             }
 
-            const placeholderItem = line.items.find(it => /_{2,}|[\.]{3,}/.test(it.str) && it.x >= promptEndX - 10);
+            const placeholderItem = line.items.find(it => /_{2,}|(?:\.\s*){4,}|[\.]{4,}|…{2,}/.test(it.str) && it.x >= promptEndX - 10);
             const targetX = Math.round(placeholderItem && placeholderItem.x >= promptEndX + 2 ? placeholderItem.x : promptEndX + 6);
             let targetY = Math.max(0, Math.round(line.y - (isSig ? 6 : 2)));
             let targetH = isSig ? 38 : (isMulti ? 50 : 20);
@@ -142,7 +196,7 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
                 return !isRectEdge;
             });
 
-            const hasTextPlaceholder = /_{2,}|[\.]{3,}/.test(valueChunk) || Boolean(placeholderItem);
+            const hasTextPlaceholder = /_{2,}|(?:\.\s*){4,}|[\.]{4,}|…{2,}/.test(valueChunk) || Boolean(placeholderItem);
 
             // In forms where explicit vector inputs or underlines exist, ignore arbitrary text colons in paragraphs/instructions
             // UNLESS there is an explicit visual placeholder (underscores or dots) written by the author
@@ -151,10 +205,15 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
                 continue;
             }
 
-            // On pages without underlines or placeholders, ONLY recognize standard form semantic keys (name, date, ssn, email, phone, etc.)
+            // On pages without underlines or placeholders, ONLY recognize standard form semantic keys (multilingual)
             // to suppress section headings and prose titles like "Purpose of Package:", "Exception:", "Important:", "Worksheet:"
             if (!matchingUnderline && !hasTextPlaceholder) {
-                const isRecognizedFormKey = /^(?:name|first\s*name|last\s*name|full\s*name|address|street|city|state|zip|postal|phone|telephone|mobile|fax|email|e-mail|date|dob|birth|ssn|ein|tin|tax\s*id|title|signature|sign|amount|total|subtotal|quantity|qty|price|rate|company|employer|organization)$/i.test(cleanLabel.replace(/[:_.\s-]+$/, ""));
+                const isRecognizedFormKey = Boolean(
+                    (preSem.dataFormat && preSem.dataFormat !== "text") ||
+                    preSem.autofill ||
+                    (preSem.name && !/^(?:field|input|box|text)_\d+$/i.test(preSem.name) && preSem.name !== "field" && preSem.name !== "input") ||
+                    /^(?:name|first\s*name|last\s*name|full\s*name|address|street|city|state|zip|postal|phone|telephone|mobile|fax|email|e-mail|date|dob|birth|ssn|ein|tin|tax\s*id|title|signature|sign|amount|total|subtotal|quantity|qty|price|rate|company|employer|organization)$/i.test(cleanLabel.replace(/[:_.\s-]+$/, ""))
+                );
                 if (!isRecognizedFormKey) {
                     continue;
                 }
@@ -208,6 +267,9 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
                 multiline: isMulti || sem.multiline || false,
                 autofill: sem.autofill || "",
                 dataFormat: isDate ? "date" : (sem.dataFormat || "text"),
+                label: cleanLabel,
+                labelX: line.x,
+                hasPlaceholder: Boolean(hasTextPlaceholder || matchingUnderline),
                 tooltip: (cleanLabel || fieldName).replace(/[:_—–-]+$/, '').trim(),
                 detectedBy: "affordance2_colon_prompt",
                 confidence: 0.65

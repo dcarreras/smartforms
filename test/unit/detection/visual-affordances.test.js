@@ -119,5 +119,34 @@ describe('visual-affordances', () => {
             assert.equal(fields[0].type, 'textField');
             assert.equal(fields[0].name, 'full_name');
         });
+
+        it('strips bullet glyphs and numbered prefixes from prompts', () => {
+            const rawBlocks = [
+                { x: 50, y: 100, width: 90, height: 12, str: '⏩ नाम, थर:' },
+                { x: 150, y: 100, width: 120, height: 12, str: '................' },
+                { x: 50, y: 140, width: 90, height: 12, str: '1. Street Address:' },
+                { x: 150, y: 140, width: 120, height: 12, str: '________________' }
+            ];
+            const textLines = clusterIntoLines(rawBlocks);
+            const fields = [];
+            detectColonPrompts(textLines, rawBlocks, viewport, 1, new Set(), fields, null, null);
+            assert.equal(fields.length, 2);
+            assert.equal(fields[0].name, 'last_name');
+            assert.equal(fields[1].name, 'street_address');
+        });
+
+        it('detects sub-captioned dotted signature lines in unboxed forms', () => {
+            const rawBlocks = [
+                { x: 350, y: 500, width: 150, height: 12, str: '....................................' },
+                { x: 360, y: 520, width: 120, height: 12, str: '(प्रशासकीय अधिकृत)' }
+            ];
+            const textLines = clusterIntoLines(rawBlocks);
+            const fields = [];
+            detectColonPrompts(textLines, rawBlocks, viewport, 1, new Set(), fields, null, null);
+            assert.equal(fields.length, 1);
+            assert.equal(fields[0].type, 'signature');
+            assert.equal(fields[0].label, 'प्रशासकीय अधिकृत');
+            assert.ok(fields[0].hasPlaceholder);
+        });
     });
 });
