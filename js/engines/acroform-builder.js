@@ -795,6 +795,7 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
                 let rg;
                 const rgName = f.radioGroup || nm;
                 try { rg = form.getRadioGroup(rgName); } catch { rg = form.createRadioGroup(rgName); }
+                try { const rgTooltip = resolveAutofillTooltip(f); if (rgTooltip) rg.setToolTip(rgTooltip); } catch(e) {}
                 const optionValue = f.exportValue || f.radioValue || f.value || `option_${f.id}`;
                 rg.addOptionToPage(optionValue, page, common);
                 if (f.defaultChecked || f.checked) {

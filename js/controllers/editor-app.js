@@ -459,7 +459,7 @@ export function initEditorSubsystems() {
         });
     });
 
-    if (typeof document !== "undefined") {
+    if (typeof document !== "undefined" && typeof document.querySelectorAll === "function") {
         // Submenu trigger toggle on tap/click
         document.querySelectorAll(".menu-submenu-trigger").forEach(trigger => {
             trigger.addEventListener("click", e => {

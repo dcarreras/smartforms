@@ -285,14 +285,16 @@ export function extractScannedTextLines(binary, width, height, scale = 1.0) {
                                     const userX = Math.round(wordStartX / scale);
                                     const userY = Math.round(lineStartY / scale);
                                     const userW = Math.round(wordW / scale);
-                                    const userH = Math.round(lineH / scale);
+                                     const userH = Math.round(lineH / scale);
 
                                     textBlocks.push({
                                         x: userX,
                                         y: userY,
                                         width: userW,
                                         height: userH,
-                                        str: inferScannedLabelHeuristic(userW, userH)
+                                        str: inferScannedLabelHeuristic(userW, userH),
+                                        confidence: 0.35,
+                                        isGeometricFallback: true
                                     });
                                 }
                             }
@@ -308,16 +310,27 @@ export function extractScannedTextLines(binary, width, height, scale = 1.0) {
     return textBlocks;
 }
 
+const FALLBACK_LABELS_BY_LOCALE = {
+    de: { info: "Informationen / Details:", name: "Vollständiger Name / Beschreibung:", date: "Datum / Referenz:", field: "Feld:" },
+    fr: { info: "Informations / Détails:", name: "Nom complet / Description:", date: "Date / Référence:", field: "Champ:" },
+    es: { info: "Información / Detalles:", name: "Nombre completo / Descripción:", date: "Fecha / Referencia:", field: "Campo:" },
+    it: { info: "Informazioni / Dettagli:", name: "Nome completo / Descrizione:", date: "Data / Riferimento:", field: "Campo:" },
+    nl: { info: "Informatie / Details:", name: "Volledige naam / Beschrijving:", date: "Datum / Referentie:", field: "Veld:" },
+    en: { info: "Information / Details:", name: "Full Name / Description:", date: "Date / Reference:", field: "Field:" }
+};
+
 /**
  * Heuristic label inference from block geometry for zero-OCR fallback,
- * ensuring seamless tag propagation into the heuristic detector.
+ * supporting multilingual locales with low confidence annotation.
  */
-function inferScannedLabelHeuristic(width, height) {
+export function inferScannedLabelHeuristic(width, height, locale = null) {
+    const lang = (locale || (typeof navigator !== "undefined" && navigator.language ? navigator.language.slice(0, 2) : "en")).toLowerCase();
+    const dict = FALLBACK_LABELS_BY_LOCALE[lang] || FALLBACK_LABELS_BY_LOCALE.en;
     const aspect = width / Math.max(1, height);
-    if (aspect > 6) return "Information / Details:";
-    if (aspect > 4) return "Full Name / Description:";
-    if (aspect > 2.5) return "Date / Reference:";
-    return "Field:";
+    if (aspect > 6) return dict.info;
+    if (aspect > 4) return dict.name;
+    if (aspect > 2.5) return dict.date;
+    return dict.field;
 }
 
 /**
@@ -459,6 +472,113 @@ export function detectScannedHorizontalLines(binary, width, height, scale = 1.0)
  * @param {Object} [options={}]
  * @returns {Promise<{ textBlocks: Array, allRects: Array, underlines: Array, isScanned: boolean }>}
  */
+let sharedWorker = null;
+let sharedWorkerLang = null;
+let workerTerminationTimer = null;
+
+/**
+ * Lazy worker pool for client-side zero-upload Tesseract.js optical character recognition.
+ * Keeps worker warm across pages in the same session, auto-terminates after 60s idle.
+ */
+export async function getTesseractWorker(lang = "eng", onProgress = null) {
+    if (typeof window === "undefined") return null;
+
+    if (sharedWorker && sharedWorkerLang === lang) {
+        if (workerTerminationTimer) {
+            clearTimeout(workerTerminationTimer);
+            workerTerminationTimer = null;
+        }
+        return sharedWorker;
+    }
+
+    let Tesseract = window.Tesseract;
+    if (!Tesseract) {
+        try {
+            const mod = await import("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.esm.min.js");
+            Tesseract = mod.default || mod;
+        } catch (e) {
+            Tesseract = await new Promise((resolve, reject) => {
+                if (typeof document === "undefined") return reject(e);
+                const s = document.createElement("script");
+                s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+                s.onload = () => resolve(window.Tesseract);
+                s.onerror = () => reject(new Error("Failed to load Tesseract.js from CDN"));
+                document.head.appendChild(s);
+            });
+        }
+    }
+
+    if (!Tesseract || !Tesseract.createWorker) {
+        throw new Error("Tesseract.js not available");
+    }
+
+    const worker = await Tesseract.createWorker(lang, 1, {
+        logger: m => {
+            if (onProgress && m.status === "recognizing text" && typeof m.progress === "number") {
+                onProgress(`OCR recognition (${Math.round(m.progress * 100)}%)...`, Math.round(75 + m.progress * 20));
+            }
+        }
+    });
+
+    sharedWorker = worker;
+    sharedWorkerLang = lang;
+    return sharedWorker;
+}
+
+export function scheduleTesseractWorkerCleanup(idleMs = 60000) {
+    if (workerTerminationTimer) clearTimeout(workerTerminationTimer);
+    workerTerminationTimer = setTimeout(async () => {
+        if (sharedWorker) {
+            try { await sharedWorker.terminate(); } catch {}
+            sharedWorker = null;
+            sharedWorkerLang = null;
+        }
+    }, idleMs);
+}
+
+/**
+ * Performs actual optical character recognition on rendered canvas using in-browser WebAssembly.
+ * Extracts recognized words with exact bounding coordinates, text content, and confidence scores.
+ */
+export async function recognizeScannedCanvasOcr(canvas, renderScale = 1.0, options = {}) {
+    const lang = options.ocrLang || "eng";
+    const worker = await getTesseractWorker(lang, options.onProgress);
+    if (!worker) return [];
+
+    const { data } = await worker.recognize(canvas);
+    scheduleTesseractWorkerCleanup(60000);
+
+    const words = data.words || [];
+    const textBlocks = [];
+
+    for (const w of words) {
+        const text = (w.text || "").trim();
+        if (!text) continue;
+        const conf = typeof w.confidence === "number" ? Math.max(0.1, Math.min(1.0, w.confidence / 100)) : 0.8;
+        if (conf < 0.35 && text.length <= 1) continue;
+
+        textBlocks.push({
+            x: Math.round(w.bbox.x0 / renderScale),
+            y: Math.round(w.bbox.y0 / renderScale),
+            width: Math.round((w.bbox.x1 - w.bbox.x0) / renderScale),
+            height: Math.round((w.bbox.y1 - w.bbox.y0) / renderScale),
+            str: text,
+            confidence: conf,
+            isOcr: true
+        });
+    }
+
+    return textBlocks;
+}
+
+/**
+ * Performs thorough multi-pass client-side OCR and contour analysis on a rendered PDF page canvas.
+ * @param {HTMLCanvasElement} canvas 
+ * @param {Object} viewport 
+ * @param {number} [pageNum=1] 
+ * @param {Object} [options={}]
+ * @returns {Promise<{ textBlocks: Array, allRects: Array, underlines: Array, isScanned: boolean, ocrUsed: boolean }>}
+ */
 export async function performScannedPageOcr(canvas, viewport, pageNum = 1, options = {}) {
     if (!canvas) {
         return { textBlocks: [], allRects: [], underlines: [], isScanned: false };
@@ -479,8 +599,26 @@ export async function performScannedPageOcr(canvas, viewport, pageNum = 1, optio
     if (options.onProgress) options.onProgress("Extracting rectangular boxes & table cells...", 75);
     const detectedBoxes = detectScannedBoxContours(binary, canvas.width, canvas.height, renderScale);
 
-    if (options.onProgress) options.onProgress("Mapping visual text blocks...", 90);
-    const textBlocks = extractScannedTextLines(binary, canvas.width, canvas.height, renderScale);
+    // Pass 4: In-Browser Optical Character Recognition (Real Tesseract.js with contour fallback)
+    let textBlocks = [];
+    let ocrUsed = false;
+
+    if (options.enableTesseract !== false && typeof window !== "undefined") {
+        try {
+            if (options.onProgress) options.onProgress("Reading scanned characters via in-browser OCR...", 80);
+            textBlocks = await recognizeScannedCanvasOcr(canvas, renderScale, options);
+            if (textBlocks.length > 0) {
+                ocrUsed = true;
+            }
+        } catch (ocrErr) {
+            console.warn("Client-side Tesseract OCR failed, falling back to geometric segmentation:", ocrErr);
+        }
+    }
+
+    if (!ocrUsed || textBlocks.length === 0) {
+        if (options.onProgress) options.onProgress("Mapping visual text blocks (geometric fallback)...", 90);
+        textBlocks = extractScannedTextLines(binary, canvas.width, canvas.height, renderScale);
+    }
 
     // Convert detected boxes into vector rect format expected by auto-detector
     const allRects = detectedBoxes.map(b => ({
@@ -496,6 +634,7 @@ export async function performScannedPageOcr(canvas, viewport, pageNum = 1, optio
         allRects,
         underlines,
         isScanned: true,
+        ocrUsed,
         pageNum
     };
 }

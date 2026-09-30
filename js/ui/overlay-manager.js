@@ -559,6 +559,17 @@ export function renderOverlays(handlers) {
             div.appendChild(lockBadge);
         }
 
+        // Surface low-confidence detection indicator (< 72% confidence) in design mode
+        if (state.editorMode !== "fill" && typeof f.confidence === "number" && f.confidence < 0.72) {
+            div.classList.add("low-confidence-field");
+            const confBadge = document.createElement("span");
+            confBadge.className = "field-confidence-badge";
+            const pct = Math.round(f.confidence * 100);
+            confBadge.title = `Low confidence auto-detection (${pct}%). Please verify or adjust.`;
+            confBadge.textContent = `⚠️ ${pct}%`;
+            div.appendChild(confBadge);
+        }
+
         // Add non-blocking top-floating badge
         if (f.type !== "checkBox" && f.type !== "radioGroup") {
             const floatingBadge = document.createElement("span");

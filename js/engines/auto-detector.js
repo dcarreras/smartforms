@@ -1,6 +1,4 @@
-// ── Universal Geometric Form Field Auto-Detector (js/engines/auto-detector.js) ──
-// Pure geometric, typographical, and heuristic-based form field extraction.
-// Zero hardcoded document titles, company names, or domain-specific constants.
+// js/engines/auto-detector.js
 
 import { state, generateFieldId } from "../core/state.js";
 import { saveHistory } from "../core/storage-manager.js";
@@ -402,6 +400,9 @@ export async function getExistingWidgetFields(page, viewport, pageNum, usedNames
             multiline: isMultiline || sem.multiline || false,
             autofill: sem.autofill || "",
             dataFormat: sem.dataFormat || "text",
+            tooltip: w.alternativeText || (fieldName || sem.name || "field").replace(/_/g, " "),
+            confidence: 1.0,
+            detectedBy: "acroform",
             sourcedFrom: "acroform",
             sourceFieldName: sourceName
         });
@@ -522,8 +523,9 @@ export function enrichNeuralFieldsWithText(rawNeuralFields, rawBlocks, usedNames
             multiline: sem.multiline || false,
             autofill: sem.autofill || "",
             dataFormat: sem.dataFormat || "text",
+            tooltip: (sem.label || nf.label || sem.name || "field").replace(/[:_—–-]+$/, '').trim(),
             detectedBy: "neural_vision",
-            confidence: nf.confidence || 0.8
+            confidence: nf.confidence || 0.85
         });
     }
 
@@ -756,7 +758,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             if (isHybridMode && typeof document !== "undefined") {
                 pipelineTelemetry.stagesAttempted.push("onnx_neural");
                 try {
-                    const { detectNeuralFieldsOnCanvas } = await import("./onnx-detector.js");
+                    const { detectNeuralFieldsOnCanvas, calculateBoxIoU } = await import("./onnx-detector.js");
                     const renderCanvas = document.createElement("canvas");
                     renderCanvas.width = viewport.width;
                     renderCanvas.height = viewport.height;
@@ -767,9 +769,17 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                     const neuralFields = enrichNeuralFieldsWithText(rawNeural, rawBlocks, usedNames, pageNum);
                     let neuralCount = 0;
                     for (const nf of neuralFields) {
-                        if (!isOverlapping(nf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
+                        const matchingField = pageFields.find(pf => calculateBoxIoU(nf, pf) >= DEDUP_THRESHOLDS.CROSS_STAGE);
+                        if (!matchingField) {
                             pageFields.push(nf);
                             neuralCount++;
+                        } else {
+                            // Agreement boosts confidence
+                            matchingField.confidence = Math.min(0.99, Math.max(matchingField.confidence || 0.85, nf.confidence || 0.85) * 1.05);
+                            // Preserve richer heuristic classifications (comb, dropdown, specific formats)
+                            if (!matchingField.isComb && matchingField.type !== "dropdown" && matchingField.dataFormat === "text" && nf.type && nf.type !== "textField") {
+                                matchingField.type = nf.type;
+                            }
                         }
                     }
                     pipelineTelemetry.countsByStage["onnx_neural"] = neuralCount;
@@ -1503,7 +1513,7 @@ export function rectContainsSignificantText(rect, textBlocks) {
 
         // 2. Text block starts inside rect (handles multi-word blocks like "Part I Taxpayer...")
         const startsInside = tb.x >= rect.x - pad && tb.x <= rect.x + Math.max(12, rect.width * 0.7) &&
-                             tb.y >= rect.y - pad && tb.y <= rBottom + pad;
+                             tb.y >= rect.y - pad && (tb.y + Math.min(tb.height, 4)) <= rBottom + pad;
         if (startsInside) return true;
 
         // 3. Significant physical intersection
@@ -1538,10 +1548,10 @@ export function rectContainsSignificantText(rect, textBlocks) {
     }
 
     // A: Line number badges: e.g. "1", "1a", "2b", "10", "12a", "Line 1", "1.", "(a)", "b"
-    if (/^(?:line\s*)?\(?\d{1,3}[a-z]?\)?[\.\:\)]?$/i.test(allText)) {
+    if (/^(?:line\s*)?\(?\d{1,3}[a-z]?\)?[\.\:\)]?$/i.test(allText) || innerBlocks.some(tb => /^(?:line\s*)?\(?\d{1,3}[a-z]?\)?[\.\:\)]?$/i.test((tb.str || "").trim()))) {
         return true; // Line number badge! Suppress!
     }
-    if (rect.width <= 36 && rect.height <= 24 && /^[a-z][\.\)]?$/i.test(allText)) {
+    if (rect.width <= 36 && rect.height <= 24 && (/^[a-z][\.\)]?$/i.test(allText) || innerBlocks.some(tb => /^[a-z][\.\)]?$/i.test((tb.str || "").trim())))) {
         return true; // Alphabetical line badge! Suppress!
     }
 
@@ -1701,6 +1711,7 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             dataFormat: dataFormat,
             isComb: true,
             maxLength: maxLen,
+            tooltip: (labelText || sem.name).replace(/[:_—–-]+$/, '').trim(),
             detectedBy: "vector_drawn_comb",
             confidence: 0.98
         };
@@ -1772,6 +1783,7 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             multiline: false,
             autofill: "",
             dataFormat: "text",
+            tooltip: (label || sem.label || sem.name).replace(/[:_—–-]+$/, '').trim(),
             detectedBy: "vector_drawn_checkbox",
             confidence: 0.98
         };
@@ -1997,6 +2009,7 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             autofill: sem.autofill || "",
             dataFormat: dataFormat,
             columnLabel: labelText,
+            tooltip: (labelText || fieldName).replace(/[:_—–-]+$/, '').trim(),
             originalBox: { x: box.x, y: box.y, width: box.width, height: box.height },
             detectedBy: inheritedCol ? "vector_drawn_table_grid_row" : "vector_drawn_input_box",
             confidence: 0.98
@@ -2127,8 +2140,11 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             }
         }
 
-        if (!labelText || isUniversalStaticText(labelText)) {
+        if (labelText && isUniversalStaticText(labelText)) {
             continue;
+        }
+        if (!labelText) {
+            labelText = "field";
         }
         const sem = resolveSemanticProps(labelText, "textField", usedNames);
         const isSig = sem.type === "signature" || /\b(?:e[-_]?)?sign(?:ature|ed|ing)?\b|sign\s*here|sign\s*below|authorized\s*signature|employee\s*signature|applicant\s*signature|taxpayer\s*signature|handtekening|unterschrift|firma/i.test(labelText);
@@ -2182,7 +2198,9 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             autofill: sem.autofill || "",
             dataFormat: dataFormat,
             columnLabel: labelText,
-            detectedBy: inheritedCol ? "vector_drawn_table_grid_row" : "vector_drawn_underline"
+            tooltip: (labelText || fieldName).replace(/[:_—–-]+$/, '').trim(),
+            detectedBy: inheritedCol ? "vector_drawn_table_grid_row" : "vector_drawn_underline",
+            confidence: topLabelText ? 0.94 : (leftLabel ? 0.91 : (belowLabelText ? 0.88 : 0.82))
         };
 
         if (!isOverlapping(field, existingFields, 0.35) && !isOverlapping(field, fields, 0.35)) {
@@ -2514,7 +2532,9 @@ function buildFieldsFromTableGrid(grid, rawBlocks, pageNum, usedNames) {
                 multiline: false,
                 autofill: "",
                 dataFormat: "text",
-                detectedBy: `affordance4b_lattice_col-${col.id}_row-${r}`
+                tooltip: (col.headerText || col.id).replace(/[:_—–-]+$/, '').trim(),
+                detectedBy: `affordance4b_lattice_col-${col.id}_row-${r}`,
+                confidence: 0.93
             } : {
                 id: generateFieldId(),
                 type: "textField",
@@ -2529,7 +2549,9 @@ function buildFieldsFromTableGrid(grid, rawBlocks, pageNum, usedNames) {
                 multiline: false,
                 autofill: sem.autofill || "",
                 dataFormat: (col.id === "amount" || col.id === "unit_price") ? "currency" : ((col.id === "qty") ? "number" : "text"),
-                detectedBy: `affordance4b_lattice_col-${col.id}_row-${r}`
+                tooltip: (col.headerText || col.id).replace(/[:_—–-]+$/, '').trim(),
+                detectedBy: `affordance4b_lattice_col-${col.id}_row-${r}`,
+                confidence: 0.93
             };
             fields.push(field);
         }
@@ -2767,6 +2789,7 @@ export function detectTaxScheduleLineAffordances(rawBlocks, viewport, pageNum, u
                         multiline: false,
                         autofill: "",
                         dataFormat: "currency",
+                        tooltip: (labelText || sem.name).replace(/[:_—–-]+$/, '').trim(),
                         detectedBy: "tax_schedule_affordance",
                         confidence: 0.92
                     };
@@ -2900,7 +2923,9 @@ export function detectVisualAffordances(rawBlocks, viewport, pageNum, usedNames,
                 multiline: false,
                 autofill: "",
                 dataFormat: "text",
-                detectedBy: detectedBy
+                tooltip: (effectiveLabel || optLabel).replace(/[:_—–-]+$/, '').trim(),
+                detectedBy: detectedBy,
+                confidence: 0.70
             };
 
             if (!isOverlapping(newField, fields, 0.45)) {
@@ -3110,7 +3135,9 @@ export function detectVisualAffordances(rawBlocks, viewport, pageNum, usedNames,
                 multiline: isMulti || sem.multiline || false,
                 autofill: sem.autofill || "",
                 dataFormat: isDate ? "date" : (sem.dataFormat || "text"),
-                detectedBy: "affordance2_colon_prompt"
+                tooltip: (cleanLabel || fieldName).replace(/[:_—–-]+$/, '').trim(),
+                detectedBy: "affordance2_colon_prompt",
+                confidence: 0.65
             };
 
             if (!isOverlapping(newField, fields, 0.20)) {
@@ -3313,7 +3340,9 @@ export function detectVisualAffordances(rawBlocks, viewport, pageNum, usedNames,
                             multiline: false,
                             autofill: "",
                             dataFormat: (col.id === "amount" || col.id === "unit_price") ? "currency" : ((col.id === "qty") ? "number" : "text"),
-                            detectedBy: `affordance4_table_col-${col.id}_row-${rowNum}`
+                            tooltip: (col.headerText || col.id).replace(/[:_—–-]+$/, '').trim(),
+                            detectedBy: `affordance4_table_col-${col.id}_row-${rowNum}`,
+                            confidence: 0.68
                         };
 
                         if (!isOverlapping(cellField, fields, 0.35)) {
