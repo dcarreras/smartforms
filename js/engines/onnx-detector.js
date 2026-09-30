@@ -326,7 +326,7 @@ export async function detectFieldsWithFallback(page, pageCanvas, rawBlocks = [],
         try {
             const rawNeuralFields = await detectNeuralFieldsOnCanvas(pageCanvas, pageNum, viewport);
             if (rawNeuralFields && rawNeuralFields.length > 0) {
-                const { enrichNeuralFieldsWithText } = await import("./auto-detector.js");
+                const { enrichNeuralFieldsWithText } = await import("./detection/index.js");
                 const enriched = enrichNeuralFieldsWithText(rawNeuralFields, rawBlocks, usedNames, pageNum);
                 if (enriched.length > 0) {
                     return enriched;
@@ -338,7 +338,7 @@ export async function detectFieldsWithFallback(page, pageCanvas, rawBlocks = [],
     }
 
     // 2. Fallback to vector rules
-    const { detectFormFieldsFromDoc } = await import("./auto-detector.js");
+    const { detectFormFieldsFromDoc } = await import("./detection/index.js");
     const docResult = await detectFormFieldsFromDoc(page, { scope: "currentPage", currentPageNum: pageNum });
     return docResult.fields || [];
 }

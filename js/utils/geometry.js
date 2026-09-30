@@ -1,7 +1,7 @@
 // js/utils/geometry.js
 // Geometric utilities and IoU overlap calculation
 
-import { DEDUP_THRESHOLDS } from "../engines/auto-detector.js";
+import { DEDUP_THRESHOLDS } from "../engines/detection/config.js";
 
 /**
  * Checks if a candidate field significantly overlaps any existing field in the list.

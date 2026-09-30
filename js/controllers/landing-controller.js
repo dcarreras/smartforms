@@ -624,7 +624,7 @@ export async function loadPdfFile(file, onLoaded) {
 
     try {
         const { loadPdfLibraries, analyzePdfDocument, goToPage } = await import("../engines/pdf-engine.js");
-        const { importExistingAcroFormFields } = await import("../engines/auto-detector.js");
+        const { importExistingAcroFormFields } = await import("../engines/detection/index.js");
         const { saveHistory } = await import("../core/storage-manager.js");
 
         await loadPdfLibraries();

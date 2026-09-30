@@ -8,7 +8,7 @@ import { renderOverlays, updateOverlayPositionsDirectly } from "../ui/overlay-ma
 import { initCanvasController, handleFieldMouseDown, handleResizeStart, showVernierHud } from "../ui/canvas-controller.js";
 import { loadTemplate } from "./landing-controller.js";
 import { initSignaturePad } from "../ui/signature-pad.js";
-import { autoDetectFields } from "../engines/auto-detector.js";
+import { autoDetectFields } from "../engines/detection/index.js";
 import { saveHistory, undo, redo, getUndoActionName, getRedoActionName, exportProjectJson, importProjectJson } from "../core/storage-manager.js";
 import { exportFormDataAsJson, exportFormDataAsCsv, importFormData } from "../core/data-exporter.js";
 import { createTableGrid } from "../engines/text-engine.js";
