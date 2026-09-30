@@ -9,4 +9,8 @@ docs
 dataset_*
 scripts
 scratch
-
+corpus
+visual_diffs
+*.py
+requirements.txt
+*.log
