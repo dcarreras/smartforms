@@ -5,6 +5,7 @@ import { generateFieldId } from "../../../core/state.js";
 import { isOverlapping } from "../../../utils/geometry.js";
 import { isUniversalStaticText, resolveSemanticProps, SEMANTIC_DIMENSIONS } from "../semantic-resolver.js";
 import { CHECKBOX_REGEX } from "./checkbox-glyphs.js";
+import { cleanOcrWordToken, isOcrCheckboxArtifact } from "./line-clustering.js";
 
 export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, usedNames, fields, docLayout, vectorShapes) {
     const pageWidth = viewport.width;
@@ -13,6 +14,7 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
     for (const line of textLines) {
         const text = line.str.trim();
         if (/^[_\-=\*#•·—–─━│┃┌┐└┘├┤┬┴┼░▒▓█\s]+$/.test(text) && !/(?:\.\s*){4,}|_{4,}/.test(text)) continue;
+        if (isOcrCheckboxArtifact(text)) continue;
         if (text.includes("?") && !text.includes(":") && !text.includes("ः") && !text.includes("：")) continue;
 
         // ── Sub-affordance A: Standalone typed dotted/underscore line with sub-caption directly below (e.g. signature leader) ──
@@ -72,10 +74,7 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
         for (let i = 0; i < promptMatches.length; i++) {
             const m = promptMatches[i];
             const cleanLabelRaw = m[1].trim();
-            const cleanLabel = cleanLabelRaw
-                .replace(/^[\s\u2022\u25B6\u25BA\u23E9\u25CF\u25AA\u25AB\uF038\uF0A7\uF0B7\uF06E\uF0A8\uF0FE\u27A4\u27A2\u279C\u2794\u2799\u2798\u2714\u2713\u2043\u2219\u25E6\u2023\-\*•>»]+/u, '')
-                .replace(/^\s*(?:\(?\d+[.)]\s*|[a-zA-Z][.)]\s+|[०-९]+[.)]\s*)/u, '')
-                .trim();
+            const cleanLabel = cleanOcrWordToken(cleanLabelRaw);
             if (cleanLabel.length < 2) continue;
             if (isUniversalStaticText(cleanLabel)) continue;
 

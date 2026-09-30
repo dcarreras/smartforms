@@ -1,5 +1,4 @@
-// ── Right Properties Inspector & Alignment (js/ui/properties-panel.js) ─
-import { state, getSelectedField, setSelectedField, setSelectedFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, getRadioGroupName, getRadioGroupFields, selectRadioOption, setRadioGroupMode, generateFieldId, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
+import { state, getSelectedField, setSelectedField, setSelectedFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, getRadioGroupName, getRadioGroupFields, selectRadioOption, setRadioGroupMode, toggleCheckboxField, getCheckboxGroupKey, getCheckboxGroupFields, generateFieldId, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
 import { saveHistory } from "../core/storage-manager.js";
 import { openSignatureModal } from "./signature-pad.js";
 import { toggleListFormat, addRowToTable, removeRowFromTable, addColumnToTable, removeColumnFromTable, deleteTable } from "../engines/text-engine.js";
@@ -1232,6 +1231,13 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
                 field.checked = false;
             }
             saveHistory(true, "Toggle Radio Choice");
+            populateProperties(field);
+            if (panelOnFieldUpdated) panelOnFieldUpdated(field);
+            return;
+        }
+        if (field && field.type === "checkBox") {
+            toggleCheckboxField(field, e.target.checked, state.fields);
+            saveHistory(true, "Toggle Checked");
             populateProperties(field);
             if (panelOnFieldUpdated) panelOnFieldUpdated(field);
             return;

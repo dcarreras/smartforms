@@ -245,6 +245,76 @@ export function setRadioGroupMode(field, mode, allFields = state.fields) {
         .forEach(f => { f.radioGroupMulti = isMulti; });
 }
 
+/**
+ * Resolves the effective group identifier for a checkbox group.
+ */
+export function getCheckboxGroupKey(field) {
+    if (!field || field.type !== "checkBox") return null;
+    return (field.groupKey || field.checkboxGroup || "").trim() || null;
+}
+
+/**
+ * Returns all checkbox fields in the document that belong to the same checkbox group as the target field.
+ */
+export function getCheckboxGroupFields(field, allFields = state.fields) {
+    if (!field || field.type !== "checkBox") return [];
+    const groupKey = getCheckboxGroupKey(field);
+    if (!groupKey) return [];
+    const targetPage = field.page || 1;
+    return allFields.filter(f => f.type === "checkBox" && getCheckboxGroupKey(f) === groupKey && (f.page || 1) === targetPage);
+}
+
+/**
+ * Toggles a checkbox field with mutual-exclusion group semantics.
+ * If target field is being checked (checked === true), all other checkboxes in the same
+ * mutually exclusive group (e.g. yes_no, enum) are automatically unchecked.
+ */
+export function toggleCheckboxField(field, forceState = undefined, allFields = state.fields) {
+    if (!field || field.type !== "checkBox") return false;
+    const currentState = Boolean(field.defaultChecked || field.checked);
+    const newState = forceState !== undefined ? Boolean(forceState) : !currentState;
+    field.defaultChecked = newState;
+    field.checked = newState;
+    field.value = newState ? (field.exportValue || field.value || "Yes") : "Off";
+
+    if (newState) {
+        const groupKey = getCheckboxGroupKey(field);
+        if (groupKey) {
+            const isExclusive = field.exclusiveGroup !== false && !field.checkboxGroupMulti;
+            if (isExclusive) {
+                const siblings = getCheckboxGroupFields(field, allFields);
+                siblings.forEach(s => {
+                    if (s.id !== field.id) {
+                        s.defaultChecked = false;
+                        s.checked = false;
+                        s.value = "Off";
+                    }
+                });
+            }
+        }
+    }
+    return newState;
+}
+
+/**
+ * Formalizes a set of checkbox fields into a unified checkbox group in state.
+ * @param {Array<object>} fields Array of checkbox fields
+ * @param {string} groupKey Unique group key (e.g. "grp_yes_no_1")
+ * @param {"yes_no" | "enum"} groupType Group semantic type
+ * @param {boolean} exclusive Whether selecting one unchecks others (default true)
+ */
+export function setCheckboxGroup(fields, groupKey, groupType = "yes_no", exclusive = true) {
+    if (!Array.isArray(fields) || fields.length === 0) return;
+    fields.forEach(f => {
+        if (f && f.type === "checkBox") {
+            f.groupKey = groupKey;
+            f.checkboxGroup = groupKey;
+            f.groupType = groupType;
+            f.exclusiveGroup = exclusive;
+        }
+    });
+}
+
 export function pasteClipboardFields() {
     if (!state.clipboard || state.clipboard.length === 0) return [];
     const newIds = [];

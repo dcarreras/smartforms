@@ -4,7 +4,9 @@ import {
     detectVisualAffordances,
     clusterIntoLines,
     detectCheckboxGlyphs,
-    detectColonPrompts
+    detectColonPrompts,
+    cleanOcrWordToken,
+    isOcrCheckboxArtifact
 } from './module-loader.js';
 
 describe('visual-affordances', () => {
@@ -148,5 +150,73 @@ describe('visual-affordances', () => {
             assert.equal(fields[0].label, 'प्रशासकीय अधिकृत');
             assert.ok(fields[0].hasPlaceholder);
         });
+
+        it('scrubs OCR artifacts (0), [ ], 6, =) from extracted colon prompt labels', () => {
+            const rawBlocks = [
+                { x: 50, y: 100, width: 90, height: 12, str: '0) Full Name:' },
+                { x: 150, y: 100, width: 120, height: 12, str: '________________' },
+                { x: 50, y: 140, width: 90, height: 12, str: '[ ] Home Address:' },
+                { x: 150, y: 140, width: 120, height: 12, str: '________________' },
+                { x: 50, y: 180, width: 90, height: 12, str: '6 Phone Number:' },
+                { x: 150, y: 180, width: 120, height: 12, str: '________________' },
+                { x: 50, y: 220, width: 90, height: 12, str: '=Date of Birth:' },
+                { x: 150, y: 220, width: 120, height: 12, str: '________________' }
+            ];
+            const textLines = clusterIntoLines(rawBlocks);
+            const fields = [];
+            detectColonPrompts(textLines, rawBlocks, viewport, 1, new Set(), fields, null, null);
+            assert.equal(fields.length, 4);
+            assert.equal(fields[0].name, 'full_name');
+            assert.equal(fields[0].label, 'Full Name');
+            assert.equal(fields[1].name, 'street_address');
+            assert.equal(fields[1].label, 'Home Address');
+            assert.equal(fields[2].name, 'phone');
+            assert.equal(fields[2].label, 'Phone Number');
+            assert.equal(fields[3].name, 'dob');
+            assert.equal(fields[3].label, 'Date of Birth');
+        });
+    });
+
+    describe('OCR Token Sanitization (DullyPDF rules)', () => {
+        it('identifies standalone OCR checkbox and divider artifacts', () => {
+            assert.equal(isOcrCheckboxArtifact('0)'), true);
+            assert.equal(isOcrCheckboxArtifact('6)'), true);
+            assert.equal(isOcrCheckboxArtifact('(0)'), true);
+            assert.equal(isOcrCheckboxArtifact('oO'), true);
+            assert.equal(isOcrCheckboxArtifact('[ ]'), true);
+            assert.equal(isOcrCheckboxArtifact('==='), true);
+            assert.equal(isOcrCheckboxArtifact('---'), true);
+
+            // Real words must not be classified as artifacts
+            assert.equal(isOcrCheckboxArtifact('Name'), false);
+            assert.equal(isOcrCheckboxArtifact('Street'), false);
+            assert.equal(isOcrCheckboxArtifact('Total'), false);
+        });
+
+        it('cleans leading OCR noise glyphs and bracketed prefixes from words', () => {
+            assert.equal(cleanOcrWordToken('0) First Name'), 'First Name');
+            assert.equal(cleanOcrWordToken('(0) Date of Birth'), 'Date of Birth');
+            assert.equal(cleanOcrWordToken('[ ] Yes / No'), 'Yes / No');
+            assert.equal(cleanOcrWordToken('6 Phone Number'), 'Phone Number');
+            assert.equal(cleanOcrWordToken('6) Phone Number'), 'Phone Number');
+            assert.equal(cleanOcrWordToken('=Past Condition'), 'Past Condition');
+            assert.equal(cleanOcrWordToken('oO Marital Status'), 'Marital Status');
+            assert.equal(cleanOcrWordToken('© Employer Name'), 'Employer Name');
+            assert.equal(cleanOcrWordToken('• 1. City'), 'City');
+        });
+
+        it('filters pure OCR noise blocks from regular text lines in clusterIntoLines', () => {
+            const rawBlocks = [
+                { x: 50, y: 100, width: 12, height: 12, str: '0)' },
+                { x: 68, y: 100, width: 35, height: 12, str: 'Address:' },
+                { x: 50, y: 140, width: 15, height: 12, str: 'oO' },
+                { x: 50, y: 180, width: 40, height: 12, str: '=====' }
+            ];
+
+            const lines = clusterIntoLines(rawBlocks);
+            assert.equal(lines.length, 1);
+            assert.equal(lines[0].str, 'Address:');
+        });
     });
 });
+

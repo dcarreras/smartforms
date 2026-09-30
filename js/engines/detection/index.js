@@ -29,7 +29,7 @@ export * from "./table-grid.js";
 export * from "./underline-fields.js";
 export * from "./neural-bridge.js";
 export * from "./visual-affordances/index.js";
-export { clusterIntoLines } from "./visual-affordances/line-clustering.js";
+export { clusterIntoLines, cleanOcrWordToken, isOcrCheckboxArtifact } from "./visual-affordances/line-clustering.js";
 export { isOverlapping } from "../../utils/geometry.js";
 
 /**

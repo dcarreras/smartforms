@@ -1,5 +1,4 @@
-// ── Canvas Overlay Rendering & Visual Elements (js/ui/overlay-manager.js) ─
-import { state, getFieldsForCurrentPage, getSelectedField, setSelectedField, setSelectedFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, sortFieldsByReadingOrder, evaluateCalculations, getRadioGroupName, getRadioGroupFields, selectRadioOption, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, pasteFormulaRecipeToFields } from "../core/state.js";
+import { state, getFieldsForCurrentPage, getSelectedField, setSelectedField, setSelectedFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, sortFieldsByReadingOrder, evaluateCalculations, getRadioGroupName, getRadioGroupFields, selectRadioOption, toggleCheckboxField, getCheckboxGroupKey, getCheckboxGroupFields, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, pasteFormulaRecipeToFields } from "../core/state.js";
 import { FIELD_TYPE_LABELS } from "../core/constants.js";
 import { openSignatureModal } from "./signature-pad.js";
 import { makeScrubbableAndScrollable, distributeSelectedFields, isPickingCalcField, updateCanvasPickModeUI } from "./properties-panel.js";
@@ -165,9 +164,10 @@ export function renderOverlays(handlers) {
                 cb.checked = !!f.defaultChecked;
                 cb.style.cssText = "width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: #2563eb;";
                 cb.addEventListener("change", () => {
-                    f.defaultChecked = cb.checked;
-                    f.value = cb.checked ? (f.value || "Yes") : "";
-                    saveHistory();
+                    toggleCheckboxField(f, cb.checked, state.fields);
+                    saveHistory(true, "Toggle Checkbox");
+                    renderOverlays(handlers);
+                    if (handlers?.onUpdated) handlers.onUpdated(f);
                 });
                 div.appendChild(cb);
             } else if (f.type === "radioGroup" || f.type === "radio") {
@@ -692,7 +692,8 @@ export function renderOverlays(handlers) {
             } else if (e.key === " ") {
                 if (f.type === "checkBox") {
                     e.preventDefault();
-                    f.defaultChecked = !f.defaultChecked;
+                    toggleCheckboxField(f, undefined, state.fields);
+                    saveHistory(true, "Toggle Checkbox");
                     renderOverlays(handlers);
                     if (handlers.onUpdated) handlers.onUpdated(f);
                 } else if (f.type === "radioGroup" || f.type === "radio") {
@@ -1401,7 +1402,7 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
     if (!field || field.locked || field.hidden) return;
 
     if (field.type === "checkBox") {
-        field.defaultChecked = !field.defaultChecked;
+        toggleCheckboxField(field, undefined, state.fields);
         saveHistory(true, "Toggle Checkbox");
         if (handlers?.onUpdated) handlers.onUpdated(field);
         renderOverlays(handlers);

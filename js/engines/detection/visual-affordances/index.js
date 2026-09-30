@@ -5,12 +5,12 @@ import { generateFieldId } from "../../../core/state.js";
 import { isOverlapping } from "../../../utils/geometry.js";
 import { isUniversalStaticText, resolveSemanticProps } from "../semantic-resolver.js";
 import { calculateDocumentColumnBoundaries } from "../vector-shapes.js";
-import { clusterIntoLines } from "./line-clustering.js";
+import { clusterIntoLines, cleanOcrWordToken, isOcrCheckboxArtifact } from "./line-clustering.js";
 import { TABLE_COL_DEFS, matchColumnKeyword } from "../table-grid.js";
 import { detectCheckboxGlyphs, CHECKBOX_CHARS } from "./checkbox-glyphs.js";
 import { detectColonPrompts } from "./colon-prompts.js";
 
-export { detectCheckboxGlyphs, CHECKBOX_CHARS, detectColonPrompts };
+export { detectCheckboxGlyphs, CHECKBOX_CHARS, detectColonPrompts, clusterIntoLines, cleanOcrWordToken, isOcrCheckboxArtifact };
 
 // TODO(refactor-followup): Decompose detectVisualAffordances into glyph and colon-prompt submodules
 
