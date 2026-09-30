@@ -797,8 +797,7 @@ export function initEditorSubsystems() {
             }
 
             const count = typeof result === "object" ? result.totalCount : result;
-            const autoAccepted = typeof result === "object" ? result.autoAccepted : count;
-            const reviewCount = typeof result === "object" ? result.reviewCount : 0;
+            const omittedCount = typeof result === "object" ? (result.omittedCount || result.reviewCount || 0) : 0;
 
             if (count > 0) {
                 refreshUI();
@@ -815,16 +814,20 @@ export function initEditorSubsystems() {
                     });
                 }
 
-                if (reviewCount > 0) {
-                    showNoticeToast(`Detected ${count} field${count > 1 ? "s" : ""} (${autoAccepted} auto-accepted, ${reviewCount} to review)`);
+                if (omittedCount > 0) {
+                    showNoticeToast(`Added ${count} high-confidence field${count > 1 ? "s" : ""} (${omittedCount} low-confidence candidate${omittedCount > 1 ? "s" : ""} omitted)`);
                 } else {
-                    showNoticeToast(`Detected ${count} form field${count > 1 ? "s" : ""}`);
+                    showNoticeToast(`Detected & added ${count} form field${count > 1 ? "s" : ""}`);
                 }
                 if (window.va) {
-                    window.va("event", { name: "auto_detect_completed", data: { count, autoAccepted, reviewCount } });
+                    window.va("event", { name: "auto_detect_completed", data: { count, omittedCount } });
                 }
             } else {
-                showNoticeToast("No new form fields detected on this page");
+                if (omittedCount > 0) {
+                    showNoticeToast(`No high-confidence fields found (${omittedCount} low-confidence candidate${omittedCount > 1 ? "s" : ""} omitted)`);
+                } else {
+                    showNoticeToast("No new form fields detected on this page");
+                }
             }
         } catch(err) {
             if (scanHud) scanHud.remove();

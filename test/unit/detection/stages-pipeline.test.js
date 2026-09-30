@@ -190,3 +190,34 @@ test('Pipeline Stages: exposes autoAccepted and reviewCount metrics', async () =
     assert.equal(result.autoAccepted + result.reviewCount, result.totalCount);
 });
 
+test('Pipeline Stages: minConfidence filter excludes fields below 0.90', async () => {
+    const mockPage = {
+        getAnnotations: async () => [],
+        getOperatorList: async () => ({ fnArray: [], argsArray: [] }),
+        getTextContent: async () => ({
+            items: [
+                { str: 'Notes: ____________________', x: 50, y: 500, width: 200, height: 12 }
+            ]
+        }),
+        getViewport: () => ({ width: 612, height: 792 })
+    };
+
+    const mockPdfDoc = {
+        numPages: 1,
+        getPage: async () => mockPage
+    };
+
+    const resultWithFilter = await detectFormFieldsFromDoc(mockPdfDoc, {
+        pageNumber: 1,
+        enableOcr: false,
+        useSidecar: false,
+        minConfidence: 0.90
+    });
+
+    // Unassisted colon prompts have confidence < 0.90, so they must be filtered out
+    assert.ok(resultWithFilter.fields.every(f => (f.confidence || 0) >= 0.90), 'Every returned field must have confidence >= 0.90');
+    assert.equal(resultWithFilter.fields.length, 0, 'Low-confidence field must not be added');
+    assert.ok(resultWithFilter.omittedCount >= 1, 'Omitted count must record the low-confidence field');
+});
+
+

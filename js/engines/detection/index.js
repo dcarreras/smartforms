@@ -381,11 +381,17 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
     const autoAccepted = finalUnique.filter(f => (f.confidence || 0) >= 0.90).length;
     const reviewCount = finalUnique.filter(f => (f.confidence || 0) < 0.90).length;
 
+    let returnedFields = finalUnique;
+    if (typeof options.minConfidence === "number" && options.minConfidence > 0) {
+        returnedFields = finalUnique.filter(f => (f.confidence || 0) >= options.minConfidence || f.sourcedFrom === "acroform");
+    }
+
     return {
-        fields: finalUnique,
-        totalCount: finalUnique.length,
+        fields: returnedFields,
+        totalCount: returnedFields.length,
         autoAccepted,
         reviewCount,
+        omittedCount: finalUnique.length - returnedFields.length,
         pages: pageSummaries,
         telemetry: pipelineTelemetry
     };
@@ -413,16 +419,22 @@ export async function autoDetectFields(scope = "current", options = {}) {
         return !pageIsScanned || !isDetectorField;
     });
 
+    const minConfidence = typeof options.minConfidence === "number" ? options.minConfidence : 0.90;
+
     const result = await detectFormFieldsFromDoc(state.pdfDoc, {
         ...options,
+        minConfidence,
         pageNumber: pagesToScan,
         totalPages: state.totalPages,
         currentPageNum: state.currentPageNum,
         existingFields: preservedFields
     });
 
-    if (result.fields.length > 0) {
-        state.fields = [...preservedFields, ...result.fields];
+    // Only add fields with confidence >= minConfidence (0.90) or authoritative AcroForms
+    const acceptedFields = result.fields.filter(f => (f.confidence || 0) >= minConfidence || f.sourcedFrom === "acroform");
+
+    if (acceptedFields.length > 0) {
+        state.fields = [...preservedFields, ...acceptedFields];
         state.selectedFieldIds.clear();
         if (state.lastSelectedFieldId === null) {
             state.lastSelectedFieldId = state.fields.find(f => (f.page || 1) === state.currentPageNum)?.id
@@ -432,14 +444,14 @@ export async function autoDetectFields(scope = "current", options = {}) {
         saveHistory();
     }
 
-    const autoAccepted = result.fields.filter(f => (f.confidence || 0) >= 0.90).length;
-    const reviewCount = result.fields.filter(f => (f.confidence || 0) < 0.90).length;
+    const omittedCount = result.omittedCount !== undefined ? result.omittedCount : (result.reviewCount || 0);
 
     const returnObj = {
-        totalCount: result.totalCount,
-        autoAccepted,
-        reviewCount,
-        fields: result.fields,
+        totalCount: acceptedFields.length,
+        autoAccepted: acceptedFields.length,
+        reviewCount: omittedCount,
+        omittedCount,
+        fields: acceptedFields,
         valueOf() { return this.totalCount; },
         [Symbol.toPrimitive](hint) { return hint === "string" ? String(this.totalCount) : this.totalCount; }
     };
