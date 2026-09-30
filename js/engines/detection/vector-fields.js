@@ -155,6 +155,245 @@ export function reconstructLinePhrase(closestWord, rawBlocks, direction = "left"
     return closestWord.str;
 }
 
+/**
+ * Classifies whether a vector rectangle is eligible to be considered an input field.
+ * Filters out divider bars, section headers, title frames, column spacers, and static text containers.
+ */
+export function classifyRectAsField(box, rawBlocks = [], checkboxRects = []) {
+    if (!box) return { valid: false, reason: "null_box" };
+    if (box.height > 70 || box.width > 555) return { valid: false, reason: "bounds_exceeded" };
+    // Skip horizontal divider bars and shaded section separators
+    if (box.height <= 14 && box.width >= 240) return { valid: false, reason: "divider_bar" };
+    // Skip top header banners and form title boxes (e.g. wide title frames spanning across header)
+    if (box.y < 70 && box.width >= 120 && box.height <= 35) return { valid: false, reason: "header_banner" };
+    // Skip narrow column spacers (e.g. 21.6 pt spacers between columns)
+    if (box.width <= 25) return { valid: false, reason: "column_spacer" };
+    // Skip wide section-header/label bands: thin rows spanning ≥350pt that contain any text
+    if (box.height <= 22 && box.width >= 350) {
+        const hasHeaderText = rawBlocks.some(tb =>
+            tb.x >= box.x - 4 && tb.x <= box.x + box.width + 4 &&
+            tb.y >= box.y - 4 && tb.y <= box.y + box.height + 4
+        );
+        if (hasHeaderText) return { valid: false, reason: "section_header_band" };
+    }
+    // Skip multi-cell composite boxes that contain 2 or more checkboxes inside
+    const innerCbs = checkboxRects.filter(cb => 
+        cb.x >= box.x - 2 && cb.x + cb.width <= box.x + box.width + 2 &&
+        cb.y >= box.y - 2 && cb.y + cb.height <= box.y + box.height + 2
+    );
+    if (innerCbs.length >= 2) return { valid: false, reason: "composite_checkbox_box" };
+
+    // Check if there are inner text blocks (e.g. pre-filled values or dropdown glyphs)
+    const innerBlocks = rawBlocks.filter(tb => {
+        const overlapX = Math.max(0, Math.min(box.x + box.width, tb.x + tb.width) - Math.max(box.x, tb.x));
+        const overlapY = Math.max(0, Math.min(box.y + box.height, tb.y + tb.height) - Math.max(box.y, tb.y));
+        return (overlapX > 2 && overlapY > 2);
+    });
+    const hasDropdownGlyph = innerBlocks.some(tb => 
+        tb.x >= (box.x + box.width - 25) &&
+        /^[vV▼▾▽↓·\u25BC\u25BE\u25BD\u2193\uF074\uF073]$/.test(tb.str.trim())
+    );
+
+    return {
+        valid: true,
+        innerBlocks,
+        hasDropdownGlyph
+    };
+}
+
+/**
+ * Locates the nearest associated label prompt (left, top, in-box, or column inheritance) for an input box.
+ */
+export function attachNearestLabel(box, rawBlocks = [], checkboxRects = [], fields = [], pageNum = 1) {
+    const maxLeftReach = box.width <= 85 ? 90 : 200;
+    const leftLabel = rawBlocks
+        .filter(tb => {
+            if (tb.x + tb.width > box.x + 8 || (box.x - (tb.x + tb.width)) > maxLeftReach) return false;
+            const vOverlap = Math.max(0, Math.min(box.y + box.height, tb.y + tb.height) - Math.max(box.y, tb.y));
+            if (vOverlap < 2) return false;
+            if (/^[—–\-:\._\s]+$/.test(tb.str)) return false;
+            // Do not steal labels that belong directly to an adjacent checkbox
+            if (checkboxRects.some(cb => Math.abs(cb.y - tb.y) <= 8 && tb.x >= cb.x && (tb.x - (cb.x + cb.width)) <= 25)) return false;
+            return true;
+        })
+        .sort((a, b) => (b.x + b.width) - (a.x + a.width))[0];
+
+    const topLabel = !leftLabel ? rawBlocks
+        .filter(tb => tb.y + tb.height <= box.y + 6 && (box.y - (tb.y + tb.height)) <= 45 &&
+                      (tb.x >= box.x - 60 && tb.x <= box.x + box.width + 60))
+        .sort((a, b) => {
+            const aOverlap = Math.max(0, Math.min(box.x + box.width, a.x + a.width) - Math.max(box.x, a.x));
+            const bOverlap = Math.max(0, Math.min(box.x + box.width, b.x + b.width) - Math.max(box.x, b.x));
+            if ((aOverlap > 0) !== (bOverlap > 0)) return bOverlap - aOverlap;
+
+            const aDistX = aOverlap > 0 ? 0 : Math.min(Math.abs(a.x - box.x), Math.abs(a.x + a.width - (box.x + box.width)));
+            const bDistX = bOverlap > 0 ? 0 : Math.min(Math.abs(b.x - box.x), Math.abs(b.x + b.width - (box.x + box.width)));
+            if (Math.abs(aDistX - bDistX) > 2) return aDistX - bDistX;
+
+            const aDistY = Math.abs(box.y - (a.y + a.height));
+            const bDistY = Math.abs(box.y - (b.y + b.height));
+            return aDistY - bDistY;
+        })[0] : null;
+
+    const rightLabel = (!leftLabel && !topLabel) ? rawBlocks
+        .filter(tb => tb.x >= box.x + box.width - 4 && (tb.x - (box.x + box.width)) <= 180 &&
+                      Math.abs(tb.y - box.y) <= 18)
+        .sort((a, b) => (a.x - (box.x + box.width)) - (b.x - (box.x + box.width)))[0] : null;
+
+    const extCandidate = leftLabel || topLabel;
+    const extStr = (extCandidate?.str || "").trim();
+    const isPureNumberOrMetric = /^\$?\d+(?:[\.,]\d+)*%?$/.test(extStr);
+    const hasSubstantivePromptWords = /[a-zA-Z]{2,}/.test(extStr);
+    const hasExternalPrompt = Boolean(extCandidate && hasSubstantivePromptWords && !isPureNumberOrMetric && !isUniversalStaticText(extStr));
+
+    let labelText = "";
+    let inheritedCol = null;
+    let adjustedBoxY = box.y;
+    let adjustedBoxHeight = box.height;
+
+    // Check for in-box top prompt label (common in IRS and government tax forms)
+    const inBoxLabels = rawBlocks.filter(tb => 
+        tb.x >= box.x - 2 && tb.x + tb.width <= box.x + box.width + 4 &&
+        tb.y >= box.y - 2 && tb.y + tb.height <= box.y + box.height * 0.65
+    );
+    let hasInBoxTopLabel = false;
+    if (inBoxLabels.length > 0 && box.height >= 18) {
+        const maxTextBottom = Math.max(...inBoxLabels.map(tb => tb.y + tb.height));
+        if ((box.y + box.height) - maxTextBottom >= 9) {
+            labelText = inBoxLabels.map(tb => tb.str).join(" ").replace(/^(?:\([a-z0-9]+\)|\d+[a-z]?[\.\:]?)\s*/i, "").trim();
+            adjustedBoxY = Math.round(maxTextBottom + 1);
+            adjustedBoxHeight = Math.round((box.y + box.height) - adjustedBoxY);
+            hasInBoxTopLabel = true;
+        }
+    }
+
+    if (leftLabel && !hasInBoxTopLabel) {
+        labelText = reconstructLinePhrase(leftLabel, rawBlocks, "left");
+    } else if (topLabel && !hasInBoxTopLabel) {
+        labelText = reconstructLinePhrase(topLabel, rawBlocks, "right");
+        if (labelText.length < topLabel.str.length) labelText = topLabel.str;
+    } else if (rightLabel && !hasInBoxTopLabel) {
+        labelText = reconstructLinePhrase(rightLabel, rawBlocks, "right");
+    } else if (!hasInBoxTopLabel) {
+        // Check column inheritance for table grid rows (stacked boxes in same column)
+        const upperColField = fields
+            .filter(f => {
+                if (f.page !== pageNum) return false;
+                const fLeft = f.originalBox?.x ?? f.x;
+                const fWidth = f.originalBox?.width ?? f.width;
+                const fTop = f.originalBox?.y ?? f.y;
+                const fHeight = f.originalBox?.height ?? f.height;
+                const fBottom = fTop + fHeight;
+
+                const hOverlap = Math.max(0, Math.min(box.x + box.width, fLeft + fWidth) - Math.max(box.x, fLeft));
+                if (hOverlap < Math.min(box.width, fWidth) * 0.6) return false;
+                return box.y > fTop && (box.y - fBottom) <= 35 && (box.y - fBottom) >= -2;
+            })
+            .sort((a, b) => {
+                const aBottom = (a.originalBox?.y ?? a.y) + (a.originalBox?.height ?? a.height);
+                const bBottom = (b.originalBox?.y ?? b.y) + (b.originalBox?.height ?? b.height);
+                return (box.y - bBottom) - (box.y - aBottom);
+            })[0];
+        if (upperColField) {
+            inheritedCol = upperColField;
+            labelText = upperColField.columnLabel || upperColField.name;
+        }
+    }
+
+    return {
+        labelText,
+        inheritedCol,
+        adjustedBoxY,
+        adjustedBoxHeight,
+        hasInBoxTopLabel,
+        hasExternalPrompt,
+        extCandidate
+    };
+}
+
+/**
+ * Resolves form field type, dimensions, formatting, and prefilled state based on shape geometry, label text, and context.
+ */
+export function resolveFieldTypeFromShape(box, labelText, options = {}) {
+    const {
+        sem,
+        inheritedCol = null,
+        hasDropdownGlyph = false,
+        rawBlocks = [],
+        adjustedBoxY = box.y,
+        adjustedBoxHeight = box.height,
+        hasExternalPrompt = false,
+        innerBlocks = [],
+        pageNum = 1
+    } = options;
+
+    const isSig = sem.type === "signature" || /\b(?:e[-_]?)?sign(?:ature|ed|ing)?\b|sign\s*here|authorized\s*signature|employee\s*signature|applicant\s*signature|taxpayer\s*signature|sign\s*below|handtekening|unterschrift|firma/i.test(labelText);
+    const isDate = sem.type === "dateField" || /date/i.test(labelText);
+    const isQuestionOrCheckbox = sem.type === "checkBox" || /\?$/.test(labelText) || /\b(sick\??|absent\??|yes\??|no\??)\b/i.test(labelText);
+    let type = isSig ? "signature" : (isDate ? "dateField" : (isQuestionOrCheckbox || inheritedCol?.type === "checkBox" ? "checkBox" : (inheritedCol?.type || sem.type)));
+    if (hasDropdownGlyph || /^(?:country|state|language|gender|status|choice|select|dropdown)/i.test(labelText) || /dropdown|listbox|choice/i.test(labelText)) {
+        type = "dropdown";
+    }
+
+    // Currency symbol proximity ($ € £ ¥ directly left of box or inside left edge)
+    const hasCurrencySymbol = rawBlocks.some(tb => 
+        /^[$\u20AC\u00A3\u00A5]$/.test(tb.str.trim()) &&
+        ((tb.x + tb.width <= box.x + 4 && (box.x - (tb.x + tb.width)) <= 20 && Math.abs(tb.y - box.y) <= 12) ||
+         (tb.x >= box.x - 2 && tb.x <= box.x + 18 && tb.y >= box.y - 2 && tb.y <= box.y + box.height + 2))
+    );
+    const dataFormat = hasCurrencySymbol ? "currency" : (inheritedCol?.dataFormat || sem.dataFormat || "text");
+
+    let fx = box.x;
+    let fy = adjustedBoxY;
+    let fw = box.width;
+    let fh = adjustedBoxHeight;
+    if (type === "checkBox" && box.width > 24) {
+        fw = 15;
+        fh = 15;
+        fx = Math.round(box.x + (box.width - fw) / 2);
+        fy = Math.round(box.y + (box.height - fh) / 2);
+    }
+
+    const dayMatch = rawBlocks.find(tb => 
+        tb.y + tb.height <= box.y && (box.y - (tb.y + tb.height)) <= 85 &&
+        /^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(tb.str.trim())
+    );
+    let fieldName = sem.name;
+    if (dayMatch) {
+        const prefix = dayMatch.str.trim().slice(0, 3).toLowerCase() + "_";
+        if (!fieldName.startsWith(prefix)) {
+            fieldName = prefix + fieldName;
+        }
+    }
+
+    let prefilledVal = "";
+    if (hasExternalPrompt && innerBlocks.length > 0) {
+        prefilledVal = innerBlocks.map(tb => tb.str || "").join(" ").replace(/[vV▼▾▽↓·\u25BC\u25BE\u25BD\u2193\uF074\uF073]$/, "").trim();
+    }
+
+    return {
+        id: generateFieldId(),
+        type,
+        name: fieldName,
+        value: prefilledVal,
+        x: fx,
+        y: fy,
+        width: fw,
+        height: fh,
+        page: pageNum,
+        borderStyle: "solid",
+        fillStyle: "white",
+        multiline: type !== "checkBox" && type !== "radioGroup" && (box.height >= 36 || sem.multiline || Boolean(inheritedCol?.multiline)),
+        autofill: sem.autofill || "",
+        dataFormat,
+        columnLabel: labelText,
+        tooltip: (labelText || fieldName).replace(/[:_—–-]+$/, '').trim(),
+        originalBox: { x: box.x, y: box.y, width: box.width, height: box.height },
+        detectedBy: inheritedCol ? "vector_drawn_table_grid_row" : "vector_drawn_input_box",
+        confidence: 0.98
+    };
+}
+
 export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNames, existingFields = [], options = {}) {
     const fields = [];
     if (!vectorShapes) return fields;
@@ -314,84 +553,18 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
         }
     }
 
+
     // 3. Match Vector Input Rectangles (excluding consumed comb boxes)
     const sortedInputBoxes = [...inputBoxRects].sort((a, b) => a.y - b.y || a.x - b.x);
     for (const box of sortedInputBoxes) {
         if (consumedRects.has(box)) continue;
-        if (box.height > 70 || box.width > 555) continue;
-        // Skip horizontal divider bars and shaded section separators
-        if (box.height <= 14 && box.width >= 240) continue;
-        // Skip top header banners and form title boxes (e.g. wide title frames spanning across header)
-        if (box.y < 70 && box.width >= 120 && box.height <= 35) continue;
-        // Skip narrow column spacers (e.g. 21.6 pt spacers between columns)
-        if (box.width <= 25) continue;
-        // Skip wide section-header/label bands: thin rows spanning ≥350pt that contain any text
-        // (e.g. "1. GENERAL INFORMATION", "2. FORM SPECIFIC PARAMETERS" — coloured label rows)
-        if (box.height <= 22 && box.width >= 350) {
-            const hasHeaderText = rawBlocks.some(tb =>
-                tb.x >= box.x - 4 && tb.x <= box.x + box.width + 4 &&
-                tb.y >= box.y - 4 && tb.y <= box.y + box.height + 4
-            );
-            if (hasHeaderText) continue;
-        }
-        // Skip multi-cell composite boxes that contain 2 or more checkboxes inside
-        const innerCbs = checkboxRects.filter(cb => 
-            cb.x >= box.x - 2 && cb.x + cb.width <= box.x + box.width + 2 &&
-            cb.y >= box.y - 2 && cb.y + cb.height <= box.y + box.height + 2
-        );
-        if (innerCbs.length >= 2) continue;
 
-        const maxLeftReach = box.width <= 85 ? 90 : 200;
-        const leftLabel = rawBlocks
-            .filter(tb => {
-                if (tb.x + tb.width > box.x + 8 || (box.x - (tb.x + tb.width)) > maxLeftReach) return false;
-                const vOverlap = Math.max(0, Math.min(box.y + box.height, tb.y + tb.height) - Math.max(box.y, tb.y));
-                if (vOverlap < 2) return false;
-                if (/^[—–\-:\._\s]+$/.test(tb.str)) return false;
-                // Do not steal labels that belong directly to an adjacent checkbox
-                if (checkboxRects.some(cb => Math.abs(cb.y - tb.y) <= 8 && tb.x >= cb.x && (tb.x - (cb.x + cb.width)) <= 25)) return false;
-                return true;
-            })
-            .sort((a, b) => (b.x + b.width) - (a.x + a.width))[0];
+        const classification = classifyRectAsField(box, rawBlocks, checkboxRects);
+        if (!classification.valid) continue;
+        const { innerBlocks, hasDropdownGlyph } = classification;
 
-        const topLabel = !leftLabel ? rawBlocks
-            .filter(tb => tb.y + tb.height <= box.y + 6 && (box.y - (tb.y + tb.height)) <= 45 &&
-                          (tb.x >= box.x - 60 && tb.x <= box.x + box.width + 60))
-            .sort((a, b) => {
-                const aOverlap = Math.max(0, Math.min(box.x + box.width, a.x + a.width) - Math.max(box.x, a.x));
-                const bOverlap = Math.max(0, Math.min(box.x + box.width, b.x + b.width) - Math.max(box.x, b.x));
-                if ((aOverlap > 0) !== (bOverlap > 0)) return bOverlap - aOverlap;
-
-                const aDistX = aOverlap > 0 ? 0 : Math.min(Math.abs(a.x - box.x), Math.abs(a.x + a.width - (box.x + box.width)));
-                const bDistX = bOverlap > 0 ? 0 : Math.min(Math.abs(b.x - box.x), Math.abs(b.x + b.width - (box.x + box.width)));
-                if (Math.abs(aDistX - bDistX) > 2) return aDistX - bDistX;
-
-                const aDistY = Math.abs(box.y - (a.y + a.height));
-                const bDistY = Math.abs(box.y - (b.y + b.height));
-                return aDistY - bDistY;
-            })[0] : null;
-
-        const rightLabel = (!leftLabel && !topLabel) ? rawBlocks
-            .filter(tb => tb.x >= box.x + box.width - 4 && (tb.x - (box.x + box.width)) <= 180 &&
-                          Math.abs(tb.y - box.y) <= 18)
-            .sort((a, b) => (a.x - (box.x + box.width)) - (b.x - (box.x + box.width)))[0] : null;
-
-        // Check if there are inner text blocks (e.g. pre-filled values or dropdown glyphs)
-        const innerBlocks = rawBlocks.filter(tb => {
-            const overlapX = Math.max(0, Math.min(box.x + box.width, tb.x + tb.width) - Math.max(box.x, tb.x));
-            const overlapY = Math.max(0, Math.min(box.y + box.height, tb.y + tb.height) - Math.max(box.y, tb.y));
-            return (overlapX > 2 && overlapY > 2);
-        });
-        const hasDropdownGlyph = innerBlocks.some(tb => 
-            tb.x >= (box.x + box.width - 25) &&
-            /^[vV▼▾▽↓·\u25BC\u25BE\u25BD\u2193\uF074\uF073]$/.test(tb.str.trim())
-        );
-
-        const extCandidate = leftLabel || topLabel;
-        const extStr = (extCandidate?.str || "").trim();
-        const isPureNumberOrMetric = /^\$?\d+(?:[\.,]\d+)*%?$/.test(extStr);
-        const hasSubstantivePromptWords = /[a-zA-Z]{2,}/.test(extStr);
-        const hasExternalPrompt = Boolean(extCandidate && hasSubstantivePromptWords && !isPureNumberOrMetric && !isUniversalStaticText(extStr));
+        const labelInfo = attachNearestLabel(box, rawBlocks, checkboxRects, fields, pageNum);
+        let { labelText, inheritedCol, adjustedBoxY, adjustedBoxHeight, hasExternalPrompt } = labelInfo;
 
         // Skip boxes that contain significant static text, UNLESS it has a clear external prompt (pre-filled field) or dropdown glyph
         if (rectContainsSignificantText(box, rawBlocks)) {
@@ -402,60 +575,6 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             const innerText = innerBlocks.map(tb => (tb.str || "").trim()).filter(Boolean).join(" ");
             if (innerText.length > 40 || innerBlocks.length >= 8) {
                 continue;
-            }
-        }
-
-        let labelText = "";
-        let inheritedCol = null;
-        let adjustedBoxY = box.y;
-        let adjustedBoxHeight = box.height;
-
-        // Check for in-box top prompt label (common in IRS and government tax forms)
-        const inBoxLabels = rawBlocks.filter(tb => 
-            tb.x >= box.x - 2 && tb.x + tb.width <= box.x + box.width + 4 &&
-            tb.y >= box.y - 2 && tb.y + tb.height <= box.y + box.height * 0.65
-        );
-        let hasInBoxTopLabel = false;
-        if (inBoxLabels.length > 0 && box.height >= 18) {
-            const maxTextBottom = Math.max(...inBoxLabels.map(tb => tb.y + tb.height));
-            if ((box.y + box.height) - maxTextBottom >= 9) {
-                labelText = inBoxLabels.map(tb => tb.str).join(" ").replace(/^(?:\([a-z0-9]+\)|\d+[a-z]?[\.\:]?)\s*/i, "").trim();
-                adjustedBoxY = Math.round(maxTextBottom + 1);
-                adjustedBoxHeight = Math.round((box.y + box.height) - adjustedBoxY);
-                hasInBoxTopLabel = true;
-            }
-        }
-
-        if (leftLabel && !hasInBoxTopLabel) {
-            labelText = reconstructLinePhrase(leftLabel, rawBlocks, "left");
-        } else if (topLabel && !hasInBoxTopLabel) {
-            labelText = reconstructLinePhrase(topLabel, rawBlocks, "right");
-            if (labelText.length < topLabel.str.length) labelText = topLabel.str;
-        } else if (rightLabel && !hasInBoxTopLabel) {
-            labelText = reconstructLinePhrase(rightLabel, rawBlocks, "right");
-        } else if (!hasInBoxTopLabel) {
-            // Check column inheritance for table grid rows (stacked boxes in same column)
-            const upperColField = fields
-                .filter(f => {
-                    if (f.page !== pageNum) return false;
-                    const fLeft = f.originalBox?.x ?? f.x;
-                    const fWidth = f.originalBox?.width ?? f.width;
-                    const fTop = f.originalBox?.y ?? f.y;
-                    const fHeight = f.originalBox?.height ?? f.height;
-                    const fBottom = fTop + fHeight;
-
-                    const hOverlap = Math.max(0, Math.min(box.x + box.width, fLeft + fWidth) - Math.max(box.x, fLeft));
-                    if (hOverlap < Math.min(box.width, fWidth) * 0.6) return false;
-                    return box.y > fTop && (box.y - fBottom) <= 35 && (box.y - fBottom) >= -2;
-                })
-                .sort((a, b) => {
-                    const aBottom = (a.originalBox?.y ?? a.y) + (a.originalBox?.height ?? a.height);
-                    const bBottom = (b.originalBox?.y ?? b.y) + (b.originalBox?.height ?? b.height);
-                    return (box.y - bBottom) - (box.y - aBottom);
-                })[0];
-            if (upperColField) {
-                inheritedCol = upperColField;
-                labelText = upperColField.columnLabel || upperColField.name;
             }
         }
 
@@ -470,72 +589,19 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             }
             labelText = "field";
         }
+
         const sem = resolveSemanticProps(labelText, "textField", usedNames);
-        const isSig = sem.type === "signature" || /\b(?:e[-_]?)?sign(?:ature|ed|ing)?\b|sign\s*here|authorized\s*signature|employee\s*signature|applicant\s*signature|taxpayer\s*signature|sign\s*below|handtekening|unterschrift|firma/i.test(labelText);
-        const isDate = sem.type === "dateField" || /date/i.test(labelText);
-        const isQuestionOrCheckbox = sem.type === "checkBox" || /\?$/.test(labelText) || /\b(sick\??|absent\??|yes\??|no\??)\b/i.test(labelText);
-        let type = isSig ? "signature" : (isDate ? "dateField" : (isQuestionOrCheckbox || inheritedCol?.type === "checkBox" ? "checkBox" : (inheritedCol?.type || sem.type)));
-        if (hasDropdownGlyph || /^(?:country|state|language|gender|status|choice|select|dropdown)/i.test(labelText) || /dropdown|listbox|choice/i.test(labelText)) {
-            type = "dropdown";
-        }
-        
-        // Currency symbol proximity ($ € £ ¥ directly left of box or inside left edge)
-        const hasCurrencySymbol = rawBlocks.some(tb => 
-            /^[$\u20AC\u00A3\u00A5]$/.test(tb.str.trim()) &&
-            ((tb.x + tb.width <= box.x + 4 && (box.x - (tb.x + tb.width)) <= 20 && Math.abs(tb.y - box.y) <= 12) ||
-             (tb.x >= box.x - 2 && tb.x <= box.x + 18 && tb.y >= box.y - 2 && tb.y <= box.y + box.height + 2))
-        );
-        const dataFormat = hasCurrencySymbol ? "currency" : (inheritedCol?.dataFormat || sem.dataFormat || "text");
-
-        let fx = box.x;
-        let fy = adjustedBoxY;
-        let fw = box.width;
-        let fh = adjustedBoxHeight;
-        if (type === "checkBox" && box.width > 24) {
-            fw = 15;
-            fh = 15;
-            fx = Math.round(box.x + (box.width - fw) / 2);
-            fy = Math.round(box.y + (box.height - fh) / 2);
-        }
-
-        const dayMatch = rawBlocks.find(tb => 
-            tb.y + tb.height <= box.y && (box.y - (tb.y + tb.height)) <= 85 &&
-            /^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(tb.str.trim())
-        );
-        let fieldName = sem.name;
-        if (dayMatch) {
-            const prefix = dayMatch.str.trim().slice(0, 3).toLowerCase() + "_";
-            if (!fieldName.startsWith(prefix)) {
-                fieldName = prefix + fieldName;
-            }
-        }
-
-        let prefilledVal = "";
-        if (hasExternalPrompt && innerBlocks.length > 0) {
-            prefilledVal = innerBlocks.map(tb => tb.str || "").join(" ").replace(/[vV▼▾▽↓·\u25BC\u25BE\u25BD\u2193\uF074\uF073]$/, "").trim();
-        }
-
-        const field = {
-            id: generateFieldId(),
-            type: type,
-            name: fieldName,
-            value: prefilledVal,
-            x: fx,
-            y: fy,
-            width: fw,
-            height: fh,
-            page: pageNum,
-            borderStyle: "solid",
-            fillStyle: "white",
-            multiline: type !== "checkBox" && type !== "radioGroup" && (box.height >= 36 || sem.multiline || Boolean(inheritedCol?.multiline)),
-            autofill: sem.autofill || "",
-            dataFormat: dataFormat,
-            columnLabel: labelText,
-            tooltip: (labelText || fieldName).replace(/[:_—–-]+$/, '').trim(),
-            originalBox: { x: box.x, y: box.y, width: box.width, height: box.height },
-            detectedBy: inheritedCol ? "vector_drawn_table_grid_row" : "vector_drawn_input_box",
-            confidence: 0.98
-        };
+        const field = resolveFieldTypeFromShape(box, labelText, {
+            sem,
+            inheritedCol,
+            hasDropdownGlyph,
+            rawBlocks,
+            adjustedBoxY,
+            adjustedBoxHeight,
+            hasExternalPrompt,
+            innerBlocks,
+            pageNum
+        });
 
         if (!isOverlapping(field, existingFields, 0.35) && !isOverlapping(field, fields, 0.35)) {
             fields.push(field);

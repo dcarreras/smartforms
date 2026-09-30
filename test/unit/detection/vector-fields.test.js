@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import {
     detectVectorDrawnFields,
     rectContainsSignificantText,
-    reconstructLinePhrase
+    reconstructLinePhrase,
+    classifyRectAsField,
+    attachNearestLabel,
+    resolveFieldTypeFromShape
 } from './module-loader.js';
 
 describe('vector-fields', () => {
@@ -130,6 +133,66 @@ describe('vector-fields', () => {
             ];
             const phrase = reconstructLinePhrase(rawBlocks[0], rawBlocks, 'right');
             assert.equal(phrase, 'I Agree');
+        });
+    });
+
+    describe('classifyRectAsField', () => {
+        it('rejects boxes exceeding bounds or matching divider bars', () => {
+            assert.equal(classifyRectAsField(null).valid, false);
+            assert.equal(classifyRectAsField({ x: 10, y: 10, width: 600, height: 20 }).valid, false);
+            assert.equal(classifyRectAsField({ x: 10, y: 10, width: 300, height: 12 }).valid, false);
+            assert.equal(classifyRectAsField({ x: 10, y: 20, width: 150, height: 30 }).valid, false); // header banner
+            assert.equal(classifyRectAsField({ x: 10, y: 100, width: 20, height: 30 }).valid, false); // narrow spacer
+        });
+
+        it('identifies dropdown glyphs inside rectangle', () => {
+            const box = { x: 100, y: 100, width: 150, height: 24 };
+            const rawBlocks = [
+                { x: 235, y: 104, width: 10, height: 10, str: '▼' }
+            ];
+            const res = classifyRectAsField(box, rawBlocks);
+            assert.equal(res.valid, true);
+            assert.equal(res.hasDropdownGlyph, true);
+        });
+    });
+
+    describe('attachNearestLabel', () => {
+        it('locates label directly to the left', () => {
+            const box = { x: 120, y: 150, width: 200, height: 24 };
+            const rawBlocks = [
+                { x: 50, y: 156, width: 60, height: 12, str: 'Email' }
+            ];
+            const res = attachNearestLabel(box, rawBlocks);
+            assert.equal(res.labelText, 'Email');
+        });
+
+        it('detects in-box top prompt labels in government boxes', () => {
+            const box = { x: 50, y: 100, width: 200, height: 36 };
+            const rawBlocks = [
+                { x: 52, y: 102, width: 70, height: 8, str: 'Full Name' }
+            ];
+            const res = attachNearestLabel(box, rawBlocks);
+            assert.equal(res.hasInBoxTopLabel, true);
+            assert.equal(res.labelText, 'Full Name');
+            assert.ok(res.adjustedBoxY > box.y);
+            assert.ok(res.adjustedBoxHeight < box.height);
+        });
+    });
+
+    describe('resolveFieldTypeFromShape', () => {
+        it('resolves signature field from signature label', () => {
+            const box = { x: 50, y: 100, width: 200, height: 40 };
+            const sem = { name: 'signature', type: 'signature', autofill: '', dataFormat: 'text' };
+            const field = resolveFieldTypeFromShape(box, 'Sign Here', { sem });
+            assert.equal(field.type, 'signature');
+        });
+
+        it('detects currency dataFormat when currency symbol is prepended', () => {
+            const box = { x: 70, y: 100, width: 100, height: 24 };
+            const sem = { name: 'amount', type: 'textField', autofill: '', dataFormat: 'text' };
+            const rawBlocks = [{ x: 50, y: 106, width: 10, height: 12, str: '$' }];
+            const field = resolveFieldTypeFromShape(box, 'Total', { sem, rawBlocks });
+            assert.equal(field.dataFormat, 'currency');
         });
     });
 });

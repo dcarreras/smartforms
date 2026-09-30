@@ -1,6 +1,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { detectVisualAffordances, clusterIntoLines } from './module-loader.js';
+import {
+    detectVisualAffordances,
+    clusterIntoLines,
+    detectCheckboxGlyphs,
+    detectColonPrompts
+} from './module-loader.js';
 
 describe('visual-affordances', () => {
     const viewport = { width: 612, height: 792 };
@@ -83,6 +88,36 @@ describe('visual-affordances', () => {
 
         it('returns empty array when given empty input', () => {
             assert.deepEqual(clusterIntoLines([]), []);
+        });
+    });
+
+    describe('detectCheckboxGlyphs', () => {
+        it('detects checkbox glyphs directly from textLines', () => {
+            const rawBlocks = [
+                { x: 50, y: 100, width: 12, height: 12, str: '☐' },
+                { x: 68, y: 100, width: 30, height: 12, str: 'Option' }
+            ];
+            const textLines = clusterIntoLines(rawBlocks);
+            const fields = [];
+            detectCheckboxGlyphs(textLines, rawBlocks, 1, new Set(), fields);
+            assert.equal(fields.length, 1);
+            assert.equal(fields[0].type, 'checkBox');
+            assert.equal(fields[0].value, 'Option');
+        });
+    });
+
+    describe('detectColonPrompts', () => {
+        it('detects colon prompt directly from textLines', () => {
+            const rawBlocks = [
+                { x: 50, y: 300, width: 65, height: 12, str: 'Full Name:' },
+                { x: 120, y: 300, width: 150, height: 12, str: '________________________' }
+            ];
+            const textLines = clusterIntoLines(rawBlocks);
+            const fields = [];
+            detectColonPrompts(textLines, rawBlocks, viewport, 1, new Set(), fields, null, null);
+            assert.equal(fields.length, 1);
+            assert.equal(fields[0].type, 'textField');
+            assert.equal(fields[0].name, 'full_name');
         });
     });
 });
