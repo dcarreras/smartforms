@@ -1141,6 +1141,538 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Responsive More ▾ Menu (Visible on 1150px - 1379px) -->
+                    <div class="menu-bar-item" id="moreMenuDropdown">
+                        <button type="button" class="menu-bar-btn" id="moreMenuBtn" aria-haspopup="true" aria-expanded="false">
+                            <span>More</span>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="menu-bar-dropdown" role="menu" aria-label="More options menu">
+                            <!-- Submenu: Insert -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="plus-circle" class="menu-item-icon"></i> Insert</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <div class="menu-section-header">Document Elements</div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="staticText" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="type" class="menu-item-icon"></i> Add Text / Heading</span>
+                                        <span class="menu-item-kbd">A</span>
+                                    </button>
+                                    <div class="menu-submenu">
+                                        <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                            <span class="menu-item-left"><i data-lucide="table" class="menu-item-icon"></i> Table Grid Form</span>
+                                        </button>
+                                        <div class="menu-submenu-content" role="menu">
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="invoice" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="receipt" class="menu-item-icon"></i> Invoice Breakdown</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="timesheet" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="clock" class="menu-item-icon"></i> Weekly Timesheet</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="signoff" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="pen-tool" class="menu-item-icon"></i> Sign-off Matrix</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="checklist" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="check-square" class="menu-item-icon"></i> Inspection Checklist</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="custom" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="grid" class="menu-item-icon"></i> Custom Grid (3x3)</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="menu-section-header">Form Fields</div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="textField" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="form-input" class="menu-item-icon"></i> Text Field</span>
+                                        <span class="menu-item-kbd">T</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="dropdown" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="chevron-down-square" class="menu-item-icon"></i> Dropdown Select</span>
+                                        <span class="menu-item-kbd">D</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="checkBox" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="check-square" class="menu-item-icon"></i> Checkbox</span>
+                                        <span class="menu-item-kbd">C</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="radioGroup" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="circle-dot" class="menu-item-icon"></i> Radio Group</span>
+                                        <span class="menu-item-kbd">R</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="signature" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="pen-tool" class="menu-item-icon"></i> Signature Field</span>
+                                        <span class="menu-item-kbd">S</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="autoDetectBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="sparkles" class="menu-item-icon" style="color:#2563eb;"></i> Auto-Detect Fields</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submenu: View -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="eye" class="menu-item-icon"></i> View</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuModeDesignBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="edit-3" class="menu-item-icon"></i> Design Mode</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuModeFillBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="play" class="menu-item-icon"></i> Fill &amp; Test Mode</span>
+                                        <span class="menu-item-kbd">⌘P</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuZoomInBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="zoom-in" class="menu-item-icon"></i> Zoom In</span>
+                                        <span class="menu-item-kbd">⌘+</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuZoomOutBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="zoom-out" class="menu-item-icon"></i> Zoom Out</span>
+                                        <span class="menu-item-kbd">⌘-</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuZoomResetBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="maximize-2" class="menu-item-icon"></i> Reset Zoom (100%)</span>
+                                        <span class="menu-item-kbd">⌘0</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuZoomFitBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="minimize-2" class="menu-item-icon"></i> Fit to Page</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="toggleGuidesMenuBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="grid" class="menu-item-icon"></i> <span class="toggle-guides-menu-text">Smart Guides: ON</span></span>
+                                        <span class="menu-item-kbd">⌘;</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuToggleLayersBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="panel-left-close" class="menu-item-icon"></i> Toggle Layers Panel</span>
+                                        <span class="menu-item-kbd">⌘\</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuTogglePropsBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="panel-right-close" class="menu-item-icon"></i> Toggle Properties Panel</span>
+                                        <span class="menu-item-kbd">⌘]</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submenu: Arrange -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="layout-grid" class="menu-item-icon"></i> Arrange</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <div class="menu-submenu">
+                                        <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                            <span class="menu-item-left"><i data-lucide="align-start-vertical" class="menu-item-icon"></i> Align</span>
+                                        </button>
+                                        <div class="menu-submenu-content" role="menu">
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignLeftBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-horizontal-distribute-start" class="menu-item-icon"></i> Align Left</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignCenterBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-horizontal-distribute-center" class="menu-item-icon"></i> Align Center</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignRightBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-horizontal-distribute-end" class="menu-item-icon"></i> Align Right</span>
+                                            </button>
+                                            <div class="menu-divider"></div>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignTopBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-vertical-distribute-start" class="menu-item-icon"></i> Align Top</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignMiddleBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-vertical-distribute-center" class="menu-item-icon"></i> Align Middle</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignBottomBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-vertical-distribute-end" class="menu-item-icon"></i> Align Bottom</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="menu-submenu">
+                                        <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                            <span class="menu-item-left"><i data-lucide="distribute-vertical" class="menu-item-icon"></i> Distribute</span>
+                                        </button>
+                                        <div class="menu-submenu-content" role="menu">
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuDistributeVerticalBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="distribute-vertical" class="menu-item-icon"></i> Distribute Vertically</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuDistributeHorizontalBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="distribute-horizontal" class="menu-item-icon"></i> Distribute Horizontally</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuGroupBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="folder-plus" class="menu-item-icon"></i> Group Selected</span>
+                                        <span class="menu-item-kbd">⌘G</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuUngroupBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="folder-minus" class="menu-item-icon"></i> Ungroup Selected</span>
+                                        <span class="menu-item-kbd">⌘⇧G</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuSortTabOrderBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="arrow-down-narrow-wide" class="menu-item-icon"></i> Auto-Sort Tab Flow</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuMatchWidthBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="scaling" class="menu-item-icon"></i> Match Width</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuMatchHeightBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="scaling" class="menu-item-icon"></i> Match Height</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submenu: Help -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="help-circle" class="menu-item-icon"></i> Help</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuCommandPaletteBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="command" class="menu-item-icon"></i> Command Palette</span>
+                                        <span class="menu-item-kbd">⌘K</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="shortcutsMenuBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="keyboard" class="menu-item-icon"></i> Keyboard Shortcuts</span>
+                                        <span class="menu-item-kbd">?</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="feedbackMenuBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="message-square-plus" class="menu-item-icon" style="color:#2563eb;"></i> Feedback &amp; Review</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAboutBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="info" class="menu-item-icon"></i> About Formblatt</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Responsive Unified Menu ▾ (Visible on < 1150px) -->
+                    <div class="menu-bar-item" id="compactMenuDropdown">
+                        <button type="button" class="menu-bar-btn" id="compactMenuBtn" aria-haspopup="true" aria-expanded="false">
+                            <i data-lucide="menu" style="width: 13.5px; height: 13.5px;"></i>
+                            <span>Menu</span>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="menu-bar-dropdown" role="menu" aria-label="Unified application menu">
+                            <!-- Submenu: File -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="file" class="menu-item-icon"></i> File</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="newBlankDocMenuBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="file-plus" class="menu-item-icon"></i> New Blank Document</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="openPdfDropdownBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="file-up" class="menu-item-icon"></i> Open PDF...</span>
+                                    </button>
+                                    <div class="menu-submenu">
+                                        <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                            <span class="menu-item-left"><i data-lucide="layout-template" class="menu-item-icon"></i> Starter Templates</span>
+                                        </button>
+                                        <div class="menu-submenu-content" role="menu">
+                                            <button type="button" class="menu-bar-dropdown-item menu-template-item" data-template="weeklySchedule" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="calendar" class="menu-item-icon"></i> Weekly Schedule</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-template-item" data-template="invoice" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="receipt" class="menu-item-icon"></i> Commercial Invoice</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-template-item" data-template="w9" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="file-text" class="menu-item-icon"></i> IRS W-9 Form</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-template-item" data-template="intake" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="clipboard-list" class="menu-item-icon"></i> Patient Intake</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-template-item" data-template="lease" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="file-check" class="menu-item-icon"></i> Residential Lease</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-template-item" data-template="rental" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="home" class="menu-item-icon"></i> Rental Application</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="saveProjectMenuBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="save" class="menu-item-icon"></i> Save Project (.formblatt)</span>
+                                        <span class="menu-item-kbd">⌘S</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="loadProjectDropdownBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="folder-open" class="menu-item-icon"></i> Load Project (.formblatt)</span>
+                                        <span class="menu-item-kbd">⌘O</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuExportDataJsonBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="file-json" class="menu-item-icon"></i> Export Form Data (JSON)...</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuExportDataCsvBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="file-spreadsheet" class="menu-item-icon"></i> Export Form Data (CSV)...</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuImportDataBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="file-input" class="menu-item-icon"></i> Import Form Data...</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuExportPdfBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="download" class="menu-item-icon"></i> Export PDF...</span>
+                                        <span class="menu-item-kbd">⌘E</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuHomeBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="layout-grid" class="menu-item-icon"></i> Home Dashboard</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item danger" data-proxy-click="newProjectMenuBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="trash-2" class="menu-item-icon"></i> Clear Form (New)</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submenu: Edit -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="edit-3" class="menu-item-icon"></i> Edit</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuUndoBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="undo-2" class="menu-item-icon"></i> Undo</span>
+                                        <span class="menu-item-kbd">⌘Z</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuRedoBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="redo-2" class="menu-item-icon"></i> Redo</span>
+                                        <span class="menu-item-kbd">⌘⇧Z</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuCutBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="scissors" class="menu-item-icon"></i> Cut</span>
+                                        <span class="menu-item-kbd">⌘X</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuCopyBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="copy" class="menu-item-icon"></i> Copy</span>
+                                        <span class="menu-item-kbd">⌘C</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuPasteBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="clipboard" class="menu-item-icon"></i> Paste</span>
+                                        <span class="menu-item-kbd">⌘V</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuDuplicateBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="copy-plus" class="menu-item-icon"></i> Duplicate</span>
+                                        <span class="menu-item-kbd">⌘D</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuSelectAllBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="check-square" class="menu-item-icon"></i> Select All</span>
+                                        <span class="menu-item-kbd">⌘A</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuDeselectAllBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="square-dashed" class="menu-item-icon"></i> Deselect All</span>
+                                        <span class="menu-item-kbd">Esc</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item danger" data-proxy-click="menuDeleteBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="trash-2" class="menu-item-icon"></i> Delete Selected</span>
+                                        <span class="menu-item-kbd">Del</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submenu: Insert -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="plus-circle" class="menu-item-icon"></i> Insert</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <div class="menu-section-header">Document Elements</div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="staticText" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="type" class="menu-item-icon"></i> Add Text / Heading</span>
+                                        <span class="menu-item-kbd">A</span>
+                                    </button>
+                                    <div class="menu-submenu">
+                                        <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                            <span class="menu-item-left"><i data-lucide="table" class="menu-item-icon"></i> Table Grid Form</span>
+                                        </button>
+                                        <div class="menu-submenu-content" role="menu">
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="invoice" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="receipt" class="menu-item-icon"></i> Invoice Breakdown</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="timesheet" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="clock" class="menu-item-icon"></i> Weekly Timesheet</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="signoff" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="pen-tool" class="menu-item-icon"></i> Sign-off Matrix</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="checklist" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="check-square" class="menu-item-icon"></i> Inspection Checklist</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item menu-table-preset" data-preset="custom" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="grid" class="menu-item-icon"></i> Custom Grid (3x3)</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="menu-section-header">Form Fields</div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="textField" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="form-input" class="menu-item-icon"></i> Text Field</span>
+                                        <span class="menu-item-kbd">T</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="dropdown" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="chevron-down-square" class="menu-item-icon"></i> Dropdown Select</span>
+                                        <span class="menu-item-kbd">D</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="checkBox" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="check-square" class="menu-item-icon"></i> Checkbox</span>
+                                        <span class="menu-item-kbd">C</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="radioGroup" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="circle-dot" class="menu-item-icon"></i> Radio Group</span>
+                                        <span class="menu-item-kbd">R</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-menu-insert="signature" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="pen-tool" class="menu-item-icon"></i> Signature Field</span>
+                                        <span class="menu-item-kbd">S</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="autoDetectBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="sparkles" class="menu-item-icon" style="color:#2563eb;"></i> Auto-Detect Fields</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submenu: View -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="eye" class="menu-item-icon"></i> View</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuModeDesignBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="edit-3" class="menu-item-icon"></i> Design Mode</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuModeFillBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="play" class="menu-item-icon"></i> Fill &amp; Test Mode</span>
+                                        <span class="menu-item-kbd">⌘P</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuZoomInBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="zoom-in" class="menu-item-icon"></i> Zoom In</span>
+                                        <span class="menu-item-kbd">⌘+</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuZoomOutBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="zoom-out" class="menu-item-icon"></i> Zoom Out</span>
+                                        <span class="menu-item-kbd">⌘-</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuZoomResetBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="maximize-2" class="menu-item-icon"></i> Reset Zoom (100%)</span>
+                                        <span class="menu-item-kbd">⌘0</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuZoomFitBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="minimize-2" class="menu-item-icon"></i> Fit to Page</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="toggleGuidesMenuBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="grid" class="menu-item-icon"></i> <span class="toggle-guides-menu-text">Smart Guides: ON</span></span>
+                                        <span class="menu-item-kbd">⌘;</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuToggleLayersBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="panel-left-close" class="menu-item-icon"></i> Toggle Layers Panel</span>
+                                        <span class="menu-item-kbd">⌘\</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuTogglePropsBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="panel-right-close" class="menu-item-icon"></i> Toggle Properties Panel</span>
+                                        <span class="menu-item-kbd">⌘]</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submenu: Arrange -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="layout-grid" class="menu-item-icon"></i> Arrange</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <div class="menu-submenu">
+                                        <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                            <span class="menu-item-left"><i data-lucide="align-start-vertical" class="menu-item-icon"></i> Align</span>
+                                        </button>
+                                        <div class="menu-submenu-content" role="menu">
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignLeftBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-horizontal-distribute-start" class="menu-item-icon"></i> Align Left</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignCenterBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-horizontal-distribute-center" class="menu-item-icon"></i> Align Center</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignRightBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-horizontal-distribute-end" class="menu-item-icon"></i> Align Right</span>
+                                            </button>
+                                            <div class="menu-divider"></div>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignTopBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-vertical-distribute-start" class="menu-item-icon"></i> Align Top</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignMiddleBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-vertical-distribute-center" class="menu-item-icon"></i> Align Middle</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAlignBottomBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="align-vertical-distribute-end" class="menu-item-icon"></i> Align Bottom</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="menu-submenu">
+                                        <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                            <span class="menu-item-left"><i data-lucide="distribute-vertical" class="menu-item-icon"></i> Distribute</span>
+                                        </button>
+                                        <div class="menu-submenu-content" role="menu">
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuDistributeVerticalBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="distribute-vertical" class="menu-item-icon"></i> Distribute Vertically</span>
+                                            </button>
+                                            <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuDistributeHorizontalBtn" role="menuitem">
+                                                <span class="menu-item-left"><i data-lucide="distribute-horizontal" class="menu-item-icon"></i> Distribute Horizontally</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuGroupBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="folder-plus" class="menu-item-icon"></i> Group Selected</span>
+                                        <span class="menu-item-kbd">⌘G</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuUngroupBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="folder-minus" class="menu-item-icon"></i> Ungroup Selected</span>
+                                        <span class="menu-item-kbd">⌘⇧G</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuSortTabOrderBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="arrow-down-narrow-wide" class="menu-item-icon"></i> Auto-Sort Tab Flow</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuMatchWidthBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="scaling" class="menu-item-icon"></i> Match Width</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuMatchHeightBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="scaling" class="menu-item-icon"></i> Match Height</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submenu: Help -->
+                            <div class="menu-submenu">
+                                <button type="button" class="menu-bar-dropdown-item menu-submenu-trigger" role="menuitem" aria-haspopup="true">
+                                    <span class="menu-item-left"><i data-lucide="help-circle" class="menu-item-icon"></i> Help</span>
+                                </button>
+                                <div class="menu-submenu-content" role="menu">
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuCommandPaletteBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="command" class="menu-item-icon"></i> Command Palette</span>
+                                        <span class="menu-item-kbd">⌘K</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="shortcutsMenuBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="keyboard" class="menu-item-icon"></i> Keyboard Shortcuts</span>
+                                        <span class="menu-item-kbd">?</span>
+                                    </button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="feedbackMenuBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="message-square-plus" class="menu-item-icon" style="color:#2563eb;"></i> Feedback &amp; Review</span>
+                                    </button>
+                                    <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAboutBtn" role="menuitem">
+                                        <span class="menu-item-left"><i data-lucide="info" class="menu-item-icon"></i> About Formblatt</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </nav>
             </div>
         

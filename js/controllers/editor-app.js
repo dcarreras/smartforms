@@ -422,6 +422,9 @@ export function initEditorSubsystems() {
             const btn = mi.querySelector(".menu-bar-btn");
             if (btn) btn.setAttribute("aria-expanded", "false");
         });
+        if (typeof document !== "undefined") {
+            document.querySelectorAll(".menu-submenu.is-open").forEach(s => s.classList.remove("is-open"));
+        }
         isMenuBarActive = false;
     };
 
@@ -456,8 +459,35 @@ export function initEditorSubsystems() {
         });
     });
 
-    if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+    if (typeof document !== "undefined") {
+        // Submenu trigger toggle on tap/click
+        document.querySelectorAll(".menu-submenu-trigger").forEach(trigger => {
+            trigger.addEventListener("click", e => {
+                e.stopPropagation();
+                const submenu = trigger.closest(".menu-submenu");
+                if (submenu) {
+                    const wasOpen = submenu.classList.contains("is-open");
+                    const parentContainer = submenu.parentElement;
+                    if (parentContainer) {
+                        parentContainer.querySelectorAll(":scope > .menu-submenu").forEach(s => s.classList.remove("is-open"));
+                    }
+                    if (!wasOpen) {
+                        submenu.classList.add("is-open");
+                    }
+                }
+            });
+        });
+
+        // Universal proxy click handler for responsive cascaded dropdowns
         document.addEventListener("click", e => {
+            const proxyItem = e.target.closest("[data-proxy-click]");
+            if (proxyItem) {
+                const targetId = proxyItem.getAttribute("data-proxy-click");
+                if (targetId) {
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) targetEl.click();
+                }
+            }
             if (!e.target.closest(".app-menu-bar")) {
                 closeAllMenus();
             }
@@ -674,10 +704,9 @@ export function initEditorSubsystems() {
             btn.title = `Smart Alignment Guides: ${enabled ? "ON" : "OFF"} (Ctrl/Cmd+;)`;
             btn.style.color = enabled ? "#2563eb" : "#94a3b8";
         }
-        const menuText = document.getElementById("toggleGuidesMenuText");
-        if (menuText) {
-            menuText.textContent = `Smart Guides: ${enabled ? "ON" : "OFF"}`;
-        }
+        safeQuerySelectorAll(".toggle-guides-menu-text, #toggleGuidesMenuText").forEach(el => {
+            el.textContent = `Smart Guides: ${enabled ? "ON" : "OFF"}`;
+        });
         const ctxText = document.getElementById("ctxGuidesText");
         if (ctxText) {
             ctxText.textContent = `Snap Guides: ${enabled ? "ON" : "OFF"}`;
