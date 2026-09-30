@@ -82,3 +82,111 @@ test('Pipeline Stages: detectFormFieldsFromDoc executes STAGES and produces tele
     assert(result.telemetry.stagesAttempted.includes('visual_affordances'), 'visual_affordances stage must be attempted');
     assert(result.telemetry.stagesSucceeded.includes('vector_geometry'), 'vector_geometry must succeed');
 });
+
+test('Pipeline Stages: partially fillable PDFs do not skip detection on pages with widgets', async () => {
+    const mockPage = {
+        getAnnotations: async () => [
+            {
+                subtype: 'Widget',
+                fieldType: 'Tx',
+                fieldName: 'first_name_widget',
+                rect: [50, 700, 200, 720] // AcroForm widget at top
+            }
+        ],
+        getOperatorList: async () => ({
+            // Drawn vector box elsewhere on page
+            fnArray: [
+                17, // constructPath (re)
+                18  // stroke
+            ],
+            argsArray: [
+                [0, 50, 400, 150, 25],
+                []
+            ]
+        }),
+        getTextContent: async () => ({
+            items: [
+                { str: 'First Name:', x: 50, y: 725, width: 60, height: 12 },
+                { str: 'Comments:', x: 50, y: 430, width: 60, height: 12 }
+            ]
+        }),
+        getViewport: () => ({ width: 612, height: 792 })
+    };
+
+    const mockPdfDoc = {
+        numPages: 1,
+        getPage: async () => mockPage
+    };
+
+    const result = await detectFormFieldsFromDoc(mockPdfDoc, {
+        pageNumber: 1,
+        enableOcr: false,
+        useSidecar: false
+    });
+
+    assert.ok(result.fields.length >= 1, 'Must detect fields on partially fillable page');
+    const hasAcro = result.fields.some(f => f.detectedBy === 'acroform' || f.sourcedFrom === 'acroform');
+    assert.ok(hasAcro, 'Must preserve authoritative AcroForm widget');
+});
+
+test('Pipeline Stages: born-digital PDF with text does not trigger OCR', async () => {
+    const mockPage = {
+        getAnnotations: async () => [],
+        getOperatorList: async () => ({ fnArray: [], argsArray: [] }),
+        getTextContent: async () => ({
+            items: [
+                { str: 'Paragraph line 1', x: 50, y: 700, width: 200, height: 12 },
+                { str: 'Paragraph line 2', x: 50, y: 680, width: 200, height: 12 },
+                { str: 'Paragraph line 3', x: 50, y: 660, width: 200, height: 12 },
+                { str: 'Paragraph line 4', x: 50, y: 640, width: 200, height: 12 },
+                { str: 'Paragraph line 5', x: 50, y: 620, width: 200, height: 12 },
+                { str: 'Paragraph line 6', x: 50, y: 600, width: 200, height: 12 }
+            ]
+        }),
+        getViewport: () => ({ width: 612, height: 792 })
+    };
+
+    const mockPdfDoc = {
+        numPages: 1,
+        getPage: async () => mockPage
+    };
+
+    const result = await detectFormFieldsFromDoc(mockPdfDoc, {
+        pageNumber: 1,
+        useSidecar: false
+    });
+
+    assert.equal(result.telemetry.stagesAttempted.includes('ocr'), false, 'OCR must not trigger when text is abundant');
+});
+
+test('Pipeline Stages: exposes autoAccepted and reviewCount metrics', async () => {
+    const mockPage = {
+        getAnnotations: async () => [
+            {
+                subtype: 'Widget',
+                fieldType: 'Tx',
+                fieldName: 'tax_id',
+                rect: [50, 700, 200, 720]
+            }
+        ],
+        getOperatorList: async () => ({ fnArray: [], argsArray: [] }),
+        getTextContent: async () => ({ items: [] }),
+        getViewport: () => ({ width: 612, height: 792 })
+    };
+
+    const mockPdfDoc = {
+        numPages: 1,
+        getPage: async () => mockPage
+    };
+
+    const result = await detectFormFieldsFromDoc(mockPdfDoc, {
+        pageNumber: 1,
+        enableOcr: false,
+        useSidecar: false
+    });
+
+    assert.equal(typeof result.autoAccepted, 'number');
+    assert.equal(typeof result.reviewCount, 'number');
+    assert.equal(result.autoAccepted + result.reviewCount, result.totalCount);
+});
+

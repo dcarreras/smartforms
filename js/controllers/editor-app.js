@@ -784,7 +784,7 @@ export function initEditorSubsystems() {
                 if (statusPill) statusPill.textContent = msg;
             };
 
-            const count = await autoDetectFields("current", {
+            const result = await autoDetectFields("current", {
                 mode: "hybrid",
                 useNeural: true,
                 onProgress
@@ -795,6 +795,10 @@ export function initEditorSubsystems() {
                 scanHud.style.transition = "opacity 0.2s ease";
                 setTimeout(() => scanHud.remove(), 200);
             }
+
+            const count = typeof result === "object" ? result.totalCount : result;
+            const autoAccepted = typeof result === "object" ? result.autoAccepted : count;
+            const reviewCount = typeof result === "object" ? result.reviewCount : 0;
 
             if (count > 0) {
                 refreshUI();
@@ -811,9 +815,13 @@ export function initEditorSubsystems() {
                     });
                 }
 
-                showNoticeToast(`Detected ${count} form field${count > 1 ? "s" : ""}`);
+                if (reviewCount > 0) {
+                    showNoticeToast(`Detected ${count} field${count > 1 ? "s" : ""} (${autoAccepted} auto-accepted, ${reviewCount} to review)`);
+                } else {
+                    showNoticeToast(`Detected ${count} form field${count > 1 ? "s" : ""}`);
+                }
                 if (window.va) {
-                    window.va("event", { name: "auto_detect_completed", data: { count } });
+                    window.va("event", { name: "auto_detect_completed", data: { count, autoAccepted, reviewCount } });
                 }
             } else {
                 showNoticeToast("No new form fields detected on this page");

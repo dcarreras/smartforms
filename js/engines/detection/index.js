@@ -15,7 +15,7 @@ import { detectUnderlineFields, detect as detectUnderlines } from "./underline-f
 import { enrichNeuralFieldsWithText, detect as detectNeuralFields } from "./neural-bridge.js";
 import { detectVisualAffordances, detectTaxScheduleLineAffordances, detectTaxSchedules, detect as detectVisualAffordancesStage } from "./visual-affordances/index.js";
 import { clusterIntoLines } from "./visual-affordances/line-clustering.js";
-import { resolveSemanticProps, isUniversalStaticText, GENERIC_PATTERNS, SEMANTIC_DIMENSIONS } from "./semantic-resolver.js";
+import { resolveSemanticProps, isUniversalStaticText, GENERIC_PATTERNS, SEMANTIC_DIMENSIONS, computeFieldConfidence } from "./semantic-resolver.js";
 
 // Re-export all pipeline symbols for external callers and backwards compatibility
 export * from "./config.js";
@@ -31,6 +31,32 @@ export * from "./neural-bridge.js";
 export * from "./visual-affordances/index.js";
 export { clusterIntoLines } from "./visual-affordances/line-clustering.js";
 export { isOverlapping } from "../../utils/geometry.js";
+
+/**
+ * Stage quality priorities for Non-Maximum Suppression (NMS).
+ * High-confidence authoritative and geometric stages outrank text/affordance guesses in the same location.
+ */
+export const STAGE_PRIORITIES = {
+    acroform: 100,
+    lattice_tables: 80,
+    table_grid: 80,
+    vector_geometry: 70,
+    vector_fields: 70,
+    boundary_underlines: 60,
+    underline_fields: 60,
+    onnx_neural: 65,
+    layoutlmv3_sidecar: 65,
+    tax_schedules: 50,
+    visual_affordances: 40,
+    colon_prompts: 35,
+    checkbox_glyphs: 35
+};
+
+const ocrPageCache = new Map();
+
+export function clearOcrCache() {
+    ocrPageCache.clear();
+}
 
 /**
  * Detection pipeline stages definition.
@@ -66,7 +92,7 @@ export const STAGES = [
 ];
 
 export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
-    if (!pdfDoc) return { fields: [], totalCount: 0, pages: [] };
+    if (!pdfDoc) return { fields: [], totalCount: 0, autoAccepted: 0, reviewCount: 0, pages: [] };
 
     const totalPages = pdfDoc.numPages || options.totalPages || 1;
     const pagesToScan = options.pageNumber
@@ -94,17 +120,16 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 : { width: 612, height: 792 };
 
             // 1. Authoritative AcroForm passthrough — real widgets are trusted as-is
+            // In partially fillable forms, keep widgets as authoritative and continue detection
+            // for remaining drawn boxes/underlines, letting NMS drop overlaps.
             const widgetFields = await getExistingWidgetFields(page, viewport, pageNum, usedNames);
-            if (widgetFields.length > 0) {
-                allDetected.push(...widgetFields);
-                pageSummaries.push({
-                    pageNumber: pageNum,
-                    width: viewport.width,
-                    height: viewport.height,
-                    fields: widgetFields
-                });
-                continue;
+            for (const wf of widgetFields) {
+                wf.confidence = 1.0;
+                wf.detectedBy = "acroform";
+                wf.sourcedFrom = "acroform";
             }
+            const pageExistingFields = [...existingFields, ...widgetFields];
+
             const vectorShapes = await extractPdfVectorShapes(page, viewport);
             const boundaryLines = await detectTableGridLines(page);
 
@@ -126,35 +151,47 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             }
 
             // 1.25 Scanned / Flattened PDF Client-Side OCR Fallback
-            // Triggers when text is sparse (scanned) OR when interactive vector shapes (boxes, checkboxes, underlines) are absent
+            // Triggers ONLY when there is little or no extractable text (rawBlocks sparse < 5)
+            const isTextSparse = rawBlocks.length < 5;
             const hasInteractiveVectorShapes = (vectorShapes.checkboxRects?.length || 0) > 0 ||
                 (vectorShapes.inputBoxRects?.length || 0) > 0 ||
                 (vectorShapes.underlines?.length || 0) > 0;
-            const isTextSparse = rawBlocks.length < 5;
-            const isVectorSparse = (vectorShapes.allRects?.length === 0 && (vectorShapes.paths?.length || 0) < 5);
-            const isScannedDoc = isTextSparse || isVectorSparse;
-            const needsVisualOrOcrScan = isScannedDoc || !hasInteractiveVectorShapes;
+            const isScannedDoc = isTextSparse;
 
-            if (needsVisualOrOcrScan && typeof document !== "undefined" && options.enableOcr !== false) {
+            if (isScannedDoc && typeof document !== "undefined" && options.enableOcr !== false) {
                 try {
                     pipelineTelemetry.stagesAttempted.push("ocr");
                     const { performScannedPageOcr } = await import("../ocr-engine.js");
-                    let ocrCanvas = null;
-                    const mainCanvas = document.getElementById("pdfCanvas");
-                    
-                    if (mainCanvas && mainCanvas.width > 0 && pageNum === (options.currentPageNum || 1)) {
-                        ocrCanvas = mainCanvas;
+                    const docFingerprint = pdfDoc.fingerprint || (pdfDoc.loadingTask && pdfDoc.loadingTask.docId) || "doc";
+                    const ocrLang = options.ocrLang || options.lang || "eng";
+                    const cacheKey = `${docFingerprint}_p${pageNum}_${ocrLang}`;
+
+                    let ocrResult = null;
+                    if (ocrPageCache.has(cacheKey)) {
+                        ocrResult = ocrPageCache.get(cacheKey);
                     } else {
-                        ocrCanvas = document.createElement("canvas");
-                        const ocrScale = 2.0;
-                        const ocrViewport = page.getViewport({ scale: ocrScale });
-                        ocrCanvas.width = ocrViewport.width;
-                        ocrCanvas.height = ocrViewport.height;
-                        const ocrCtx = ocrCanvas.getContext("2d", { willReadFrequently: true });
-                        await page.render({ canvasContext: ocrCtx, viewport: ocrViewport }).promise;
+                        let ocrCanvas = null;
+                        const mainCanvas = document.getElementById("pdfCanvas");
+                        
+                        if (mainCanvas && mainCanvas.width > 0 && pageNum === (options.currentPageNum || 1)) {
+                            ocrCanvas = mainCanvas;
+                        } else {
+                            ocrCanvas = document.createElement("canvas");
+                            const ocrScale = 2.0;
+                            const ocrViewport = page.getViewport({ scale: ocrScale });
+                            ocrCanvas.width = ocrViewport.width;
+                            ocrCanvas.height = ocrViewport.height;
+                            const ocrCtx = ocrCanvas.getContext("2d", { willReadFrequently: true });
+                            await page.render({ canvasContext: ocrCtx, viewport: ocrViewport }).promise;
+                        }
+
+                        ocrResult = await performScannedPageOcr(ocrCanvas, viewport, pageNum, {
+                            ...options,
+                            ocrLang
+                        });
+                        ocrPageCache.set(cacheKey, ocrResult);
                     }
 
-                    const ocrResult = await performScannedPageOcr(ocrCanvas, viewport, pageNum, options);
                     if (ocrResult.textBlocks && ocrResult.textBlocks.length > 0) {
                         rawBlocks = [...rawBlocks, ...ocrResult.textBlocks];
                     }
@@ -171,18 +208,19 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 }
             }
 
-            let pageFields = [];
+            const rawPageCandidates = [...widgetFields];
             const context = {
                 page,
                 viewport,
                 pageNum,
                 usedNames,
-                existingFields,
+                existingFields: pageExistingFields,
                 widgetFields,
-                pageFields,
+                pageFields: rawPageCandidates,
                 rawBlocks,
                 vectorShapes,
                 boundaryLines,
+                hasInteractiveVectorShapes,
                 options,
                 sharedData: {
                     latticeRegions: []
@@ -196,19 +234,12 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 pipelineTelemetry.stagesAttempted.push(stage.name);
                 try {
                     const fields = await stage.detect(context);
-                    let count = 0;
-                    if (stage.initial) {
-                        pageFields.push(...(fields || []));
-                        count = fields ? fields.length : 0;
-                    } else {
-                        for (const f of (fields || [])) {
-                            if (!isOverlapping(f, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
-                                pageFields.push(f);
-                                count++;
-                            }
-                        }
-                    }
-                    pipelineTelemetry.countsByStage[stage.name] = (pipelineTelemetry.countsByStage[stage.name] || 0) + count;
+                    const validFields = (fields || []).map(f => {
+                        if (!f.detectedBy) f.detectedBy = stage.name;
+                        return f;
+                    });
+                    rawPageCandidates.push(...validFields);
+                    pipelineTelemetry.countsByStage[stage.name] = (pipelineTelemetry.countsByStage[stage.name] || 0) + validFields.length;
                     pipelineTelemetry.stagesSucceeded.push(stage.name);
                 } catch (stageErr) {
                     pipelineTelemetry.stageErrors[stage.name] = stageErr.message;
@@ -224,14 +255,11 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                     const sidecarStatus = await isSidecarAvailable();
                     if (sidecarStatus && sidecarStatus.available) {
                         const sidecarFields = await detectFieldsViaSidecar(page, viewport, rawBlocks, pageNum, usedNames);
-                        let sidecarCount = 0;
                         for (const sf of sidecarFields) {
-                            if (!isOverlapping(sf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
-                                pageFields.push(sf);
-                                sidecarCount++;
-                            }
+                            sf.detectedBy = "layoutlmv3_sidecar";
                         }
-                        pipelineTelemetry.countsByStage["layoutlmv3_sidecar"] = sidecarCount;
+                        rawPageCandidates.push(...sidecarFields);
+                        pipelineTelemetry.countsByStage["layoutlmv3_sidecar"] = sidecarFields.length;
                         pipelineTelemetry.stagesSucceeded.push("layoutlmv3_sidecar");
                     } else {
                         pipelineTelemetry.stagesSkipped.push("layoutlmv3_sidecar_offline");
@@ -245,7 +273,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             if (isHybridMode && typeof document !== "undefined") {
                 pipelineTelemetry.stagesAttempted.push("onnx_neural");
                 try {
-                    const { detectNeuralFieldsOnCanvas, calculateBoxIoU } = await import("../onnx-detector.js");
+                    const { detectNeuralFieldsOnCanvas } = await import("../onnx-detector.js");
                     const renderCanvas = document.createElement("canvas");
                     renderCanvas.width = viewport.width;
                     renderCanvas.height = viewport.height;
@@ -254,34 +282,82 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
 
                     const rawNeural = await detectNeuralFieldsOnCanvas(renderCanvas, pageNum, viewport);
                     const neuralFields = enrichNeuralFieldsWithText(rawNeural, rawBlocks, usedNames, pageNum);
-                    let neuralCount = 0;
                     for (const nf of neuralFields) {
-                        const matchingField = pageFields.find(pf => calculateBoxIoU(nf, pf) >= DEDUP_THRESHOLDS.CROSS_STAGE);
-                        if (!matchingField) {
-                            pageFields.push(nf);
-                            neuralCount++;
-                        } else {
-                            // Agreement boosts confidence
-                            matchingField.confidence = Math.min(0.99, Math.max(matchingField.confidence || 0.85, nf.confidence || 0.85) * 1.05);
-                            // Preserve richer heuristic classifications (comb, dropdown, specific formats)
-                            if (!matchingField.isComb && matchingField.type !== "dropdown" && matchingField.dataFormat === "text" && nf.type && nf.type !== "textField") {
-                                matchingField.type = nf.type;
-                            }
-                        }
+                        nf.detectedBy = "onnx_neural";
                     }
-                    pipelineTelemetry.countsByStage["onnx_neural"] = neuralCount;
+                    rawPageCandidates.push(...neuralFields);
+                    pipelineTelemetry.countsByStage["onnx_neural"] = neuralFields.length;
                     pipelineTelemetry.stagesSucceeded.push("onnx_neural");
                 } catch (neuralErr) {
                     pipelineTelemetry.stageErrors["onnx_neural"] = neuralErr.message;
                     console.warn("Neural vision inference skipped:", neuralErr);
                 }
             }
-            allDetected.push(...pageFields);
+
+            // 4. Quality-Dependent Non-Maximum Suppression (NMS)
+            for (const c of rawPageCandidates) {
+                const stagePri = STAGE_PRIORITIES[c.detectedBy] || (c.sourcedFrom === "acroform" ? 100 : 50);
+                const conf = typeof c.confidence === "number" ? c.confidence : 0.65;
+                c._sortScore = (conf * 1000) + stagePri;
+            }
+
+            // Sort candidates descending by confidence & stage priority
+            rawPageCandidates.sort((a, b) => b._sortScore - a._sortScore);
+
+            const pageAccepted = [];
+            for (const c of rawPageCandidates) {
+                // Drop candidate if it overlaps with an existing preserved field
+                if (c.detectedBy !== "acroform" && isOverlapping(c, existingFields, DEDUP_THRESHOLDS.WITHIN_STAGE)) {
+                    continue;
+                }
+
+                // Check overlap against higher-scoring accepted fields
+                let overlappingAccepted = null;
+                for (const acc of pageAccepted) {
+                    if (isOverlapping(c, [acc], DEDUP_THRESHOLDS.CROSS_STAGE)) {
+                        overlappingAccepted = acc;
+                        break;
+                    }
+                }
+
+                if (overlappingAccepted) {
+                    // Suppressed by higher-scoring candidate.
+                    // If from a distinct stage, record multi-stage agreement and preserve richer attributes
+                    if (c.detectedBy !== overlappingAccepted.detectedBy) {
+                        overlappingAccepted.stageAgreementCount = (overlappingAccepted.stageAgreementCount || 1) + 1;
+                        if (!overlappingAccepted.stagesAgreed) {
+                            overlappingAccepted.stagesAgreed = [overlappingAccepted.detectedBy];
+                        }
+                        if (!overlappingAccepted.stagesAgreed.includes(c.detectedBy)) {
+                            overlappingAccepted.stagesAgreed.push(c.detectedBy);
+                        }
+                        if (!overlappingAccepted.label && c.label) overlappingAccepted.label = c.label;
+                        if (!overlappingAccepted.tooltip && c.tooltip) overlappingAccepted.tooltip = c.tooltip;
+                        if (c.isComb && !overlappingAccepted.isComb) {
+                            overlappingAccepted.isComb = true;
+                            overlappingAccepted.maxLength = c.maxLength;
+                        }
+                        if (c.dataFormat && c.dataFormat !== "text" && overlappingAccepted.dataFormat === "text") {
+                            overlappingAccepted.dataFormat = c.dataFormat;
+                        }
+                    }
+                } else {
+                    pageAccepted.push(c);
+                }
+            }
+
+            // Compute dynamic confidence score based on real signals
+            for (const f of pageAccepted) {
+                f.confidence = computeFieldConfidence(f, pageAccepted, f.stageAgreementCount || 1);
+                delete f._sortScore;
+            }
+
+            allDetected.push(...pageAccepted);
             pageSummaries.push({
                 pageNumber: pageNum,
                 width: viewport.width,
                 height: viewport.height,
-                fields: pageFields
+                fields: pageAccepted
             });
         } catch(err) {
             console.error("Auto-detect error on page " + pageNum + ":", err);
@@ -289,6 +365,12 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
     }
 
     const finalUnique = [];
+    allDetected.sort((a, b) => {
+        const scoreB = (b.confidence || 0.5) * 1000 + (STAGE_PRIORITIES[b.detectedBy] || 50);
+        const scoreA = (a.confidence || 0.5) * 1000 + (STAGE_PRIORITIES[a.detectedBy] || 50);
+        return scoreB - scoreA;
+    });
+
     for (let f of allDetected) {
         if (!isOverlapping(f, existingFields, DEDUP_THRESHOLDS.WITHIN_STAGE) &&
             !isOverlapping(f, finalUnique, DEDUP_THRESHOLDS.WITHIN_STAGE)) {
@@ -296,9 +378,14 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
         }
     }
 
+    const autoAccepted = finalUnique.filter(f => (f.confidence || 0) >= 0.90).length;
+    const reviewCount = finalUnique.filter(f => (f.confidence || 0) < 0.90).length;
+
     return {
         fields: finalUnique,
         totalCount: finalUnique.length,
+        autoAccepted,
+        reviewCount,
         pages: pageSummaries,
         telemetry: pipelineTelemetry
     };
@@ -345,5 +432,17 @@ export async function autoDetectFields(scope = "current", options = {}) {
         saveHistory();
     }
 
-    return result.totalCount;
+    const autoAccepted = result.fields.filter(f => (f.confidence || 0) >= 0.90).length;
+    const reviewCount = result.fields.filter(f => (f.confidence || 0) < 0.90).length;
+
+    const returnObj = {
+        totalCount: result.totalCount,
+        autoAccepted,
+        reviewCount,
+        fields: result.fields,
+        valueOf() { return this.totalCount; },
+        [Symbol.toPrimitive](hint) { return hint === "string" ? String(this.totalCount) : this.totalCount; }
+    };
+
+    return returnObj;
 }

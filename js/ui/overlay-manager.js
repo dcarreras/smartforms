@@ -559,14 +559,14 @@ export function renderOverlays(handlers) {
             div.appendChild(lockBadge);
         }
 
-        // Surface low-confidence detection indicator (< 72% confidence) in design mode
-        if (state.editorMode !== "fill" && typeof f.confidence === "number" && f.confidence < 0.72) {
+        // Surface low-confidence detection indicator (< 90% confidence) in design mode for review
+        if (state.editorMode !== "fill" && typeof f.confidence === "number" && f.confidence < 0.90 && f.detectedBy !== "acroform" && f.sourcedFrom !== "acroform") {
             div.classList.add("low-confidence-field");
             const confBadge = document.createElement("span");
             confBadge.className = "field-confidence-badge";
             const pct = Math.round(f.confidence * 100);
-            confBadge.title = `Low confidence auto-detection (${pct}%). Please verify or adjust.`;
-            confBadge.textContent = `⚠️ ${pct}%`;
+            confBadge.title = `Review needed (${pct}% confidence). Please verify or adjust.`;
+            confBadge.textContent = `⚠️ Review (${pct}%)`;
             div.appendChild(confBadge);
         }
 

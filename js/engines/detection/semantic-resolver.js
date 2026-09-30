@@ -8,57 +8,58 @@
 // TODO(refactor-followup): GENERIC_PATTERNS precedence and duplicate pattern matching
 export const GENERIC_PATTERNS = [
     // ── Dates (EN, DE, FR, ES, IT, PT, NL, NE/HI) ──
-    { regex: /due\s*date|payment\s*due|pay\s*by|f[äa]lligkeitsdatum|date\s*d['’]?[\s]*[ée]ch[ée]ance|fecha\s*de\s*vencimiento|data\s*di\s*scadenza|data\s*de\s*vencimento|vervaldatum/i, id: "due_date", type: "dateField", priority: 2 },
-    { regex: /expiration\s*date|exp\s*date|expiry|ablaufdatum|g[üu]ltig\s*bis|date\s*d['’]?expiration|fecha\s*de\s*(?:expiraci[óo]n|caducidad)|data\s*di\s*scadenza|data\s*de\s*validade|verloopdatum/i, id: "expiration_date", type: "dateField", priority: 2 },
-    { regex: /date\s*approved|approval\s*date|genehmigungsdatum|date\s*d['’]?approbation|fecha\s*de\s*aprobaci[óo]n|data\s*di\s*approvazione/i, id: "date_approved", type: "dateField", priority: 2 },
-    { regex: /birth\s*date|\bdob\b|date\s*of\s*birth|geburtsdatum|date\s*de\s*naissance|fecha\s*de\s*nacimiento|data\s*di\s*nascita|data\s*de\s*nascimento|geboortedatum|जन्म\s*मिति/i, id: "dob", type: "dateField", priority: 2 },
-    { regex: /\bdate\b|\(yyyy-mm-dd\)|\(mm\/dd\/yyyy\)|yyyy\s*-\s*mm\s*-\s*dd|\(dd\/mm\/yyyy\)|datum\b|fecha\b|data\b|मिति|मितिः/i, id: "date", type: "dateField", priority: 0 },
+    { regex: /(?<![\p{L}])(?:due\s*date|payment\s*due|pay\s*by|f[äa]lligkeitsdatum|date\s*d['’]?[\s]*[ée]ch[ée]ance|fecha\s*de\s*vencimiento|data\s*di\s*scadenza|data\s*de\s*vencimento|vervaldatum)(?![\p{L}])/iu, id: "due_date", type: "dateField", priority: 2 },
+    { regex: /(?<![\p{L}])(?:expiration\s*date|exp\s*date|expiry|ablaufdatum|g[üu]ltig\s*bis|date\s*d['’]?expiration|fecha\s*de\s*(?:expiraci[óo]n|caducidad)|data\s*di\s*scadenza|data\s*de\s*validade|verloopdatum)(?![\p{L}])/iu, id: "expiration_date", type: "dateField", priority: 2 },
+    { regex: /(?<![\p{L}])(?:date\s*approved|approval\s*date|genehmigungsdatum|date\s*d['’]?approbation|fecha\s*de\s*aprobaci[óo]n|data\s*di\s*approvazione)(?![\p{L}])/iu, id: "date_approved", type: "dateField", priority: 2 },
+    { regex: /(?<![\p{L}])(?:birth\s*date|dob|date\s*of\s*birth|geburtsdatum|date\s*de\s*naissance|fecha\s*de\s*nacimiento|data\s*di\s*nascita|data\s*de\s*nascimento|geboortedatum|जन्म\s*मिति)(?![\p{L}])/iu, id: "dob", type: "dateField", priority: 2 },
+    { regex: /(?<![\p{L}])(?:date\s*(?:of\s*)?sign(?:ed|ature)?|sign(?:ed|ature)?\s*date|datum\s*der\s*unterschrift|date\s*(?:de\s*)?signature|fecha\s*(?:de\s*)?firma|data\s*(?:di\s*)?firma|data\s*(?:da\s*)?assinatura|हस्ताक्षर\s*मिति|दस्तखत\s*मिति)(?![\p{L}])/iu, id: "date_signed", type: "dateField", priority: 4 },
+    { regex: /(?<![\p{L}])(?:date|\(yyyy-mm-dd\)|\(mm\/dd\/yyyy\)|yyyy\s*-\s*mm\s*-\s*dd|\(dd\/mm\/yyyy\)|datum|fecha|data|मिति|मितिः)(?![\p{L}])/iu, id: "date", type: "dateField", priority: 0 },
     
     // ── Signatures (EN, DE, FR, ES, IT, PT, NL, NE/HI) ──
-    { regex: /\b(?:e[-_]?)?sign(?:ature|ed|ing)?\b|sign\s*here|signed\s*by|unterschrift|unterschrieben|signatur|signé\s*par|firma\b|firmado\s*por|firmato\s*da|assinatura|assinado\s*por|handtekening|ondertekend|दस्तखत|हस्ताक्षर|सही\s*छाप/i, id: "signature", type: "signature", priority: 2 },
+    { regex: /(?<![\p{L}])(?:(?:e[-_]?)?sign(?:ature|ed|ing)?|sign\s*here|signed\s*by|unterschrift|unterschrieben|signatur|signé\s*par|firma|firmado\s*por|firmato\s*da|assinatura|assinado\s*por|handtekening|ondertekend|दस्तखत|हस्ताक्षर|सही\s*छाप)(?![\p{L}])/iu, id: "signature", type: "signature", priority: 2 },
 
     // ── Financial & Numbers (EN, DE, FR, ES, IT, PT, NL, NE/HI) ──
-    { regex: /invoice\s*(?:#|no|number|num)|rechnungs\s*(?:nr|nummer)|(?:n[°o]|num[eé]ro)\s*de\s*facture|n[úu]mero\s*de\s*factura|fattura\s*n\.?|fatura\s*n[°º]|factuurnummer|बिल\s*नं/i, id: "invoice_number", type: "textField", autofill: "invoice_num", priority: 2 },
-    { regex: /po\s*(?:#|no|number|num)|purchase\s*order|contract\s*(?:#|no|number|num)|job\s*(?:#|no|number|num)|project\s*(?:#|no|number|num)|work\s*order|bestellnummer|bon\s*de\s*commande|orden\s*de\s*compra|ordine\s*d['’]?acquisto|ordem\s*de\s*compra|inkoopordernummer/i, id: "po_number", type: "textField", priority: 2 },
-    { regex: /contractor\s*lic(?:ense)?|lic(?:ense)?\s*(?:#|no|number|num)|trade\s*lic(?:ense)?/i, id: "license_number", type: "textField", priority: 2 },
-    { regex: /subtotal|zwischensumme|sous-total|subtotale|sub-total|subtotaal/i, id: "subtotal", type: "textField", priority: 1 },
-    { regex: /retainage|retention\s*(?:amount|rate|fee)?/i, id: "retainage", type: "textField", priority: 1 },
-    { regex: /\b(?:tax|vat|gst|mwst|ust|tva|iva|imposto|btw)\b|कर|भ्याट/i, id: "tax", type: "textField", priority: 0 },
-    { regex: /total|balance\s*due|amount\s*due|gesamtbetrag|endbetrag|solde\s*d[uû]|importe\s*total|totale\s*dovuto|valor\s*total|totaalbedrag|कुल\s*जम्मा|जम्मा/i, id: "total", type: "textField", priority: 0 },
-    { regex: /unit\s*price|hourly\s*rate|rate\s*(?:\/|\s*per\s*)hour|unit\s*cost|einzelpreis|prix\s*unitaire|precio\s*unitario|prezzo\s*unitario/i, id: "unit_price", type: "textField", priority: 2 },
-    { regex: /\b(?:hours?|hrs?|stunden|heures|horas|ore|uren|घण्टा)\b/i, id: "hours", type: "textField", priority: 0 },
-    { regex: /amount|price|rate|cost|\bfees?\b|charge|betrag|preis|kosten|geb[üu]hr|montant|prix|co[uû]t|tarif|importe|precio|tarifa|costo|valore|valor|pre[çc]o|prijs|bedrag|kosten|रकम|मूल्य|दर/i, id: "amount", type: "textField", priority: 0 },
-    { regex: /\bqty\b|quantity|units|menge|anzahl|st[üu]ckzahl|quantit[ée]|quantit[àa]|cantidad|unidades|quantidade|aantal|परिमाण|संख्या/i, id: "quantity", type: "textField", priority: 0 },
-    { regex: /payment\s*instructions|bank\s*(?:details|info|wire)|wire\s*instructions|zahlungsanweisungen/i, id: "payment_instructions", type: "textField", multiline: true, priority: 2 },
-    { regex: /routing|iban|swift|bic|bsb|bankleitzahl|blz|code\s*banque|c[óo]digo\s*bancario|खाता\s*नं/i, id: "routing_number", type: "textField", priority: 1 },
-    { regex: /account\s*(?:#|no|number|num)|kontonummer|konto-nr|n[°o]\s*de\s*compte|n[úu]mero\s*de\s*cuenta|numero\s*conto|n[úu]mero\s*da\s*conta|rekeningnummer/i, id: "account_number", type: "textField", priority: 1 },
-    { regex: /नागरिकता\s*(?:नं|नंबर|प्रमाण)/, id: "citizenship_number", type: "textField", priority: 1 },
-    { regex: /ssn|social\s*security|tax\s*id|ein|national\s*id|steuernummer|steuer-id|sozialversicherungsnummer|n[°o]\s*s[eé]curit[eé]\s*sociale|siret|siren|nif|cif|dni|nie|codice\s*fiscale|partita\s*iva|cpf|cnpj|rg|bsn|burgerkrachtnummer|प्यान\s*नं|राष्ट्रिय\s*परिचय/i, id: "ssn", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}])(?:invoice\s*(?:#|no|number|num)|rechnungs\s*(?:nr|nummer)|(?:n[°o]|num[eé]ro)\s*de\s*facture|n[úu]mero\s*de\s*factura|fattura\s*n\.?|fatura\s*n[°º]|factuurnummer|बिल\s*नं)(?![\p{L}])/iu, id: "invoice_number", type: "textField", autofill: "invoice_num", priority: 2 },
+    { regex: /(?<![\p{L}])(?:po\s*(?:#|no|number|num)|purchase\s*order|contract\s*(?:#|no|number|num)|job\s*(?:#|no|number|num)|project\s*(?:#|no|number|num)|work\s*order|bestellnummer|bon\s*de\s*commande|orden\s*de\s*compra|ordine\s*d['’]?acquisto|ordem\s*de\s*compra|inkoopordernummer)(?![\p{L}])/iu, id: "po_number", type: "textField", priority: 2 },
+    { regex: /(?<![\p{L}])(?:contractor\s*lic(?:ense)?|lic(?:ense)?\s*(?:#|no|number|num)|trade\s*lic(?:ense)?)(?![\p{L}])/iu, id: "license_number", type: "textField", priority: 2 },
+    { regex: /(?<![\p{L}])(?:subtotal|zwischensumme|sous-total|subtotale|sub-total|subtotaal)(?![\p{L}])/iu, id: "subtotal", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}])(?:retainage|retention\s*(?:amount|rate|fee)?)(?![\p{L}])/iu, id: "retainage", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}])(?:tax|vat|gst|mwst|ust|tva|iva|imposto|btw|कर|भ्याट)(?![\p{L}])/iu, id: "tax", type: "textField", priority: 0 },
+    { regex: /(?<![\p{L}])(?:total|balance\s*due|amount\s*due|gesamtbetrag|endbetrag|solde\s*d[uû]|importe\s*total|totale\s*dovuto|valor\s*total|totaalbedrag|कुल\s*जम्मा|जम्मा)(?![\p{L}])/iu, id: "total", type: "textField", priority: 0 },
+    { regex: /(?<![\p{L}])(?:unit\s*price|hourly\s*rate|rate\s*(?:\/|\s*per\s*)hour|unit\s*cost|einzelpreis|prix\s*unitaire|precio\s*unitario|prezzo\s*unitario)(?![\p{L}])/iu, id: "unit_price", type: "textField", priority: 2 },
+    { regex: /(?<![\p{L}])(?:hours?|hrs?|stunden|heures|horas|ore|uren|घण्टा)(?![\p{L}])/iu, id: "hours", type: "textField", priority: 0 },
+    { regex: /(?<![\p{L}])(?:amount|price|rate|cost|fees?|charge|betrag|preis|kosten|geb[üu]hr|montant|prix|co[uû]t|tarif|importe|precio|tarifa|costo|valore|valor|pre[çc]o|prijs|bedrag|रकम|मूल्य|दर)(?![\p{L}])/iu, id: "amount", type: "textField", priority: 0 },
+    { regex: /(?<![\p{L}])(?:qty|quantity|units|menge|anzahl|st[üu]ckzahl|quantit[ée]|quantit[àa]|cantidad|unidades|quantidade|aantal|परिमाण|संख्या)(?![\p{L}])/iu, id: "quantity", type: "textField", priority: 0 },
+    { regex: /(?<![\p{L}])(?:payment\s*instructions|bank\s*(?:details|info|wire)|wire\s*instructions|zahlungsanweisungen)(?![\p{L}])/iu, id: "payment_instructions", type: "textField", multiline: true, priority: 2 },
+    { regex: /(?<![\p{L}])(?:routing|iban|swift|bic|bsb|bankleitzahl|blz|code\s*banque|c[óo]digo\s*bancario|खाता\s*नं)(?![\p{L}])/iu, id: "routing_number", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}])(?:account\s*(?:#|no|number|num)|kontonummer|konto-nr|n[°o]\s*de\s*compte|n[úu]mero\s*de\s*cuenta|numero\s*conto|n[úu]mero\s*da\s*conta|rekeningnummer)(?![\p{L}])/iu, id: "account_number", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}])(?:नागरिकता\s*(?:नं|नंबर|प्रमाण))(?![\p{L}])/iu, id: "citizenship_number", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}])(?:employer\s*identification\s*number(?:\s*\(?ein\)?)?|ein|social\s*security(?:\s*number)?|ssn|tax\s*id(?:\s*number)?|national\s*id|steuernummer|steuer[- ]id|sozialversicherungsnummer|n[°o]\s*s[eé]curit[eé]\s*sociale|siret|siren|nif|cif|dni|nie|codice\s*fiscale|partita\s*iva|cpf|cnpj|rg|bsn|burgerkrachtnummer|प्यान\s*नं|राष्ट्रिय\s*परिचय)(?![\p{L}])/iu, id: "ssn", type: "textField", priority: 3 },
 
     // ── Contact & Identity (EN, DE, FR, ES, IT, PT, NL, NE/HI) ──
-    { regex: /first\s*name|given\s*name|forename|vorname|pr[eé]nom|primer\s*nombre|nome\s*proprio|primeiro\s*nome|voornaam|पहिलो\s*नाम/i, id: "first_name", type: "textField", autofill: "given-name", priority: 2 },
-    { regex: /last\s*name|surname|family\s*name|nachname|familienname|nom\s*de\s*famille|apellidos?|primer\s*apellido|segundo\s*apellido|cognome|sobrenome|achternaam|थर/i, id: "last_name", type: "textField", autofill: "family-name", priority: 2 },
-    { regex: /full\s*name|complete\s*name|vollst[äa]ndiger\s*name|nom\s*complet|nombre\s*completo|nome\s*completo|volledige\s*naam|नाम\s*,?\s*थर|पूरा\s*नाम|आवेदकको\s*नाम|निवेदकको\s*नाम|^name\b|^nom\b|^nombre\b|^naam\b|^नाम\b/i, id: "full_name", type: "textField", autofill: "name", priority: 1 },
-    { regex: /e-?mail|courriel|correo\s*electr[óo]nico|e-post|इमेल|ईमेल/i, id: "email", type: "textField", autofill: "email", priority: 1 },
-    { regex: /phone|telephone|mobile|cell|fax|tel\b|telefon|handy|mobil|t[eé]l[eé]phone|portable|tel[eé]fono|m[oó]vil|cellulare|telefone|celular|telefoon|टेलिफोन|फोन|मोबाइल|सम्पर्क\s*नं/i, id: "phone", type: "textField", autofill: "tel", priority: 1 },
-    { regex: /street\s*address|address\s*line|home\s*address|stra[ßs]e(?:\s*und\s*hausnummer)?|adresse|rue|direcci[óo]n|calle|indirizzo|via|endere[çc]o|rua|straat\s*(?:en\s*huisnummer)?|ठेगाना|घर\s*ठेगाना|टोल/i, id: "street_address", type: "textField", autofill: "address-line1", priority: 2 },
-    { regex: /city|ort\b|stadt|ville|ciudad|municipio|citt[àa]|cidade|plaats|stad|नगरपालिका|गाउँपालिका/i, id: "city", type: "textField", autofill: "address-level2", priority: 1 },
-    { regex: /state|province|region|bundesland|kanton|r[eé]gion|provincia|estado|provincie|जिल्ला|प्रदेश/i, id: "state", type: "textField", autofill: "address-level1", priority: 1 },
-    { regex: /zip|postal\s*code|postcode|plz|postleitzahl|code\s*postal|c[óo]digo\s*postal|cap\b|cep\b|वडा\s*नं|पिन\s*कोड/i, id: "zip_code", type: "textField", autofill: "postal-code", priority: 2 },
-    { regex: /country|land\b|pays|pa[íi]s|nazione|paese|देश/i, id: "country", type: "textField", autofill: "country-name", priority: 1 },
-    { regex: /company|organization|employer|institution|firma|unternehmen|arbeitgeber|entreprise|soci[eé]t[eé]|employeur|empresa|instituci[óo]n|organiza[çc][ãa]o|bedrijf|werkgever|कार्यालय|कम्पनी|संस्था/i, id: "organization", type: "textField", autofill: "organization", priority: 1 },
-    { regex: /title|role|position|designation|profession|occupation|berufsbezeichnung|beruf|funktion|poste|titre|cargo|puesto|profesi[óo]n|ruolo|mansione|profiss[ãa]o|functie|beroep|पद|ओहोदा/i, id: "job_title", type: "textField", autofill: "organization-title", priority: 2 },
-    { regex: /department|division|unit|abteilung|bereich|d[eé]partement|service|departamento|secci[óo]n|dipartimento|afdeling|शाखा|विभाग/i, id: "department", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}])(?:first\s*name|given\s*name|forename|vorname|pr[eé]nom|primer\s*nombre|nome\s*proprio|primeiro\s*nome|voornaam|पहिलो\s*नाम)(?![\p{L}])/iu, id: "first_name", type: "textField", autofill: "given-name", priority: 2 },
+    { regex: /(?<![\p{L}])(?:last\s*name|surname|family\s*name|nachname|familienname|nom\s*de\s*famille|apellidos?|primer\s*apellido|segundo\s*apellido|cognome|sobrenome|achternaam|थर)(?![\p{L}])/iu, id: "last_name", type: "textField", autofill: "family-name", priority: 2 },
+    { regex: /(?<![\p{L}])(?:full\s*name|complete\s*name|vollst[äa]ndiger\s*name|nom\s*complet|nombre\s*completo|nome\s*completo|volledige\s*naam|नाम\s*,?\s*थर|पूरा\s*नाम|आवेदकको\s*नाम|निवेदकको\s*नाम|^name\b|^nom\b|^nombre\b|^naam\b|^नाम\b)(?![\p{L}])/iu, id: "full_name", type: "textField", autofill: "name", priority: 1 },
+    { regex: /(?<![\p{L}])(?:e-?mail|courriel|correo\s*electr[óo]nico|e-post|इमेल|ईमेल)(?![\p{L}])/iu, id: "email", type: "textField", autofill: "email", priority: 1 },
+    { regex: /(?<![\p{L}])(?:phone|telephone|mobile|cell|cell\s*phone|cellular\s*phone|fax|tel|telefon|handy|mobil|t[eé]l[eé]phone|portable|tel[eé]fono|m[oó]vil|cellulare|telefone|celular|telefoon|टेलिफोन|फोन|मोबाइल|सम्पर्क\s*नं)(?![\p{L}])/iu, id: "phone", type: "textField", autofill: "tel", priority: 1 },
+    { regex: /(?<![\p{L}])(?:street\s*address|address\s*line|home\s*address|stra[ßs]e(?:\s*und\s*hausnummer)?|adresse|rue|direcci[óo]n|calle|indirizzo|via|endere[çc]o|rua|straat\s*(?:en\s*huisnummer)?|ठेगाना|घर\s*ठेगाना|टोल)(?![\p{L}])/iu, id: "street_address", type: "textField", autofill: "address-line1", priority: 2 },
+    { regex: /(?<![\p{L}])(?:city|ort|stadt|ville|ciudad|municipio|citt[àa]|cidade|plaats|stad|नगरपालिका|गाउँपालिका)(?![\p{L}])/iu, id: "city", type: "textField", autofill: "address-level2", priority: 1 },
+    { regex: /(?<![\p{L}])(?:state|province|region|bundesland|kanton|r[eé]gion|provincia|estado|provincie|जिल्ला|प्रदेश)(?![\p{L}])/iu, id: "state", type: "textField", autofill: "address-level1", priority: 1 },
+    { regex: /(?<![\p{L}])(?:zip|postal\s*code|postcode|plz|postleitzahl|code\s*postal|c[óo]digo\s*postal|cap|cep|वडा\s*नं|पिन\s*कोड)(?![\p{L}])/iu, id: "zip_code", type: "textField", autofill: "postal-code", priority: 2 },
+    { regex: /(?<![\p{L}])(?:country|land|pays|pa[íi]s|nazione|paese|देश)(?![\p{L}])/iu, id: "country", type: "textField", autofill: "country-name", priority: 1 },
+    { regex: /(?<![\p{L}])(?:company|organization|employer(?!\s*(?:identification|id\b|tax|no\b|number|ein\b))|institution|firma|unternehmen|arbeitgeber|entreprise|soci[eé]t[eé]|employeur|empresa|instituci[óo]n|organiza[çc][ãa]o|bedrijf|werkgever|कार्यालय|कम्पनी|संस्था)(?![\p{L}])/iu, id: "organization", type: "textField", autofill: "organization", priority: 1 },
+    { regex: /(?<![\p{L}])(?:title|role|position|designation|profession|occupation|berufsbezeichnung|beruf|funktion|poste|titre|cargo|puesto|profesi[óo]n|ruolo|mansione|profiss[ãa]o|functie|beroep|पद|ओहोदा)(?![\p{L}])/iu, id: "job_title", type: "textField", autofill: "organization-title", priority: 2 },
+    { regex: /(?<![\p{L}])(?:department|division|unit|abteilung|bereich|d[eé]partement|service|departamento|secci[óo]n|dipartimento|afdeling|शाखा|विभाग)(?![\p{L}])/iu, id: "department", type: "textField", priority: 1 },
     
     // ── Table Line Items & Description ──
-    { regex: /item\s*description|item\s*details|beschreibung|d[eé]signation|descripci[óo]n|descrizione|descri[çc][ãa]o|omschrijving|विवरण|^description\b/i, id: "item_description", type: "textField", priority: 2 },
+    { regex: /(?<![\p{L}])(?:item\s*description|item\s*details|beschreibung|d[eé]signation|descripci[óo]n|descrizione|descri[çc][ãa]o|omschrijving|विवरण|^description\b)(?![\p{L}])/iu, id: "item_description", type: "textField", priority: 2 },
 
     // ── Notes & Multiline Freeform ──
-    { regex: /comments|notes|remarks|explanation|justification|feedback|details|bemerkungen|hinweise|anmerkungen|remarques|observations|commentaires|comentarios|observaciones|notas|note\b|commenti|observa[çc][õo]es|opmerkingen|notities|कैफियत|प्रतिक्रिया/i, id: "comments", type: "textField", multiline: true, priority: 0 },
+    { regex: /(?<![\p{L}])(?:comments|notes|remarks|explanation|justification|feedback|details|bemerkungen|hinweise|anmerkungen|remarques|observations|commentaires|comentarios|observaciones|notas|note|commenti|observa[çc][õo]es|opmerkingen|notities|कैफियत|प्रतिक्रिया)(?![\p{L}])/iu, id: "comments", type: "textField", multiline: true, priority: 0 },
 
     // ── South Asian Identity Details ──
-    { regex: /परिचय\s*पत्र|राहदानी\s*नं/, id: "id_number", type: "textField", priority: 1 },
-    { regex: /संख्या|नं\.?\s*$|नम्बर/, id: "number", type: "textField", priority: 0 }
+    { regex: /(?<![\p{L}])(?:परिचय\s*पत्र|राहदानी\s*नं)(?![\p{L}])/iu, id: "id_number", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}])(?:संख्या|नं\.?\s*$|नम्बर)(?![\p{L}])/iu, id: "number", type: "textField", priority: 0 }
 ];
 
 export const SEMANTIC_DIMENSIONS = {
@@ -81,20 +82,45 @@ export function resolveSemanticProps(rawLabel, defaultType = "textField", usedNa
     let autofill = "";
     let dataFormat = "text";
 
+    // 0. High-impact compound precedence rules:
+    // A. Date beats Signature: Any compound date label containing "date" next to "sign" is a date field
+    const hasDateTerm = /(?<![\p{L}])(?:date|datum|fecha|data|मिति)(?![\p{L}])/iu.test(clean);
+    const hasSignTerm = /(?<![\p{L}])(?:sign(?:ature|ed)?|unterschrift|firma|assinatura|दस्तखत|हस्ताक्षर)(?![\p{L}])/iu.test(clean);
+    const isDateSigned = hasDateTerm && hasSignTerm;
+
+    // B. EIN beats Organization: "Employer Identification Number (EIN)" or "(EIN)" or bare "EIN" resolves to ssn
+    const isEin = /(?<![\p{L}])(?:employer\s*identification\s*number(?:\s*\(?ein\)?)?|\(?ein\)?)(?![\p{L}])/iu.test(clean);
+
     let bestMatch = null;
     let bestScore = -1;
 
     for (const item of GENERIC_PATTERNS) {
+        // Disqualify bare signature if label also asks for date
+        if (isDateSigned && item.type === "signature") {
+            continue;
+        }
+        // Disqualify organization if EIN is specified
+        if (isEin && item.id === "organization") {
+            continue;
+        }
+
         const m = clean.match(item.regex);
         if (m) {
             const matchedTextLen = m[0].length;
-            const priorityWeight = (item.priority !== undefined ? item.priority : 1) * 15;
-            const score = matchedTextLen + priorityWeight;
+            const priority = item.priority !== undefined ? item.priority : 1;
+            // Specificity priority outranks raw character length
+            const score = (priority * 100) + matchedTextLen;
             if (score > bestScore) {
                 bestScore = score;
                 bestMatch = item;
             }
         }
+    }
+
+    if (isDateSigned && (!bestMatch || bestMatch.type !== "dateField")) {
+        bestMatch = { id: "date_signed", type: "dateField", priority: 4 };
+    } else if (isEin && (!bestMatch || bestMatch.id !== "ssn")) {
+        bestMatch = { id: "ssn", type: "textField", priority: 3 };
     }
 
     if (bestMatch) {
@@ -145,6 +171,74 @@ export function resolveSemanticProps(rawLabel, defaultType = "textField", usedNa
     usedNames.add(finalId);
 
     return { name: finalId, type, multiline, autofill, dataFormat };
+}
+
+/**
+ * Computes dynamic confidence score for a detected field based on composite evidence signals:
+ * - Geometric edge certainty (vector box/table/underline vs text guess)
+ * - Matched label presence and semantic dictionary affinity
+ * - Geometric alignment with sibling fields on the page
+ * - Multi-stage agreement count
+ * 
+ * @param {Object} field 
+ * @param {Array} [siblingFields=[]] 
+ * @param {number} [stageAgreementCount=1] 
+ * @returns {number} Float between 0.40 and 1.0 (clamped, 2 decimal places)
+ */
+export function computeFieldConfidence(field, siblingFields = [], stageAgreementCount = 1) {
+    if (!field) return 0.5;
+    if (field.sourcedFrom === "acroform" || field.detectedBy === "acroform") {
+        return 1.0;
+    }
+
+    const detectedBy = field.detectedBy || "unknown";
+
+    // Base confidence by stage type
+    let base = 0.65;
+    if (["lattice_tables", "table_grid"].includes(detectedBy)) {
+        base = 0.82;
+    } else if (["vector_geometry", "vector_fields"].includes(detectedBy)) {
+        base = 0.78;
+    } else if (detectedBy === "underline_fields") {
+        base = 0.74;
+    } else if (["onnx_neural", "layoutlmv3_sidecar"].includes(detectedBy)) {
+        base = 0.68;
+    } else if (["visual_affordances", "colon_prompts", "checkbox_glyphs"].includes(detectedBy)) {
+        base = 0.60;
+    }
+
+    // Signal 1: Clean geometric edge
+    const hasGeometricEdge = field.hasVectorEdge ||
+        ["vector_geometry", "vector_fields", "lattice_tables", "table_grid", "underline_fields"].includes(detectedBy) ||
+        (field.borderWidth && field.borderWidth > 0);
+    if (hasGeometricEdge) base += 0.10;
+
+    // Signal 2: Matched label
+    const label = (field.label || field.tooltip || "").trim();
+    const hasLabel = label.length > 1 && !/^(?:field|input|box|text)_\d+$/i.test(label);
+    if (hasLabel) base += 0.06;
+
+    // Signal 3: Semantic dictionary match
+    const hasSemanticMatch = (field.dataFormat && field.dataFormat !== "text") ||
+        (field.name && !/^(?:field|input|box|text)_\d+$/i.test(field.name) && field.name !== field.label);
+    if (hasSemanticMatch) base += 0.06;
+
+    // Signal 4: Alignment with sibling fields on page (X col or Y row)
+    const hasAlignment = Array.isArray(siblingFields) && siblingFields.some(s => {
+        if (!s || s === field || s.id === field.id) return false;
+        return Math.abs((s.x || 0) - (field.x || 0)) <= 2 || Math.abs((s.y || 0) - (field.y || 0)) <= 2;
+    });
+    if (hasAlignment) base += 0.06;
+
+    // Signal 5: Multi-stage agreement
+    const agreements = Math.max(1, stageAgreementCount || (field.stagesAgreed ? field.stagesAgreed.length : 1));
+    if (agreements > 1) {
+        base += (agreements - 1) * 0.08;
+    }
+
+    // Clamp score
+    const clamped = Math.max(0.40, Math.min(0.99, base));
+    return Math.round(clamped * 100) / 100;
 }
 
 // ============================================================================

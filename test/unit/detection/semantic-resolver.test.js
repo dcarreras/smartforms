@@ -99,6 +99,101 @@ describe('semantic-resolver', () => {
             assert.equal(res2.name, 'first_name_3');
             assert.ok(usedNames.has('first_name_3'));
         });
+
+        it('does not produce false positive matches for unrelated words (negative test set)', () => {
+            const negativeCases = [
+                // Transport, Report number, Support contact -> should NOT be city
+                { label: 'Transport', unexpectedId: 'city' },
+                { label: 'Report number', unexpectedId: 'city' },
+                { label: 'Support contact', unexpectedId: 'city' },
+                // Capacity -> should NOT be city
+                { label: 'Capacity', unexpectedId: 'city' },
+                // Specific requirements, Uniform size, Energy, Einkommen -> should NOT be ssn
+                { label: 'Specific requirements', unexpectedId: 'ssn' },
+                { label: 'Uniform size', unexpectedId: 'ssn' },
+                { label: 'Energy', unexpectedId: 'ssn' },
+                { label: 'Einkommen', unexpectedId: 'ssn' },
+                // Statement -> should NOT be state
+                { label: 'Statement', unexpectedId: 'state' },
+                // Hotel -> should NOT be phone
+                { label: 'Hotel', unexpectedId: 'phone' },
+                // Cellular -> should NOT be phone
+                { label: 'Cellular', unexpectedId: 'phone' },
+                // Deviation -> should NOT be street_address
+                { label: 'Deviation', unexpectedId: 'street_address' },
+                // Corporate name -> should NOT be amount / currency
+                { label: 'Corporate name', unexpectedId: 'amount' },
+                // Entitled to -> should NOT be job_title
+                { label: 'Entitled to', unexpectedId: 'job_title' },
+                // Community -> should NOT be department
+                { label: 'Community', unexpectedId: 'department' },
+                // Handicap -> should NOT be zip_code
+                { label: 'Handicap', unexpectedId: 'zip_code' },
+                // Metadata -> should NOT be date
+                { label: 'Metadata', unexpectedId: 'date' }
+            ];
+
+            for (const c of negativeCases) {
+                const res = resolveSemanticProps(c.label, 'textField', new Set());
+                assert.notEqual(res.name, c.unexpectedId, `Label "${c.label}" unexpectedly resolved to "${c.unexpectedId}"`);
+            }
+        });
+
+        it('compound date label beats a bare signature', () => {
+            const dateCases = [
+                'Date signed',
+                'Signature date',
+                'Datum der Unterschrift',
+                'Date of signature',
+                'Date de signature',
+                'Fecha de firma'
+            ];
+            for (const label of dateCases) {
+                const res = resolveSemanticProps(label, 'textField', new Set());
+                assert.equal(res.type, 'dateField', `Label "${label}" should resolve to type dateField, got "${res.type}"`);
+            }
+        });
+
+        it('resolves Employer Identification Number (EIN) to ssn/ein rather than organization', () => {
+            const einCases = [
+                'Employer Identification Number (EIN)',
+                'Employer Identification Number',
+                'EIN',
+                'Taxpayer EIN'
+            ];
+            for (const label of einCases) {
+                const res = resolveSemanticProps(label, 'textField', new Set());
+                assert.equal(res.name, 'ssn', `Label "${label}" should resolve to ssn/ein, got "${res.name}"`);
+                assert.equal(res.dataFormat, 'number', `Label "${label}" format should be number, got "${res.dataFormat}"`);
+            }
+        });
+    });
+
+    describe('computeFieldConfidence', () => {
+        it('calculates dynamic score based on real signals', async () => {
+            const { computeFieldConfidence } = await import('./module-loader.js');
+            const mockField = {
+                id: 'field_1',
+                x: 100,
+                y: 100,
+                detectedBy: 'vector_fields',
+                hasVectorEdge: true,
+                label: 'Full Name',
+                name: 'full_name',
+                dataFormat: 'text'
+            };
+            const mockSibling = {
+                id: 'field_2',
+                x: 100,
+                y: 150
+            };
+            const conf = computeFieldConfidence(mockField, [mockSibling], 2);
+            assert.ok(conf >= 0.90, `Expected confidence >= 0.90, got ${conf}`);
+            
+            // Acroform field is always 1.0
+            const acroField = { id: 'acro_1', detectedBy: 'acroform' };
+            assert.equal(computeFieldConfidence(acroField), 1.0);
+        });
     });
 
     describe('isUniversalStaticText', () => {
