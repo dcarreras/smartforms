@@ -6,63 +6,75 @@ import { state, generateFieldId } from "../core/state.js";
 import { saveHistory } from "../core/storage-manager.js";
 
 // ============================================================================
-// 1. GENERIC SEMANTIC RESOLVER
+// 1. GENERIC SEMANTIC RESOLVER & PIPELINE CONSTANTS
 // ============================================================================
+
+export const DEDUP_THRESHOLDS = Object.freeze({
+    // Tight match: identical or nearly identical box sizes/centers
+    EXACT_OR_SIMILAR: 0.15,
+    // Cross-stage: merging across different detection passes (e.g. vector boxes vs tax schedule vs text affordances)
+    CROSS_STAGE: 0.25,
+    // Table cell: filtering table grid cells against preexisting fields
+    TABLE_CELL: 0.30,
+    // Within-stage: standard threshold for boxes within the same detector stage
+    WITHIN_STAGE: 0.35,
+    // Loose container: checking whether a small field is inside a large section or multi-line area
+    CONTAINER_OVERLAP: 0.50
+});
+
 export const GENERIC_PATTERNS = [
     // ── Dates (EN, DE, FR, ES, IT, PT, NL, NE/HI) ──
-    { regex: /due\s*date|payment\s*due|f[äa]lligkeitsdatum|date\s*d['’]?[eé]ch[eé]ance|fecha\s*de\s*vencimiento|data\s*di\s*scadenza|data\s*de\s*vencimento|vervaldatum/i, id: "due_date", type: "dateField" },
-    { regex: /expiration\s*date|exp\s*date|expiry|ablaufdatum|g[üu]ltig\s*bis|date\s*d['’]?expiration|fecha\s*de\s*(?:expiraci[óo]n|caducidad)|data\s*di\s*scadenza|data\s*de\s*validade|verloopdatum/i, id: "expiration_date", type: "dateField" },
-    { regex: /date\s*approved|approval\s*date|genehmigungsdatum|date\s*d['’]?approbation|fecha\s*de\s*aprobaci[óo]n|data\s*di\s*approvazione/i, id: "date_approved", type: "dateField" },
-    { regex: /birth\s*date|\bdob\b|date\s*of\s*birth|geburtsdatum|date\s*de\s*naissance|fecha\s*de\s*nacimiento|data\s*di\s*nascita|data\s*de\s*nascimento|geboortedatum|जन्म\s*मिति/i, id: "dob", type: "dateField" },
-    { regex: /due\s*date|payment\s*due|pay\s*by|f[äa]lligkeitsdatum|date\s*d['’]?[\s]*[ée]ch[ée]ance|fecha\s*de\s*vencimiento|data\s*di\s*scadenza|vervaldatum/i, id: "due_date", type: "dateField" },
-    { regex: /\bdate\b|\(yyyy-mm-dd\)|\(mm\/dd\/yyyy\)|yyyy\s*-\s*mm\s*-\s*dd|\(dd\/mm\/yyyy\)|datum\b|date\b|fecha\b|data\b|मिति|मितिः/i, id: "date", type: "dateField" },
+    { regex: /due\s*date|payment\s*due|pay\s*by|f[äa]lligkeitsdatum|date\s*d['’]?[\s]*[ée]ch[ée]ance|fecha\s*de\s*vencimiento|data\s*di\s*scadenza|data\s*de\s*vencimento|vervaldatum/i, id: "due_date", type: "dateField", priority: 2 },
+    { regex: /expiration\s*date|exp\s*date|expiry|ablaufdatum|g[üu]ltig\s*bis|date\s*d['’]?expiration|fecha\s*de\s*(?:expiraci[óo]n|caducidad)|data\s*di\s*scadenza|data\s*de\s*validade|verloopdatum/i, id: "expiration_date", type: "dateField", priority: 2 },
+    { regex: /date\s*approved|approval\s*date|genehmigungsdatum|date\s*d['’]?approbation|fecha\s*de\s*aprobaci[óo]n|data\s*di\s*approvazione/i, id: "date_approved", type: "dateField", priority: 2 },
+    { regex: /birth\s*date|\bdob\b|date\s*of\s*birth|geburtsdatum|date\s*de\s*naissance|fecha\s*de\s*nacimiento|data\s*di\s*nascita|data\s*de\s*nascimento|geboortedatum|जन्म\s*मिति/i, id: "dob", type: "dateField", priority: 2 },
+    { regex: /\bdate\b|\(yyyy-mm-dd\)|\(mm\/dd\/yyyy\)|yyyy\s*-\s*mm\s*-\s*dd|\(dd\/mm\/yyyy\)|datum\b|fecha\b|data\b|मिति|मितिः/i, id: "date", type: "dateField", priority: 0 },
     
     // ── Signatures (EN, DE, FR, ES, IT, PT, NL, NE/HI) ──
-    { regex: /signature|sign\s*here|signed\s*by|^sign\b|unterschrift|unterschrieben|signatur|signé\s*par|firma\b|firmado\s*por|firmato\s*da|assinatura|assinado\s*por|handtekening|ondertekend|दस्तखत|हस्ताक्षर|सही\s*छाप/i, id: "signature", type: "signature" },
+    { regex: /\b(?:e[-_]?)?sign(?:ature|ed|ing)?\b|sign\s*here|signed\s*by|unterschrift|unterschrieben|signatur|signé\s*par|firma\b|firmado\s*por|firmato\s*da|assinatura|assinado\s*por|handtekening|ondertekend|दस्तखत|हस्ताक्षर|सही\s*छाप/i, id: "signature", type: "signature", priority: 2 },
 
     // ── Financial & Numbers (EN, DE, FR, ES, IT, PT, NL, NE/HI) ──
-    { regex: /invoice\s*(?:#|no|number|num)|rechnungs\s*(?:nr|nummer)|(?:n[°o]|num[eé]ro)\s*de\s*facture|n[úu]mero\s*de\s*factura|fattura\s*n\.?|fatura\s*n[°º]|factuurnummer|बिल\s*नं/i, id: "invoice_number", type: "textField", autofill: "invoice_num" },
-    { regex: /po\s*(?:#|no|number|num)|purchase\s*order|contract\s*(?:#|no|number|num)|job\s*(?:#|no|number|num)|project\s*(?:#|no|number|num)|work\s*order|bestellnummer|bon\s*de\s*commande|orden\s*de\s*compra|ordine\s*d['’]?acquisto|ordem\s*de\s*compra|inkoopordernummer/i, id: "po_number", type: "textField" },
-    { regex: /contractor\s*lic(?:ense)?|lic(?:ense)?\s*(?:#|no|number|num)|trade\s*lic(?:ense)?/i, id: "license_number", type: "textField" },
-    { regex: /subtotal|zwischensumme|sous-total|subtotale|sub-total|subtotaal/i, id: "subtotal", type: "textField" },
-    { regex: /retainage|retention\s*(?:amount|rate|fee)?/i, id: "retainage", type: "textField" },
-    { regex: /\b(?:tax|vat|gst|mwst|ust|tva|iva|imposto|btw)\b|कर|भ्याट/i, id: "tax", type: "textField" },
-    { regex: /total|balance\s*due|amount\s*due|gesamtbetrag|endbetrag|solde\s*d[uû]|importe\s*total|totale\s*dovuto|valor\s*total|totaalbedrag|कुल\s*जम्मा|जम्मा/i, id: "total", type: "textField" },
-    { regex: /unit\s*price|hourly\s*rate|rate\s*(?:\/|\s*per\s*)hour|unit\s*cost|einzelpreis|prix\s*unitaire|precio\s*unitario|prezzo\s*unitario/i, id: "unit_price", type: "textField" },
-    { regex: /\b(?:hours?|hrs?|stunden|heures|horas|ore|uren|घण्टा)\b/i, id: "hours", type: "textField" },
-    { regex: /amount|price|rate|cost|\bfees?\b|charge|betrag|preis|kosten|geb[üu]hr|montant|prix|co[uû]t|tarif|importe|precio|tarifa|costo|valore|valor|pre[çc]o|prijs|bedrag|kosten|रकम|मूल्य|दर/i, id: "amount", type: "textField" },
-    { regex: /\bqty\b|quantity|units|menge|anzahl|st[üu]ckzahl|quantit[ée]|quantit[àa]|cantidad|unidades|quantidade|aantal|परिमाण|संख्या/i, id: "quantity", type: "textField" },
-    { regex: /payment\s*instructions|bank\s*(?:details|info|wire)|wire\s*instructions|zahlungsanweisungen/i, id: "payment_instructions", type: "textField", multiline: true },
-    { regex: /routing|iban|swift|bic|bsb|bankleitzahl|blz|code\s*banque|c[óo]digo\s*bancario|खाता\s*नं/i, id: "routing_number", type: "textField" },
-    { regex: /account\s*(?:#|no|number|num)|kontonummer|konto-nr|n[°o]\s*de\s*compte|n[úu]mero\s*de\s*cuenta|numero\s*conto|n[úu]mero\s*da\s*conta|rekeningnummer/i, id: "account_number", type: "textField" },
-    { regex: /नागरिकता\s*(?:नं|नंबर|प्रमाण)/, id: "citizenship_number", type: "textField" },
-    { regex: /ssn|social\s*security|tax\s*id|ein|national\s*id|steuernummer|steuer-id|sozialversicherungsnummer|n[°o]\s*s[eé]curit[eé]\s*sociale|siret|siren|nif|cif|dni|nie|codice\s*fiscale|partita\s*iva|cpf|cnpj|rg|bsn|burgerkrachtnummer|प्यान\s*नं|राष्ट्रिय\s*परिचय/i, id: "ssn", type: "textField" },
+    { regex: /invoice\s*(?:#|no|number|num)|rechnungs\s*(?:nr|nummer)|(?:n[°o]|num[eé]ro)\s*de\s*facture|n[úu]mero\s*de\s*factura|fattura\s*n\.?|fatura\s*n[°º]|factuurnummer|बिल\s*नं/i, id: "invoice_number", type: "textField", autofill: "invoice_num", priority: 2 },
+    { regex: /po\s*(?:#|no|number|num)|purchase\s*order|contract\s*(?:#|no|number|num)|job\s*(?:#|no|number|num)|project\s*(?:#|no|number|num)|work\s*order|bestellnummer|bon\s*de\s*commande|orden\s*de\s*compra|ordine\s*d['’]?acquisto|ordem\s*de\s*compra|inkoopordernummer/i, id: "po_number", type: "textField", priority: 2 },
+    { regex: /contractor\s*lic(?:ense)?|lic(?:ense)?\s*(?:#|no|number|num)|trade\s*lic(?:ense)?/i, id: "license_number", type: "textField", priority: 2 },
+    { regex: /subtotal|zwischensumme|sous-total|subtotale|sub-total|subtotaal/i, id: "subtotal", type: "textField", priority: 1 },
+    { regex: /retainage|retention\s*(?:amount|rate|fee)?/i, id: "retainage", type: "textField", priority: 1 },
+    { regex: /\b(?:tax|vat|gst|mwst|ust|tva|iva|imposto|btw)\b|कर|भ्याट/i, id: "tax", type: "textField", priority: 0 },
+    { regex: /total|balance\s*due|amount\s*due|gesamtbetrag|endbetrag|solde\s*d[uû]|importe\s*total|totale\s*dovuto|valor\s*total|totaalbedrag|कुल\s*जम्मा|जम्मा/i, id: "total", type: "textField", priority: 0 },
+    { regex: /unit\s*price|hourly\s*rate|rate\s*(?:\/|\s*per\s*)hour|unit\s*cost|einzelpreis|prix\s*unitaire|precio\s*unitario|prezzo\s*unitario/i, id: "unit_price", type: "textField", priority: 2 },
+    { regex: /\b(?:hours?|hrs?|stunden|heures|horas|ore|uren|घण्टा)\b/i, id: "hours", type: "textField", priority: 0 },
+    { regex: /amount|price|rate|cost|\bfees?\b|charge|betrag|preis|kosten|geb[üu]hr|montant|prix|co[uû]t|tarif|importe|precio|tarifa|costo|valore|valor|pre[çc]o|prijs|bedrag|kosten|रकम|मूल्य|दर/i, id: "amount", type: "textField", priority: 0 },
+    { regex: /\bqty\b|quantity|units|menge|anzahl|st[üu]ckzahl|quantit[ée]|quantit[àa]|cantidad|unidades|quantidade|aantal|परिमाण|संख्या/i, id: "quantity", type: "textField", priority: 0 },
+    { regex: /payment\s*instructions|bank\s*(?:details|info|wire)|wire\s*instructions|zahlungsanweisungen/i, id: "payment_instructions", type: "textField", multiline: true, priority: 2 },
+    { regex: /routing|iban|swift|bic|bsb|bankleitzahl|blz|code\s*banque|c[óo]digo\s*bancario|खाता\s*नं/i, id: "routing_number", type: "textField", priority: 1 },
+    { regex: /account\s*(?:#|no|number|num)|kontonummer|konto-nr|n[°o]\s*de\s*compte|n[úu]mero\s*de\s*cuenta|numero\s*conto|n[úu]mero\s*da\s*conta|rekeningnummer/i, id: "account_number", type: "textField", priority: 1 },
+    { regex: /नागरिकता\s*(?:नं|नंबर|प्रमाण)/, id: "citizenship_number", type: "textField", priority: 1 },
+    { regex: /ssn|social\s*security|tax\s*id|ein|national\s*id|steuernummer|steuer-id|sozialversicherungsnummer|n[°o]\s*s[eé]curit[eé]\s*sociale|siret|siren|nif|cif|dni|nie|codice\s*fiscale|partita\s*iva|cpf|cnpj|rg|bsn|burgerkrachtnummer|प्यान\s*नं|राष्ट्रिय\s*परिचय/i, id: "ssn", type: "textField", priority: 1 },
 
     // ── Contact & Identity (EN, DE, FR, ES, IT, PT, NL, NE/HI) ──
-    { regex: /first\s*name|given\s*name|forename|vorname|pr[eé]nom|primer\s*nombre|nome\s*proprio|primeiro\s*nome|voornaam|पहिलो\s*नाम/i, id: "first_name", type: "textField", autofill: "given-name" },
-    { regex: /last\s*name|surname|family\s*name|nachname|familienname|nom\s*de\s*famille|apellidos?|primer\s*apellido|segundo\s*apellido|cognome|sobrenome|achternaam|थर/i, id: "last_name", type: "textField", autofill: "family-name" },
-    { regex: /full\s*name|complete\s*name|vollst[äa]ndiger\s*name|nom\s*complet|nombre\s*completo|nome\s*completo|volledige\s*naam|नाम\s*,?\s*थर|पूरा\s*नाम|आवेदकको\s*नाम|निवेदकको\s*नाम|^name\b|^nom\b|^nombre\b|^naam\b|^नाम\b/i, id: "full_name", type: "textField", autofill: "name" },
-    { regex: /e-?mail|courriel|correo\s*electr[óo]nico|e-post|इमेल|ईमेल/i, id: "email", type: "textField", autofill: "email" },
-    { regex: /phone|telephone|mobile|cell|fax|tel\b|telefon|handy|mobil|t[eé]l[eé]phone|portable|tel[eé]fono|m[oó]vil|cellulare|telefone|celular|telefoon|टेलिफोन|फोन|मोबाइल|सम्पर्क\s*नं/i, id: "phone", type: "textField", autofill: "tel" },
-    { regex: /street\s*address|address\s*line|home\s*address|stra[ßs]e(?:\s*und\s*hausnummer)?|adresse|rue|direcci[óo]n|calle|indirizzo|via|endere[çc]o|rua|straat\s*(?:en\s*huisnummer)?|ठेगाना|घर\s*ठेगाना|टोल/i, id: "street_address", type: "textField", autofill: "address-line1" },
-    { regex: /city|ort\b|stadt|ville|ciudad|municipio|citt[àa]|cidade|plaats|stad|नगरपालिका|गाउँपालिका/i, id: "city", type: "textField", autofill: "address-level2" },
-    { regex: /state|province|region|bundesland|kanton|r[eé]gion|provincia|estado|provincie|जिल्ला|प्रदेश/i, id: "state", type: "textField", autofill: "address-level1" },
-    { regex: /zip|postal\s*code|postcode|plz|postleitzahl|code\s*postal|c[óo]digo\s*postal|cap\b|cep\b|वडा\s*नं|पिन\s*कोड/i, id: "zip_code", type: "textField", autofill: "postal-code" },
-    { regex: /country|land\b|pays|pa[íi]s|nazione|paese|देश/i, id: "country", type: "textField", autofill: "country-name" },
-    { regex: /company|organization|employer|institution|firma|unternehmen|arbeitgeber|entreprise|soci[eé]t[eé]|employeur|empresa|instituci[óo]n|organiza[çc][ãa]o|bedrijf|werkgever|कार्यालय|कम्पनी|संस्था/i, id: "organization", type: "textField", autofill: "organization" },
-    { regex: /title|role|position|designation|profession|occupation|berufsbezeichnung|beruf|funktion|poste|titre|cargo|puesto|profesi[óo]n|ruolo|mansione|profiss[ãa]o|functie|beroep|पद|ओहोदा/i, id: "job_title", type: "textField", autofill: "organization-title" },
-    { regex: /department|division|unit|abteilung|bereich|d[eé]partement|service|departamento|secci[óo]n|dipartimento|afdeling|शाखा|विभाग/i, id: "department", type: "textField" },
+    { regex: /first\s*name|given\s*name|forename|vorname|pr[eé]nom|primer\s*nombre|nome\s*proprio|primeiro\s*nome|voornaam|पहिलो\s*नाम/i, id: "first_name", type: "textField", autofill: "given-name", priority: 2 },
+    { regex: /last\s*name|surname|family\s*name|nachname|familienname|nom\s*de\s*famille|apellidos?|primer\s*apellido|segundo\s*apellido|cognome|sobrenome|achternaam|थर/i, id: "last_name", type: "textField", autofill: "family-name", priority: 2 },
+    { regex: /full\s*name|complete\s*name|vollst[äa]ndiger\s*name|nom\s*complet|nombre\s*completo|nome\s*completo|volledige\s*naam|नाम\s*,?\s*थर|पूरा\s*नाम|आवेदकको\s*नाम|निवेदकको\s*नाम|^name\b|^nom\b|^nombre\b|^naam\b|^नाम\b/i, id: "full_name", type: "textField", autofill: "name", priority: 1 },
+    { regex: /e-?mail|courriel|correo\s*electr[óo]nico|e-post|इमेल|ईमेल/i, id: "email", type: "textField", autofill: "email", priority: 1 },
+    { regex: /phone|telephone|mobile|cell|fax|tel\b|telefon|handy|mobil|t[eé]l[eé]phone|portable|tel[eé]fono|m[oó]vil|cellulare|telefone|celular|telefoon|टेलिफोन|फोन|मोबाइल|सम्पर्क\s*नं/i, id: "phone", type: "textField", autofill: "tel", priority: 1 },
+    { regex: /street\s*address|address\s*line|home\s*address|stra[ßs]e(?:\s*und\s*hausnummer)?|adresse|rue|direcci[óo]n|calle|indirizzo|via|endere[çc]o|rua|straat\s*(?:en\s*huisnummer)?|ठेगाना|घर\s*ठेगाना|टोल/i, id: "street_address", type: "textField", autofill: "address-line1", priority: 2 },
+    { regex: /city|ort\b|stadt|ville|ciudad|municipio|citt[àa]|cidade|plaats|stad|नगरपालिका|गाउँपालिका/i, id: "city", type: "textField", autofill: "address-level2", priority: 1 },
+    { regex: /state|province|region|bundesland|kanton|r[eé]gion|provincia|estado|provincie|जिल्ला|प्रदेश/i, id: "state", type: "textField", autofill: "address-level1", priority: 1 },
+    { regex: /zip|postal\s*code|postcode|plz|postleitzahl|code\s*postal|c[óo]digo\s*postal|cap\b|cep\b|वडा\s*नं|पिन\s*कोड/i, id: "zip_code", type: "textField", autofill: "postal-code", priority: 2 },
+    { regex: /country|land\b|pays|pa[íi]s|nazione|paese|देश/i, id: "country", type: "textField", autofill: "country-name", priority: 1 },
+    { regex: /company|organization|employer|institution|firma|unternehmen|arbeitgeber|entreprise|soci[eé]t[eé]|employeur|empresa|instituci[óo]n|organiza[çc][ãa]o|bedrijf|werkgever|कार्यालय|कम्पनी|संस्था/i, id: "organization", type: "textField", autofill: "organization", priority: 1 },
+    { regex: /title|role|position|designation|profession|occupation|berufsbezeichnung|beruf|funktion|poste|titre|cargo|puesto|profesi[óo]n|ruolo|mansione|profiss[ãa]o|functie|beroep|पद|ओहोदा/i, id: "job_title", type: "textField", autofill: "organization-title", priority: 2 },
+    { regex: /department|division|unit|abteilung|bereich|d[eé]partement|service|departamento|secci[óo]n|dipartimento|afdeling|शाखा|विभाग/i, id: "department", type: "textField", priority: 1 },
     
     // ── Table Line Items & Description ──
-    { regex: /item\s*description|item\s*details|beschreibung|d[eé]signation|descripci[óo]n|descrizione|descri[çc][ãa]o|omschrijving|विवरण|^description\b/i, id: "item_description", type: "textField" },
+    { regex: /item\s*description|item\s*details|beschreibung|d[eé]signation|descripci[óo]n|descrizione|descri[çc][ãa]o|omschrijving|विवरण|^description\b/i, id: "item_description", type: "textField", priority: 2 },
 
     // ── Notes & Multiline Freeform ──
-    { regex: /comments|notes|remarks|explanation|justification|feedback|details|bemerkungen|hinweise|anmerkungen|remarques|observations|commentaires|comentarios|observaciones|notas|note\b|commenti|observa[çc][õo]es|opmerkingen|notities|कैफियत|प्रतिक्रिया/i, id: "comments", type: "textField", multiline: true },
+    { regex: /comments|notes|remarks|explanation|justification|feedback|details|bemerkungen|hinweise|anmerkungen|remarques|observations|commentaires|comentarios|observaciones|notas|note\b|commenti|observa[çc][õo]es|opmerkingen|notities|कैफियत|प्रतिक्रिया/i, id: "comments", type: "textField", multiline: true, priority: 0 },
 
     // ── South Asian Identity Details ──
-    { regex: /नागरिकता\s*(?:नं|नंबर|प्रमाण)/, id: "citizenship_number", type: "textField" },
-    { regex: /परिचय\s*पत्र|राहदानी\s*नं/, id: "id_number", type: "textField" },
-    { regex: /संख्या|नं\.?\s*$|नम्बर/, id: "number", type: "textField" }
+    { regex: /परिचय\s*पत्र|राहदानी\s*नं/, id: "id_number", type: "textField", priority: 1 },
+    { regex: /संख्या|नं\.?\s*$|नम्बर/, id: "number", type: "textField", priority: 0 }
 ];
 
 export const SEMANTIC_DIMENSIONS = {
@@ -155,14 +167,27 @@ export function resolveSemanticProps(rawLabel, defaultType = "textField", usedNa
     let autofill = "";
     let dataFormat = "text";
 
+    let bestMatch = null;
+    let bestScore = -1;
+
     for (const item of GENERIC_PATTERNS) {
-        if (item.regex.test(clean)) {
-            baseId = item.id;
-            if (item.type) type = item.type;
-            if (item.multiline) multiline = true;
-            if (item.autofill) autofill = item.autofill;
-            break;
+        const m = clean.match(item.regex);
+        if (m) {
+            const matchedTextLen = m[0].length;
+            const priorityWeight = (item.priority !== undefined ? item.priority : 1) * 15;
+            const score = matchedTextLen + priorityWeight;
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = item;
+            }
         }
+    }
+
+    if (bestMatch) {
+        baseId = bestMatch.id;
+        if (bestMatch.type) type = bestMatch.type;
+        if (bestMatch.multiline) multiline = true;
+        if (bestMatch.autofill) autofill = bestMatch.autofill;
     }
 
     // Determine semantic data format
@@ -403,13 +428,13 @@ export async function importExistingAcroFormFields(scope = "all") {
     const current = state.fields.filter(field => pagesToScan.includes(field.page || 1));
     const merged = [...existing, ...current];
     for (const field of imported) {
-        if (!isOverlapping(field, merged, 0.2)) merged.push(field);
+        if (!isOverlapping(field, merged, DEDUP_THRESHOLDS.CROSS_STAGE)) merged.push(field);
     }
     state.fields = merged;
     return imported.length;
 }
 
-function isOverlapping(field, list, threshold = 0.35) {
+function isOverlapping(field, list, threshold = DEDUP_THRESHOLDS.WITHIN_STAGE) {
     return list.some(existing => {
         if (field.id && existing.id && field.id === existing.id) return false;
         if ((existing.page || 1) !== (field.page || 1)) return false;
@@ -526,6 +551,13 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
     const usedNames = new Set(existingFields.map(f => f.name));
     const allDetected = [];
     const pageSummaries = [];
+    const pipelineTelemetry = {
+        stagesAttempted: [],
+        stagesSucceeded: [],
+        stagesSkipped: [],
+        stageErrors: {},
+        countsByStage: {}
+    };
 
     for (let pageNum of pagesToScan) {
         try {
@@ -567,9 +599,18 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             }
 
             // 1.25 Scanned / Flattened PDF Client-Side OCR Fallback
-            const isScannedDoc = rawBlocks.length < 5 || (vectorShapes.allRects?.length === 0 && (vectorShapes.paths?.length || 0) < 5);
-            if (isScannedDoc && typeof document !== "undefined" && options.enableOcr !== false) {
+            // Triggers when text is sparse (scanned) OR when interactive vector shapes (boxes, checkboxes, underlines) are absent
+            const hasInteractiveVectorShapes = (vectorShapes.checkboxRects?.length || 0) > 0 ||
+                (vectorShapes.inputBoxRects?.length || 0) > 0 ||
+                (vectorShapes.underlines?.length || 0) > 0;
+            const isTextSparse = rawBlocks.length < 5;
+            const isVectorSparse = (vectorShapes.allRects?.length === 0 && (vectorShapes.paths?.length || 0) < 5);
+            const isScannedDoc = isTextSparse || isVectorSparse;
+            const needsVisualOrOcrScan = isScannedDoc || !hasInteractiveVectorShapes;
+
+            if (needsVisualOrOcrScan && typeof document !== "undefined" && options.enableOcr !== false) {
                 try {
+                    pipelineTelemetry.stagesAttempted.push("ocr");
                     const { performScannedPageOcr } = await import("./ocr-engine.js");
                     let ocrCanvas = null;
                     const mainCanvas = document.getElementById("pdfCanvas");
@@ -596,26 +637,37 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                     if (ocrResult.underlines && ocrResult.underlines.length > 0) {
                         vectorShapes.underlines = [...(vectorShapes.underlines || []), ...ocrResult.underlines];
                     }
+                    pipelineTelemetry.stagesSucceeded.push("ocr");
                 } catch (ocrErr) {
+                    pipelineTelemetry.stageErrors["ocr"] = ocrErr.message;
                     console.warn("Client-side OCR scanning fallback:", ocrErr);
                 }
             }
 
             // 1.5 Drawn Vector Rectangles & Checkboxes (Exact vector geometry)
+            pipelineTelemetry.stagesAttempted.push("vector_geometry");
             const drawnVectorFields = detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNames, [...existingFields, ...widgetFields], { clusterRadios: true });
+            pipelineTelemetry.countsByStage["vector_geometry"] = (pipelineTelemetry.countsByStage["vector_geometry"] || 0) + drawnVectorFields.length;
+            pipelineTelemetry.stagesSucceeded.push("vector_geometry");
 
             let pageFields = [...drawnVectorFields];
 
             // 1.75 Lattice table fields and ruling lines (always evaluated for table grids)
+            pipelineTelemetry.stagesAttempted.push("lattice_tables");
             const latticeResult = await detectLatticeTableFields(page, rawBlocks, pageNum, usedNames, boundaryLines);
+            let latticeCount = 0;
             for (const lf of (latticeResult.fields || [])) {
-                if (!isOverlapping(lf, pageFields, 0.25)) {
+                if (!isOverlapping(lf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
                     pageFields.push(lf);
+                    latticeCount++;
                 }
             }
+            pipelineTelemetry.countsByStage["lattice_tables"] = (pipelineTelemetry.countsByStage["lattice_tables"] || 0) + latticeCount;
+            pipelineTelemetry.stagesSucceeded.push("lattice_tables");
 
             // 1.8 Underlines (e.g. signature lines, blanks, horizontal rules)
             if (boundaryLines[0]) {
+                pipelineTelemetry.stagesAttempted.push("boundary_underlines");
                 const boundaryFields = detectUnderlineFields(
                     boundaryLines[0],
                     rawBlocks,
@@ -623,14 +675,19 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                     usedNames,
                     [...existingFields, ...widgetFields, ...pageFields]
                 );
+                let underCount = 0;
                 for (const bf of boundaryFields) {
-                    if (!isOverlapping(bf, pageFields, 0.25)) {
+                    if (!isOverlapping(bf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
                         pageFields.push(bf);
+                        underCount++;
                     }
                 }
+                pipelineTelemetry.countsByStage["boundary_underlines"] = (pipelineTelemetry.countsByStage["boundary_underlines"] || 0) + underCount;
+                pipelineTelemetry.stagesSucceeded.push("boundary_underlines");
             }
 
             // 2.0 Dotted-Leader & Tax / Financial Schedule Line Affordances
+            pipelineTelemetry.stagesAttempted.push("tax_schedules");
             const scheduleFields = detectTaxScheduleLineAffordances(
                 rawBlocks,
                 viewport,
@@ -638,13 +695,18 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 usedNames,
                 [...existingFields, ...widgetFields, ...pageFields]
             );
+            let schedCount = 0;
             for (const sf of scheduleFields) {
-                if (!isOverlapping(sf, pageFields, 0.25)) {
+                if (!isOverlapping(sf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
                     pageFields.push(sf);
+                    schedCount++;
                 }
             }
+            pipelineTelemetry.countsByStage["tax_schedules"] = (pipelineTelemetry.countsByStage["tax_schedules"] || 0) + schedCount;
+            pipelineTelemetry.stagesSucceeded.push("tax_schedules");
 
             // 2.2 Visual affordances (unlined text-only prompts & checkboxes)
+            pipelineTelemetry.stagesAttempted.push("visual_affordances");
             const seedFields = [...widgetFields, ...pageFields];
             const geometricFields = detectVisualAffordances(
                 rawBlocks,
@@ -655,34 +717,44 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 latticeResult.regions,
                 vectorShapes
             );
+            let geomCount = 0;
             for (const gf of geometricFields) {
-                if (!isOverlapping(gf, pageFields, 0.25)) {
+                if (!isOverlapping(gf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
                     pageFields.push(gf);
+                    geomCount++;
                 }
             }
-
+            pipelineTelemetry.countsByStage["visual_affordances"] = (pipelineTelemetry.countsByStage["visual_affordances"] || 0) + geomCount;
+            pipelineTelemetry.stagesSucceeded.push("visual_affordances");
 
             // 2.5 Optional Local Python LayoutLMv3 Sidecar (http://127.0.0.1:8000)
             if (options.useSidecar !== false && typeof fetch !== "undefined") {
+                pipelineTelemetry.stagesAttempted.push("layoutlmv3_sidecar");
                 try {
                     const { isSidecarAvailable, detectFieldsViaSidecar } = await import("./sidecar-detector.js");
                     const sidecarStatus = await isSidecarAvailable();
                     if (sidecarStatus && sidecarStatus.available) {
                         const sidecarFields = await detectFieldsViaSidecar(page, viewport, rawBlocks, pageNum, usedNames);
+                        let sidecarCount = 0;
                         for (const sf of sidecarFields) {
-                            if (!isOverlapping(sf, pageFields, 0.25)) {
+                            if (!isOverlapping(sf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
                                 pageFields.push(sf);
+                                sidecarCount++;
                             }
                         }
+                        pipelineTelemetry.countsByStage["layoutlmv3_sidecar"] = sidecarCount;
+                        pipelineTelemetry.stagesSucceeded.push("layoutlmv3_sidecar");
+                    } else {
+                        pipelineTelemetry.stagesSkipped.push("layoutlmv3_sidecar_offline");
                     }
                 } catch (sidecarErr) {
-                    // Gracefully continue with client-side detection
+                    pipelineTelemetry.stageErrors["layoutlmv3_sidecar"] = sidecarErr.message;
                 }
             }
 
             // 3. Optional In-Browser ONNX Neural Vision Detector (Hybrid Mode)
-
             if (isHybridMode && typeof document !== "undefined") {
+                pipelineTelemetry.stagesAttempted.push("onnx_neural");
                 try {
                     const { detectNeuralFieldsOnCanvas } = await import("./onnx-detector.js");
                     const renderCanvas = document.createElement("canvas");
@@ -693,12 +765,17 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
 
                     const rawNeural = await detectNeuralFieldsOnCanvas(renderCanvas, pageNum, viewport);
                     const neuralFields = enrichNeuralFieldsWithText(rawNeural, rawBlocks, usedNames, pageNum);
+                    let neuralCount = 0;
                     for (const nf of neuralFields) {
-                        if (!isOverlapping(nf, pageFields, 0.25)) {
+                        if (!isOverlapping(nf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
                             pageFields.push(nf);
+                            neuralCount++;
                         }
                     }
+                    pipelineTelemetry.countsByStage["onnx_neural"] = neuralCount;
+                    pipelineTelemetry.stagesSucceeded.push("onnx_neural");
                 } catch (neuralErr) {
+                    pipelineTelemetry.stageErrors["onnx_neural"] = neuralErr.message;
                     console.warn("Neural vision inference skipped:", neuralErr);
                 }
             }
@@ -716,8 +793,8 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
 
     const finalUnique = [];
     for (let f of allDetected) {
-        if (!isOverlapping(f, existingFields, 0.35) &&
-            !isOverlapping(f, finalUnique, 0.35)) {
+        if (!isOverlapping(f, existingFields, DEDUP_THRESHOLDS.WITHIN_STAGE) &&
+            !isOverlapping(f, finalUnique, DEDUP_THRESHOLDS.WITHIN_STAGE)) {
             finalUnique.push(f);
         }
     }
@@ -725,7 +802,8 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
     return {
         fields: finalUnique,
         totalCount: finalUnique.length,
-        pages: pageSummaries
+        pages: pageSummaries,
+        telemetry: pipelineTelemetry
     };
 }
 
@@ -1258,16 +1336,23 @@ export function clusterRadioGroups(fields, rawBlocks = [], usedNames = new Set()
     // Mutually exclusive value tokens
     const MUTUAL_EXCLUSIVE_SETS = [
         new Set(["yes", "no"]),
+        new Set(["yes", "no", "maybe"]),
+        new Set(["yes", "maybe", "no"]),
         new Set(["yes", "no", "na"]),
         new Set(["yes", "no", "n_a"]),
         new Set(["male", "female"]),
         new Set(["male", "female", "other"]),
+        new Set(["male", "female", "other", "prefer_not_to_say"]),
         new Set(["single", "married"]),
         new Set(["single", "married", "divorced", "widowed"]),
         new Set(["single", "married", "married_filing_jointly", "head_of_household"]),
         new Set(["individual", "c_corp", "s_corp", "partnership", "trust_estate", "llc", "other"]),
         new Set(["checking", "savings"]),
         new Set(["am", "pm"]),
+        new Set(["morning", "afternoon", "evening", "weekend"]),
+        new Set(["poor", "fair", "good", "excellent"]),
+        new Set(["low", "medium", "high"]),
+        new Set(["strongly_agree", "agree", "neutral", "disagree", "strongly_disagree"]),
         new Set(["full_time", "part_time"]),
         new Set(["cash", "check", "credit_card", "debit_card"])
     ];
@@ -1285,7 +1370,7 @@ export function clusterRadioGroups(fields, rawBlocks = [], usedNames = new Set()
             if (Math.abs(other.y - cb.y) <= 6) {
                 const last = row[row.length - 1];
                 const gap = other.x - (last.x + last.width);
-                if (gap >= 8 && gap <= 180) {
+                if (gap >= 6 && gap <= 70) {
                     row.push(other);
                 }
             }
@@ -1345,10 +1430,13 @@ export function clusterRadioGroups(fields, rawBlocks = [], usedNames = new Set()
         const groupPrompt = leftGroupLabel || topGroupLabel;
         const promptText = groupPrompt ? groupPrompt.str.trim() : "";
 
-        const isChoicePrompt = /status|gender|sex|type|class|classification|category|method|mode|option|choice|select\s*one|check\s*one|pay\s*by|terms/i.test(promptText) ||
-                               promptText.endsWith(":");
+        const isChoicePrompt = /status|gender|sex|type|class|classification|category|method|mode|option|choice|select|check|recommend|rating|satisfaction|preference|frequency|level|tier|pay|terms/i.test(promptText) ||
+                               promptText.endsWith(":") || promptText.endsWith("?");
 
-        if (matchesKnownSet || isChoicePrompt) {
+        const isHorizontalOptionCluster = (cluster.orientation === "horizontal" && boxes.length >= 2 && boxes.length <= 6);
+        const hasMultiSelectInstruction = /\b(?:all\s+that\s+apply|check\s+all|select\s+all|multiple)\b/i.test(promptText);
+
+        if (matchesKnownSet || isChoicePrompt || (isHorizontalOptionCluster && !hasMultiSelectInstruction)) {
             let baseGroupName = "";
             if (promptText && !isUniversalStaticText(promptText)) {
                 baseGroupName = resolveSemanticProps(promptText, "radioGroup", new Set()).name;
@@ -1378,6 +1466,7 @@ export function clusterRadioGroups(fields, rawBlocks = [], usedNames = new Set()
                 const optSlug = (box.name || `opt_${idx + 1}`).toLowerCase().replace(/_\d+$/, "");
                 box.type = "radioGroup";
                 box.radioGroup = groupName;
+                box.groupId = groupName;
                 box.exportValue = optSlug;
                 box.value = box.value || optSlug;
             });
@@ -1389,7 +1478,7 @@ export function clusterRadioGroups(fields, rawBlocks = [], usedNames = new Set()
 
 // Returns true if a rectangle already contains significant text inside it,
 // meaning it is a label container, line badge, table header, or pre-filled cell — not a blank input.
-function rectContainsSignificantText(rect, textBlocks) {
+export function rectContainsSignificantText(rect, textBlocks) {
     if (!textBlocks || textBlocks.length === 0) return false;
     const pad = 3; // small padding tolerance
     const rRight = rect.x + rect.width;
@@ -1470,17 +1559,18 @@ function rectContainsSignificantText(rect, textBlocks) {
         }
     }
 
+    // Small boxes (checkboxes, radio glyphs <= 24x24) are form toggles, not static label containers
+    if (isSmallBox) {
+        return false;
+    }
+
     // C: Static label / heading words inside rect (>2 chars or multiple blocks)
     if (innerBlocks.length >= 2 || allText.length >= 3) {
         return true;
     }
 
-    // D: Single short token (1-2 chars) that is not a checkmark symbol in a small box
-    // (e.g. "1", "2", "3", "a", "b", "e")
-    if (allText.length <= 2 && !isSmallBox) {
-        return true;
-    }
-    if (isSmallBox && !/^[xX✓✔☑■●•]$/.test(allText)) {
+    // D: Single short token (1-2 chars) inside non-small box
+    if (allText.length <= 2) {
         return true;
     }
 
@@ -1639,7 +1729,14 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
                           Math.abs(tb.y - cbox.y) <= 14 && !/^[—–\-:\._\s]+$/.test(tb.str))
             .sort((a, b) => (b.x + b.width) - (a.x + a.width))[0] : null;
 
-        const matchedLabel = rightLabel || leftLabel;
+        // Find column/option label directly above if none to right or left
+        const topLabel = (!rightLabel && !leftLabel) ? rawBlocks
+            .filter(tb => tb.y + tb.height <= cbox.y && (cbox.y - (tb.y + tb.height)) <= 45 &&
+                          Math.abs((tb.x + tb.width / 2) - (cbox.x + cbox.width / 2)) <= 25 &&
+                          !/^[—–\-:\._\s]+$/.test(tb.str))
+            .sort((a, b) => (cbox.y - (a.y + a.height)) - (cbox.y - (b.y + b.height)))[0] : null;
+
+        const matchedLabel = rightLabel || leftLabel || topLabel;
         // Skip checkboxes labelled with universal static text (section headings, instructions, disclaimers).
         // However, allow single-word sentence starters like "I", "We", "The" that begin a certify/agree phrase
         // (these appear as single words because our word-by-word text block extraction splits them).
@@ -1653,7 +1750,8 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             if (!isSentenceStarter) continue;
         }
         // Suppress unlabelled checkboxes in the top header/seal area or far page margins
-        if (!matchedLabel && (cbox.y < 95 || cbox.x >= 545 || cbox.x <= 25)) {
+        const pageW = vectorShapes?.viewport?.width || 612;
+        if (!matchedLabel && (cbox.y < 80 || cbox.x <= 20 || (pageW <= 612 && cbox.x >= 545))) {
             continue;
         }
 
@@ -1702,9 +1800,6 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             );
             if (hasHeaderText) continue;
         }
-        // Skip boxes that already contain label text inside (table headers, pre-filled cells)
-        if (rectContainsSignificantText(box, rawBlocks)) continue;
-
         // Skip multi-cell composite boxes that contain 2 or more checkboxes inside
         const innerCbs = checkboxRects.filter(cb => 
             cb.x >= box.x - 2 && cb.x + cb.width <= box.x + box.width + 2 &&
@@ -1746,6 +1841,35 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             .filter(tb => tb.x >= box.x + box.width - 4 && (tb.x - (box.x + box.width)) <= 180 &&
                           Math.abs(tb.y - box.y) <= 18)
             .sort((a, b) => (a.x - (box.x + box.width)) - (b.x - (box.x + box.width)))[0] : null;
+
+        // Check if there are inner text blocks (e.g. pre-filled values or dropdown glyphs)
+        const innerBlocks = rawBlocks.filter(tb => {
+            const overlapX = Math.max(0, Math.min(box.x + box.width, tb.x + tb.width) - Math.max(box.x, tb.x));
+            const overlapY = Math.max(0, Math.min(box.y + box.height, tb.y + tb.height) - Math.max(box.y, tb.y));
+            return (overlapX > 2 && overlapY > 2);
+        });
+        const hasDropdownGlyph = innerBlocks.some(tb => 
+            tb.x >= (box.x + box.width - 25) &&
+            /^[vV▼▾▽↓·\u25BC\u25BE\u25BD\u2193\uF074\uF073]$/.test(tb.str.trim())
+        );
+
+        const extCandidate = leftLabel || topLabel;
+        const extStr = (extCandidate?.str || "").trim();
+        const isPureNumberOrMetric = /^\$?\d+(?:[\.,]\d+)*%?$/.test(extStr);
+        const hasSubstantivePromptWords = /[a-zA-Z]{2,}/.test(extStr);
+        const hasExternalPrompt = Boolean(extCandidate && hasSubstantivePromptWords && !isPureNumberOrMetric && !isUniversalStaticText(extStr));
+
+        // Skip boxes that contain significant static text, UNLESS it has a clear external prompt (pre-filled field) or dropdown glyph
+        if (rectContainsSignificantText(box, rawBlocks)) {
+            if (!hasExternalPrompt && !hasDropdownGlyph) {
+                continue;
+            }
+            // Furthermore, if it has significant text, it cannot have multi-token explanatory or paragraph text inside
+            const innerText = innerBlocks.map(tb => (tb.str || "").trim()).filter(Boolean).join(" ");
+            if (innerText.length > 40 || innerBlocks.length >= 8) {
+                continue;
+            }
+        }
 
         let labelText = "";
         let inheritedCol = null;
@@ -1813,10 +1937,13 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             labelText = "field";
         }
         const sem = resolveSemanticProps(labelText, "textField", usedNames);
-        const isSig = sem.type === "signature" || /signature|sign\s*here|authorized\s*signature|employee\s*signature|applicant\s*signature|taxpayer\s*signature|sign\s*below|handtekening|unterschrift|firma/i.test(labelText);
+        const isSig = sem.type === "signature" || /\b(?:e[-_]?)?sign(?:ature|ed|ing)?\b|sign\s*here|authorized\s*signature|employee\s*signature|applicant\s*signature|taxpayer\s*signature|sign\s*below|handtekening|unterschrift|firma/i.test(labelText);
         const isDate = sem.type === "dateField" || /date/i.test(labelText);
         const isQuestionOrCheckbox = sem.type === "checkBox" || /\?$/.test(labelText) || /\b(sick\??|absent\??|yes\??|no\??)\b/i.test(labelText);
-        const type = isSig ? "signature" : (isDate ? "dateField" : (isQuestionOrCheckbox || inheritedCol?.type === "checkBox" ? "checkBox" : (inheritedCol?.type || sem.type)));
+        let type = isSig ? "signature" : (isDate ? "dateField" : (isQuestionOrCheckbox || inheritedCol?.type === "checkBox" ? "checkBox" : (inheritedCol?.type || sem.type)));
+        if (hasDropdownGlyph || /^(?:country|state|language|gender|status|choice|select|dropdown)/i.test(labelText) || /dropdown|listbox|choice/i.test(labelText)) {
+            type = "dropdown";
+        }
         
         // Currency symbol proximity ($ € £ ¥ directly left of box or inside left edge)
         const hasCurrencySymbol = rawBlocks.some(tb => 
@@ -1849,10 +1976,16 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             }
         }
 
+        let prefilledVal = "";
+        if (hasExternalPrompt && innerBlocks.length > 0) {
+            prefilledVal = innerBlocks.map(tb => tb.str || "").join(" ").replace(/[vV▼▾▽↓·\u25BC\u25BE\u25BD\u2193\uF074\uF073]$/, "").trim();
+        }
+
         const field = {
             id: generateFieldId(),
             type: type,
             name: fieldName,
+            value: prefilledVal,
             x: fx,
             y: fy,
             width: fw,
@@ -1877,22 +2010,34 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
     // 4. Match Vector Underlines (e.g. from scanned docs or vector path underlines)
     const underlineLines = vectorShapes.underlines || [];
     for (const u of underlineLines) {
-        if (u.width < 30) continue;
+        if (u.width < 25) continue;
         const uX = u.x;
         const uY = u.y;
         const uW = u.width;
-        const uH = 20;
-        const fieldY = Math.max(0, uY - 18);
-
-        // Skip underline if text is already written inside or on the field area
-        if (rectContainsSignificantText({ x: uX, y: fieldY, width: uW, height: uH }, rawBlocks)) continue;
+        const uH = 18;
+        const fieldY = Math.max(0, uY - 16);
 
         // Skip underline if text rests directly on or intersects the underline baseline (e.g. hyperlinks or underlined prose)
+        // Exception: Currency symbols ($ € £ ¥) resting on or at the left end of the underline indicate a currency entry slot, not prose
         const textOnLine = rawBlocks.filter(tb => 
             tb.x >= uX - 6 && (tb.x + tb.width) <= uX + uW + 6 &&
-            Math.abs((tb.y + tb.height) - uY) <= 6
+            Math.abs((tb.y + tb.height) - uY) <= 3 &&
+            !/^[$\u20AC\u00A3\u00A5—–\-:\._\s]+$/.test(tb.str.trim())
         );
         if (textOnLine.length > 0) continue;
+
+        // Currency symbol proximity ($ € £ ¥ directly left of underline or resting on left edge)
+        const currencyToken = rawBlocks.find(tb => 
+            /^[$\u20AC\u00A3\u00A5]$/.test(tb.str.trim()) &&
+            ((tb.x + tb.width <= uX + 4 && (uX - (tb.x + tb.width)) <= 20 && Math.abs(tb.y - uY) <= 12) ||
+             (tb.x >= uX - 4 && tb.x <= uX + 16 && Math.abs((tb.y + tb.height) - uY) <= 5))
+        );
+        let startX = uX;
+        let lineW = uW;
+        if (currencyToken && currencyToken.x >= uX - 4 && currencyToken.x <= uX + 16) {
+            startX = currencyToken.x + currencyToken.width + 2;
+            lineW = Math.max(20, (uX + uW) - startX);
+        }
 
         // Skip underline if near text matches a URL
         const isUrl = rawBlocks.some(tb => 
@@ -1915,40 +2060,65 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
         if (isRectEdge) continue;
 
 
+        // 1. Search for prompt words directly above the underline
+        const wordsAbove = rawBlocks.filter(tb => 
+            tb.x >= uX - 8 && (tb.x + tb.width) <= uX + uW + 12 &&
+            tb.y >= uY - 28 && (tb.y + tb.height) <= uY + 1 &&
+            !/^[—–\-:\._\s$]+$/.test(tb.str)
+        );
+
+        let topLabelText = "";
+        if (wordsAbove.length > 0) {
+            topLabelText = wordsAbove
+                .sort((a, b) => a.y - b.y || a.x - b.x)
+                .map(w => w.str)
+                .join(" ");
+            topLabelText = topLabelText.replace(/^\(?[a-z0-9]{1,3}\)?[\.\:]?\s*/i, "").trim();
+        }
+
+        // 2. Search for close left-label on same baseline
         const leftLabel = rawBlocks
-            .filter(tb => tb.x + tb.width <= uX + 12 && (uX - (tb.x + tb.width)) <= 240 &&
-                          Math.abs(tb.y - (uY - 10)) <= 18 && !/^[—–\-:\._\s]+$/.test(tb.str))
-            .sort((a, b) => (b.x + b.width) - (a.x + a.width))[0];
-
-        const topLabel = !leftLabel ? rawBlocks
-            .filter(tb => tb.y + tb.height <= uY && (uY - (tb.y + tb.height)) <= 30 &&
-                          (tb.x >= uX - 40 && tb.x <= uX + uW + 40))
+            .filter(tb => tb.x + tb.width <= startX + 8 && (startX - (tb.x + tb.width)) <= 80 &&
+                          Math.abs(tb.y - (uY - 12)) <= 14 && !/^[—–\-:\._\s$]+$/.test(tb.str))
             .sort((a, b) => {
-                const aOverlap = Math.max(0, Math.min(uX + uW, a.x + a.width) - Math.max(uX, a.x));
-                const bOverlap = Math.max(0, Math.min(uX + uW, b.x + b.width) - Math.max(uX, b.x));
-                if ((aOverlap > 0) !== (bOverlap > 0)) return bOverlap - aOverlap;
+                const aDistY = Math.abs(a.y - (uY - 12));
+                const bDistY = Math.abs(b.y - (uY - 12));
+                if (Math.abs(aDistY - bDistY) > 3) return aDistY - bDistY;
+                return (b.x + b.width) - (a.x + a.width);
+            })[0];
 
-                const aDistX = aOverlap > 0 ? 0 : Math.min(Math.abs(a.x - uX), Math.abs(a.x + a.width - (uX + uW)));
-                const bDistX = bOverlap > 0 ? 0 : Math.min(Math.abs(b.x - uX), Math.abs(b.x + b.width - (uX + uW)));
-                if (Math.abs(aDistX - bDistX) > 2) return aDistX - bDistX;
-
-                const aDistY = Math.abs(uY - (a.y + a.height));
-                const bDistY = Math.abs(uY - (b.y + b.height));
-                return aDistY - bDistY;
-            })[0] : null;
+        // 3. Search for prompt words directly below the underline (e.g. signature or date sub-captions)
+        const wordsBelow = (!topLabelText && !leftLabel) ? rawBlocks.filter(tb => 
+            tb.x >= uX - 8 && (tb.x + tb.width) <= uX + uW + 12 &&
+            tb.y >= uY - 1 && (tb.y + tb.height) <= uY + 24 &&
+            !/^[—–\-:\._\s$]+$/.test(tb.str)
+        ) : [];
+        let belowLabelText = "";
+        if (wordsBelow.length > 0) {
+            belowLabelText = wordsBelow
+                .sort((a, b) => a.y - b.y || a.x - b.x)
+                .map(w => w.str)
+                .join(" ");
+            belowLabelText = belowLabelText.replace(/^\(?[a-z0-9]{1,3}\)?[\.\:]?\s*/i, "").trim();
+        }
 
         let labelText = "";
         let inheritedCol = null;
 
-        if (leftLabel) {
+        if (topLabelText && !isUniversalStaticText(topLabelText)) {
+            labelText = topLabelText;
+        } else if (leftLabel) {
             labelText = reconstructLinePhrase(leftLabel, rawBlocks, "left");
-        } else if (topLabel) {
-            labelText = reconstructLinePhrase(topLabel, rawBlocks, "right");
-            if (labelText.length < topLabel.str.length) labelText = topLabel.str;
+        } else if (belowLabelText && !isUniversalStaticText(belowLabelText)) {
+            labelText = belowLabelText;
+        } else if (topLabelText) {
+            labelText = topLabelText;
+        } else if (belowLabelText) {
+            labelText = belowLabelText;
         } else {
             // Check column inheritance for table grid rows (stacked underlines in same column)
             const upperColField = fields
-                .filter(f => f.page === pageNum && Math.abs(f.x - uX) <= 6 && Math.abs(f.width - uW) <= 8 &&
+                .filter(f => f.page === pageNum && Math.abs(f.x - startX) <= 6 && Math.abs(f.width - lineW) <= 8 &&
                              uY > f.y && (uY - (f.y + f.height)) <= 35 && (uY - (f.y + f.height)) >= -2)
                 .sort((a, b) => (uY - (b.y + b.height)) - (uY - (a.y + a.height)))[0];
             if (upperColField) {
@@ -1957,35 +2127,32 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             }
         }
 
-        if (labelText && isUniversalStaticText(labelText)) {
+        if (!labelText || isUniversalStaticText(labelText)) {
             continue;
         }
-        if (!labelText) {
-            labelText = "field";
-        }
         const sem = resolveSemanticProps(labelText, "textField", usedNames);
-        const isSig = sem.type === "signature" || /signature|sign\s*here|authorized\s*signature|employee\s*signature|applicant\s*signature|taxpayer\s*signature|sign\s*below|handtekening|unterschrift|firma/i.test(labelText);
+        const isSig = sem.type === "signature" || /\b(?:e[-_]?)?sign(?:ature|ed|ing)?\b|sign\s*here|sign\s*below|authorized\s*signature|employee\s*signature|applicant\s*signature|taxpayer\s*signature|handtekening|unterschrift|firma/i.test(labelText);
         const isDate = sem.type === "dateField" || /date/i.test(labelText);
         const isQuestionOrCheckbox = sem.type === "checkBox" || /\?$/.test(labelText) || /\b(sick\??|absent\??|yes\??|no\??)\b/i.test(labelText);
         const type = isSig ? "signature" : (isDate ? "dateField" : (isQuestionOrCheckbox || inheritedCol?.type === "checkBox" ? "checkBox" : (inheritedCol?.type || sem.type)));
         
-        // Currency symbol proximity ($ € £ ¥ directly left of underline)
-        const hasCurrencySymbol = rawBlocks.some(tb => 
-            /^[$\u20AC\u00A3\u00A5]$/.test(tb.str.trim()) &&
-            tb.x + tb.width <= uX + 4 && (uX - (tb.x + tb.width)) <= 20 &&
-            Math.abs(tb.y - uY) <= 12
-        );
+        const hasCurrencySymbol = Boolean(currencyToken);
         const dataFormat = hasCurrencySymbol ? "currency" : (inheritedCol?.dataFormat || sem.dataFormat || "text");
 
-        let fx = uX;
-        let fy = fieldY;
-        let fw = uW;
-        let fh = uH;
-        if (type === "checkBox" && uW > 24) {
+        let fw = Math.round(lineW);
+        let fh = isSig ? 32 : 12;
+        let fx = Math.round(startX);
+        let fy = Math.round(Math.max(0, uY - fh));
+
+        if (type === "signature") {
+            fw = Math.max(fw, 120);
+            fh = Math.max(fh, 30);
+            fy = Math.round(Math.max(0, uY - fh));
+        } else if (type === "checkBox" && uW > 24) {
             fw = 15;
             fh = 15;
             fx = Math.round(uX + (uW - fw) / 2);
-            fy = Math.round(fieldY + (uH - fh) / 2);
+            fy = Math.round(uY - fh);
         }
 
         const dayMatch = rawBlocks.find(tb => 
@@ -2529,6 +2696,14 @@ export function detectTaxScheduleLineAffordances(rawBlocks, viewport, pageNum, u
         // A schedule line must have dotted leaders OR explicit schedule computation prompt keywords
         if (!hasDots && !hasSchedulePrompt) continue;
 
+        // If no dotted leader is present, the row must be an explicit schedule line item,
+        // NOT a continuous paragraph of instructional prose containing inline monetary examples.
+        if (!hasDots) {
+            if (/\b(?:for example|e\.g\.|such as|if your|see instructions|pub\.|publication)\b/i.test(rowStr)) continue;
+            const lastItem = rowItems[rowItems.length - 1];
+            if (lastItem && (lastItem.x + lastItem.width) > pageWidth * 0.88) continue;
+        }
+
         for (let i = 0; i < rowItems.length; i++) {
             const item = rowItems[i];
             const token = item.str.trim();
@@ -2538,6 +2713,14 @@ export function detectTaxScheduleLineAffordances(rawBlocks, viewport, pageNum, u
             const isLetterSubline = /^[a-z]$/i.test(token) && hasDots;
 
             if (!isNumToken && !isLetterSubline) continue;
+
+            // When no dotted leader is present, the token must be an anchored line indicator at the start of the row
+            // (e.g. item 0 or 1, and x <= 160) OR immediately preceding the right-hand slot
+            if (!hasDots) {
+                const isAnchoredStart = (i <= 1 && item.x <= 160);
+                const isAnchoredEnd = (i === rowItems.length - 1 && item.x >= 350);
+                if (!isAnchoredStart && !isAnchoredEnd) continue;
+            }
 
             const xEnd = item.x + item.width;
             const nextItem = i + 1 < rowItems.length ? rowItems[i + 1] : null;

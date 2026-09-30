@@ -38,3 +38,18 @@ scratch/
 __pycache__/
 *.pyc
 
+# Evaluation corpus & benchmark harness
+corpus/
+visual_diffs/
+extract_ground_truth.py
+match_and_score.py
+run_detector.py
+run_suite.py
+visualize_diff.py
+scripts/build_manifest.py
+scripts/build_synthetic_acroforms.py
+scripts/detect_cli.mjs
+scripts/flatten_fitz.py
+scripts/flatten_pdflib.mjs
+README_HARNESS.md
+
