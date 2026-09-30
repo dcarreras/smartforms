@@ -496,3 +496,25 @@ export async function detectLatticeTableFields(page, rawBlocks, pageNum, usedNam
     }
     return { fields: allFields, regions };
 }
+
+/**
+ * Uniform stage detection plugin contract for lattice table grids.
+ * @param {Object} context Stage detection context
+ * @returns {Promise<Array>} Detected table cell fields
+ */
+export async function detect(context = {}) {
+    const {
+        page,
+        rawBlocks = [],
+        pageNum = 1,
+        usedNames = new Set(),
+        boundaryLines = null,
+        detectedGrids = boundaryLines
+    } = context;
+    if (!page) return [];
+    const result = await detectLatticeTableFields(page, rawBlocks, pageNum, usedNames, detectedGrids);
+    if (context.sharedData) {
+        context.sharedData.latticeRegions = result.regions || [];
+    }
+    return result.fields || [];
+}

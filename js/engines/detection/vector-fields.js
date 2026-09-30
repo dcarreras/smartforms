@@ -801,3 +801,23 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
     }
     return fields;
 }
+
+/**
+ * Uniform stage detection plugin contract for vector-drawn geometric fields.
+ * @param {Object} context Stage detection context
+ * @returns {Array} Detected vector fields
+ */
+export function detect(context = {}) {
+    const {
+        vectorShapes = {},
+        rawBlocks = [],
+        pageNum = 1,
+        usedNames = new Set(),
+        existingFields = [],
+        widgetFields = [],
+        pageFields = [],
+        options = {}
+    } = context;
+    const combinedExisting = [...existingFields, ...widgetFields, ...pageFields];
+    return detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNames, combinedExisting, { clusterRadios: true, ...options });
+}

@@ -5,15 +5,15 @@ import { state } from "../../core/state.js";
 import { saveHistory } from "../../core/storage-manager.js";
 import { isOverlapping } from "../../utils/geometry.js";
 import { DEDUP_THRESHOLDS } from "./config.js";
-import { getExistingWidgetFields, importExistingAcroFormFields } from "./acroform-passthrough.js";
+import { getExistingWidgetFields, importExistingAcroFormFields, detect as detectAcroformWidgets } from "./acroform-passthrough.js";
 import { extractPdfVectorShapes, calculateDocumentColumnBoundaries } from "./vector-shapes.js";
 import { clusterCombBoxes } from "./comb-fields.js";
 import { clusterRadioGroups, MUTUAL_EXCLUSIVE_SETS } from "./radio-clustering.js";
-import { rectContainsSignificantText, reconstructLinePhrase, detectVectorDrawnFields } from "./vector-fields.js";
-import { TABLE_COL_DEFS, matchColumnKeyword, reconstructTableGridBoxes, buildFieldsFromTableGrid, detectTableGridLines, detectLatticeTableFields } from "./table-grid.js";
-import { detectUnderlineFields } from "./underline-fields.js";
-import { enrichNeuralFieldsWithText } from "./neural-bridge.js";
-import { detectVisualAffordances, detectTaxScheduleLineAffordances } from "./visual-affordances/index.js";
+import { rectContainsSignificantText, reconstructLinePhrase, detectVectorDrawnFields, detect as detectVectorFields } from "./vector-fields.js";
+import { TABLE_COL_DEFS, matchColumnKeyword, reconstructTableGridBoxes, buildFieldsFromTableGrid, detectTableGridLines, detectLatticeTableFields, detect as detectLatticeTables } from "./table-grid.js";
+import { detectUnderlineFields, detect as detectUnderlines } from "./underline-fields.js";
+import { enrichNeuralFieldsWithText, detect as detectNeuralFields } from "./neural-bridge.js";
+import { detectVisualAffordances, detectTaxScheduleLineAffordances, detectTaxSchedules, detect as detectVisualAffordancesStage } from "./visual-affordances/index.js";
 import { clusterIntoLines } from "./visual-affordances/line-clustering.js";
 import { resolveSemanticProps, isUniversalStaticText, GENERIC_PATTERNS, SEMANTIC_DIMENSIONS } from "./semantic-resolver.js";
 
@@ -31,6 +31,39 @@ export * from "./neural-bridge.js";
 export * from "./visual-affordances/index.js";
 export { clusterIntoLines } from "./visual-affordances/line-clustering.js";
 export { isOverlapping } from "../../utils/geometry.js";
+
+/**
+ * Detection pipeline stages definition.
+ * Each stage conforms to the uniform stage plugin contract:
+ * - name: string (telemetry key)
+ * - detect: (context: Object) => Promise<Array> | Array
+ * - condition?: (context: Object) => boolean
+ * - initial?: boolean (true for base geometry stage that seeds pageFields)
+ */
+export const STAGES = [
+    {
+        name: "vector_geometry",
+        detect: detectVectorFields,
+        initial: true
+    },
+    {
+        name: "lattice_tables",
+        detect: detectLatticeTables
+    },
+    {
+        name: "boundary_underlines",
+        condition: (context) => Boolean(context.boundaryLines && context.boundaryLines[0]),
+        detect: detectUnderlines
+    },
+    {
+        name: "tax_schedules",
+        detect: detectTaxSchedules
+    },
+    {
+        name: "visual_affordances",
+        detect: detectVisualAffordancesStage
+    }
+];
 
 export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
     if (!pdfDoc) return { fields: [], totalCount: 0, pages: [] };
@@ -138,88 +171,50 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 }
             }
 
-            // 1.5 Drawn Vector Rectangles & Checkboxes (Exact vector geometry)
-            pipelineTelemetry.stagesAttempted.push("vector_geometry");
-            const drawnVectorFields = detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNames, [...existingFields, ...widgetFields], { clusterRadios: true });
-            pipelineTelemetry.countsByStage["vector_geometry"] = (pipelineTelemetry.countsByStage["vector_geometry"] || 0) + drawnVectorFields.length;
-            pipelineTelemetry.stagesSucceeded.push("vector_geometry");
-
-            let pageFields = [...drawnVectorFields];
-
-            // 1.75 Lattice table fields and ruling lines (always evaluated for table grids)
-            pipelineTelemetry.stagesAttempted.push("lattice_tables");
-            const latticeResult = await detectLatticeTableFields(page, rawBlocks, pageNum, usedNames, boundaryLines);
-            let latticeCount = 0;
-            for (const lf of (latticeResult.fields || [])) {
-                if (!isOverlapping(lf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
-                    pageFields.push(lf);
-                    latticeCount++;
+            let pageFields = [];
+            const context = {
+                page,
+                viewport,
+                pageNum,
+                usedNames,
+                existingFields,
+                widgetFields,
+                pageFields,
+                rawBlocks,
+                vectorShapes,
+                boundaryLines,
+                options,
+                sharedData: {
+                    latticeRegions: []
                 }
-            }
-            pipelineTelemetry.countsByStage["lattice_tables"] = (pipelineTelemetry.countsByStage["lattice_tables"] || 0) + latticeCount;
-            pipelineTelemetry.stagesSucceeded.push("lattice_tables");
+            };
 
-            // 1.8 Underlines (e.g. signature lines, blanks, horizontal rules)
-            if (boundaryLines[0]) {
-                pipelineTelemetry.stagesAttempted.push("boundary_underlines");
-                const boundaryFields = detectUnderlineFields(
-                    boundaryLines[0],
-                    rawBlocks,
-                    pageNum,
-                    usedNames,
-                    [...existingFields, ...widgetFields, ...pageFields]
-                );
-                let underCount = 0;
-                for (const bf of boundaryFields) {
-                    if (!isOverlapping(bf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
-                        pageFields.push(bf);
-                        underCount++;
+            for (const stage of STAGES) {
+                if (stage.condition && !stage.condition(context)) {
+                    continue;
+                }
+                pipelineTelemetry.stagesAttempted.push(stage.name);
+                try {
+                    const fields = await stage.detect(context);
+                    let count = 0;
+                    if (stage.initial) {
+                        pageFields.push(...(fields || []));
+                        count = fields ? fields.length : 0;
+                    } else {
+                        for (const f of (fields || [])) {
+                            if (!isOverlapping(f, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
+                                pageFields.push(f);
+                                count++;
+                            }
+                        }
                     }
-                }
-                pipelineTelemetry.countsByStage["boundary_underlines"] = (pipelineTelemetry.countsByStage["boundary_underlines"] || 0) + underCount;
-                pipelineTelemetry.stagesSucceeded.push("boundary_underlines");
-            }
-
-            // 2.0 Dotted-Leader & Tax / Financial Schedule Line Affordances
-            pipelineTelemetry.stagesAttempted.push("tax_schedules");
-            const scheduleFields = detectTaxScheduleLineAffordances(
-                rawBlocks,
-                viewport,
-                pageNum,
-                usedNames,
-                [...existingFields, ...widgetFields, ...pageFields]
-            );
-            let schedCount = 0;
-            for (const sf of scheduleFields) {
-                if (!isOverlapping(sf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
-                    pageFields.push(sf);
-                    schedCount++;
+                    pipelineTelemetry.countsByStage[stage.name] = (pipelineTelemetry.countsByStage[stage.name] || 0) + count;
+                    pipelineTelemetry.stagesSucceeded.push(stage.name);
+                } catch (stageErr) {
+                    pipelineTelemetry.stageErrors[stage.name] = stageErr.message;
+                    console.warn(`Detection stage '${stage.name}' failed:`, stageErr);
                 }
             }
-            pipelineTelemetry.countsByStage["tax_schedules"] = (pipelineTelemetry.countsByStage["tax_schedules"] || 0) + schedCount;
-            pipelineTelemetry.stagesSucceeded.push("tax_schedules");
-
-            // 2.2 Visual affordances (unlined text-only prompts & checkboxes)
-            pipelineTelemetry.stagesAttempted.push("visual_affordances");
-            const seedFields = [...widgetFields, ...pageFields];
-            const geometricFields = detectVisualAffordances(
-                rawBlocks,
-                viewport,
-                pageNum,
-                usedNames,
-                seedFields,
-                latticeResult.regions,
-                vectorShapes
-            );
-            let geomCount = 0;
-            for (const gf of geometricFields) {
-                if (!isOverlapping(gf, pageFields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
-                    pageFields.push(gf);
-                    geomCount++;
-                }
-            }
-            pipelineTelemetry.countsByStage["visual_affordances"] = (pipelineTelemetry.countsByStage["visual_affordances"] || 0) + geomCount;
-            pipelineTelemetry.stagesSucceeded.push("visual_affordances");
 
             // 2.5 Optional Local Python LayoutLMv3 Sidecar (http://127.0.0.1:8000)
             if (options.useSidecar !== false && typeof fetch !== "undefined") {

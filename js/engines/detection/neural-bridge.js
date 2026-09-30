@@ -62,3 +62,18 @@ export function enrichNeuralFieldsWithText(rawNeuralFields, rawBlocks, usedNames
 
     return enriched;
 }
+
+/**
+ * Uniform stage detection plugin contract for enriching neural bounding boxes with text.
+ * @param {Object} context Stage detection context
+ * @returns {Array} Enriched neural fields
+ */
+export function detect(context = {}) {
+    const {
+        rawNeural = context.rawNeuralFields || [],
+        rawBlocks = [],
+        usedNames = new Set(),
+        pageNum = 1
+    } = context;
+    return enrichNeuralFieldsWithText(rawNeural, rawBlocks, usedNames, pageNum);
+}

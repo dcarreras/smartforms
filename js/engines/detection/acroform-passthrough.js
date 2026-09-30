@@ -119,3 +119,19 @@ export async function importExistingAcroFormFields(scope = "all") {
     state.fields = merged;
     return imported.length;
 }
+
+/**
+ * Uniform stage detection plugin contract for existing AcroForm widgets.
+ * @param {Object} context Stage detection context
+ * @returns {Promise<Array>} Detected AcroForm widget fields
+ */
+export async function detect(context = {}) {
+    const {
+        page,
+        viewport = { width: 612, height: 792 },
+        pageNum = 1,
+        usedNames = new Set()
+    } = context;
+    if (!page) return [];
+    return await getExistingWidgetFields(page, viewport, pageNum, usedNames);
+}

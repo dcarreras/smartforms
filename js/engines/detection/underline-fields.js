@@ -91,3 +91,29 @@ export function detectUnderlineFields(grid, rawBlocks, pageNum, usedNames, exist
     }
     return fields;
 }
+
+/**
+ * Uniform stage detection plugin contract for boundary underlines and signature lines.
+ * @param {Object} context Stage detection context
+ * @returns {Array} Detected underline fields
+ */
+export function detect(context = {}) {
+    const {
+        boundaryLines,
+        grid = (boundaryLines && boundaryLines[0]),
+        rawBlocks = [],
+        pageNum = 1,
+        usedNames = new Set(),
+        existingFields = [],
+        widgetFields = [],
+        pageFields = []
+    } = context;
+    if (!grid) return [];
+    return detectUnderlineFields(
+        grid,
+        rawBlocks,
+        pageNum,
+        usedNames,
+        [...existingFields, ...widgetFields, ...pageFields]
+    );
+}

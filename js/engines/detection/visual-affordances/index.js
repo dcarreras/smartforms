@@ -377,3 +377,55 @@ export function detectVisualAffordances(rawBlocks, viewport, pageNum, usedNames,
 
     return fields.slice(seedCount);
 }
+
+/**
+ * Uniform stage detection plugin contract for tax and financial schedule line affordances.
+ * @param {Object} context Stage detection context
+ * @returns {Array} Detected tax schedule fields
+ */
+export function detectTaxSchedules(context = {}) {
+    const {
+        rawBlocks = [],
+        viewport = { width: 612, height: 792 },
+        pageNum = 1,
+        usedNames = new Set(),
+        existingFields = [],
+        widgetFields = [],
+        pageFields = []
+    } = context;
+    return detectTaxScheduleLineAffordances(
+        rawBlocks,
+        viewport,
+        pageNum,
+        usedNames,
+        [...existingFields, ...widgetFields, ...pageFields]
+    );
+}
+
+/**
+ * Uniform stage detection plugin contract for visual text affordances (checkbox glyphs, colon prompts).
+ * @param {Object} context Stage detection context
+ * @returns {Array} Detected visual affordance fields
+ */
+export function detect(context = {}) {
+    const {
+        rawBlocks = [],
+        viewport = { width: 612, height: 792 },
+        pageNum = 1,
+        usedNames = new Set(),
+        pageFields = [],
+        widgetFields = [],
+        seedFields = [...widgetFields, ...pageFields],
+        latticeRegions = context.latticeRegions || context.sharedData?.latticeRegions || [],
+        vectorShapes = context.vectorShapes || null
+    } = context;
+    return detectVisualAffordances(
+        rawBlocks,
+        viewport,
+        pageNum,
+        usedNames,
+        seedFields,
+        latticeRegions,
+        vectorShapes
+    );
+}
