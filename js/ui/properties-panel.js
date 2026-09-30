@@ -2126,22 +2126,7 @@ export function populateProperties(field) {
 
     const confEl = document.getElementById("propFieldConfidenceBadge");
     if (confEl) {
-        if (typeof fallbackField.confidence === "number") {
-            const pct = Math.round(fallbackField.confidence * 100);
-            confEl.style.display = "inline-flex";
-            confEl.textContent = `${pct}%`;
-            const source = fallbackField.detectedBy || (fallbackField.sourcedFrom === "acroform" ? "AcroForm" : "Detector");
-            confEl.title = `Confidence: ${pct}% (${source})`;
-            if (pct >= 88) {
-                confEl.style.cssText = "display:inline-flex; font-size:10.5px; font-weight:700; color:#15803d; background:#dcfce7; border:1px solid #bbf7d0; border-radius:4px; padding:2px 6px;";
-            } else if (pct >= 72) {
-                confEl.style.cssText = "display:inline-flex; font-size:10.5px; font-weight:700; color:#2563eb; background:#dbeafe; border:1px solid #bfdbfe; border-radius:4px; padding:2px 6px;";
-            } else {
-                confEl.style.cssText = "display:inline-flex; font-size:10.5px; font-weight:700; color:#b45309; background:#fef3c7; border:1px solid #fde68a; border-radius:4px; padding:2px 6px;";
-            }
-        } else {
-            confEl.style.display = "none";
-        }
+        confEl.style.display = "none";
     }
 
     const setVal = (id, val) => { 
