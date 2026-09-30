@@ -1,9 +1,17 @@
 // js/engines/detection/config.js
 // Centralized configuration and threshold constants for the modular detection pipeline
 
-import { DEDUP_THRESHOLDS, SEMANTIC_DIMENSIONS } from "../auto-detector.js";
+import { SEMANTIC_DIMENSIONS } from "./semantic-resolver.js";
 
-export { DEDUP_THRESHOLDS, SEMANTIC_DIMENSIONS };
+export { SEMANTIC_DIMENSIONS };
+
+export const DEDUP_THRESHOLDS = Object.freeze({
+    EXACT_OR_SIMILAR: 0.15,
+    CROSS_STAGE: 0.25,
+    TABLE_CELL: 0.30,
+    WITHIN_STAGE: 0.35,
+    CONTAINER_OVERLAP: 0.50
+});
 
 export const OVERLAP = Object.freeze({
     EXACT_OR_SIMILAR: 0.15,
