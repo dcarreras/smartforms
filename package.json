@@ -5,11 +5,11 @@
   "type": "module",
   "main": "js/main.js",
   "scripts": {
-    "test": "node tests/test_suite.js",
-    "bench": "node tests/benchmark_speed.js",
+    "test": "node test/run-unit-tests.js && node tests/test_suite.js",
+    "test:unit": "node test/run-unit-tests.js",
     "test:detector": "node tests/evaluate_detector_cli.js",
-    "test:funsd": "node tests/evaluate_funsd.js",
     "test:commonforms": "node tests/evaluate_commonforms.js",
+    "bench": "node tests/benchmark_speed.js",
     "start": "node server.cjs",
     "start:sidecar": ".venv/bin/uvicorn server:app --port 8000"
   },

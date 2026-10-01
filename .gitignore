@@ -41,13 +41,8 @@ __pycache__/
 # Evaluation corpus & benchmark harness
 corpus/
 visual_diffs/
-extract_ground_truth.py
-match_and_score.py
-run_detector.py
-run_suite.py
-visualize_diff.py
+dataset_*/
 scripts/templates/
 test/fixtures/
-README_HARNESS.md
 
 
