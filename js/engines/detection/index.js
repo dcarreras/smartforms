@@ -151,12 +151,15 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             }
 
             // 1.25 Scanned / Flattened PDF Client-Side OCR Fallback
-            // Triggers ONLY when there is little or no extractable text (rawBlocks sparse < 5)
+            // Triggers when text is sparse (< 5), when explicit options.forceOcr is set,
+            // or when a flattened bitmap has 0 interactive vector shapes and all text consists of noise fragments
             const isTextSparse = rawBlocks.length < 5;
             const hasInteractiveVectorShapes = (vectorShapes.checkboxRects?.length || 0) > 0 ||
                 (vectorShapes.inputBoxRects?.length || 0) > 0 ||
                 (vectorShapes.underlines?.length || 0) > 0;
-            const isScannedDoc = isTextSparse;
+            const isNoisyTextOnly = !hasInteractiveVectorShapes && rawBlocks.length > 0 &&
+                rawBlocks.every(tb => (tb.str || "").trim().length <= 3 || /^\d+$/.test((tb.str || "").trim()));
+            const isScannedDoc = isTextSparse || isNoisyTextOnly || options.forceOcr === true;
 
             if (isScannedDoc && typeof document !== "undefined" && options.enableOcr !== false) {
                 try {

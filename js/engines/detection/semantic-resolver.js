@@ -49,6 +49,16 @@ export const GENERIC_PATTERNS = [
     { regex: /(?<![\p{L}\p{M}])(?:country|land|pays|pa[íi]s|nazione|paese|देश)(?![\p{L}\p{M}])/iu, id: "country", type: "textField", autofill: "country-name", priority: 1 },
     { regex: /(?<![\p{L}\p{M}])(?:company|organization|employer(?!\s*(?:identification|id\b|tax|no\b|number|ein\b))|institution|firma|unternehmen|arbeitgeber|entreprise|soci[eé]t[eé]|employeur|empresa|instituci[óo]n|organiza[çc][ãa]o|bedrijf|werkgever|कार्यालय|कम्पनी|संस्था)(?![\p{L}\p{M}])/iu, id: "organization", type: "textField", autofill: "organization", priority: 1 },
     { regex: /(?<![\p{L}\p{M}])(?:title|role|position|designation|profession|occupation|berufsbezeichnung|beruf|funktion|poste|titre|cargo|puesto|profesi[óo]n|ruolo|mansione|profiss[ãa]o|functie|beroep|पद|ओहोदा)(?![\p{L}\p{M}])/iu, id: "job_title", type: "textField", autofill: "organization-title", priority: 2 },
+    { regex: /(?<![\p{L}\p{M}])(?:middle\s*initial|m\.?i\.?)(?![\p{L}\p{M}])/iu, id: "middle_initial", type: "textField", autofill: "additional-name", priority: 2 },
+    { regex: /(?<![\p{L}\p{M}])(?:middle\s*name|zweiter\s*vorname|deuxi[èe]me\s*pr[ée]nom)(?![\p{L}\p{M}])/iu, id: "middle_name", type: "textField", autofill: "additional-name", priority: 2 },
+    { regex: /(?<![\p{L}\p{M}])(?:maiden\s*name|geburtsname|nom\s*de\s*jeune\s*fille|apellido\s*de\s*soltera)(?![\p{L}\p{M}])/iu, id: "maiden_name", type: "textField", priority: 2 },
+    { regex: /(?<![\p{L}\p{M}])(?:gender|sex|geschlecht|genre|sexo|sesso|लिङ्ग)(?![\p{L}\p{M}])/iu, id: "gender", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}\p{M}])(?:marital\s*status|familienstand|[ée]tat\s*civil|estado\s*civil|stato\s*civile|वैवाहिक\s*स्थिति)(?![\p{L}\p{M}])/iu, id: "marital_status", type: "textField", priority: 2 },
+    { regex: /(?<![\p{L}\p{M}])(?:emergency\s*contact|notfallkontakt|contact\s*d['’]?urgence|contacto\s*de\s*emergencia|contatto\s*di\s*emergenza|आपतकालीन\s*सम्पर्क)(?![\p{L}\p{M}])/iu, id: "emergency_contact", type: "textField", priority: 2 },
+    { regex: /(?<![\p{L}\p{M}])(?:relationship|verwandtschaftsgrad|lien\s*de\s*parent[ée]|relaci[óo]n|parentesco|relazione|नाता)(?![\p{L}\p{M}])/iu, id: "relationship", type: "textField", priority: 1 },
+    { regex: /(?<![\p{L}\p{M}])(?:policy\s*(?:#|no|number|num)|insurance\s*(?:#|no|number|num)|policennummer|n[°o]\s*de\s*police|n[úu]mero\s*de\s*p[óo]liza|numero\s*polizza)(?![\p{L}\p{M}])/iu, id: "policy_number", type: "textField", priority: 2 },
+    { regex: /(?<![\p{L}\p{M}])(?:claim\s*(?:#|no|number|num)|schadennummer|n[°o]\s*de\s*sinistre|n[úu]mero\s*de\s*reclamo)(?![\p{L}\p{M}])/iu, id: "claim_number", type: "textField", priority: 2 },
+    { regex: /(?<![\p{L}\p{M}])(?:patient\s*(?:#|no|number|num|id)|patienten[- ]?id|identifiant\s*patient|id\s*de\s*paciente)(?![\p{L}\p{M}])/iu, id: "patient_id", type: "textField", priority: 2 },
     { regex: /(?<![\p{L}\p{M}])(?:department|division|unit|abteilung|bereich|d[eé]partement|service|departamento|secci[óo]n|dipartimento|afdeling|शाखा|विभाग)(?![\p{L}\p{M}])/iu, id: "department", type: "textField", priority: 1 },
     
     // ── Table Line Items & Description ──
@@ -91,6 +101,9 @@ export function resolveSemanticProps(rawLabel, defaultType = "textField", usedNa
     // B. EIN beats Organization: "Employer Identification Number (EIN)" or "(EIN)" or bare "EIN" resolves to ssn
     const isEin = /(?<![\p{L}\p{M}])(?:employer\s*identification\s*number(?:\s*\(?ein\)?)?|\(?ein\)?)(?![\p{L}\p{M}])/iu.test(clean);
 
+    // C. First Name beats Middle Initial: Compound "First name and middle initial" resolves to first_name
+    const isFirstNameWithMiddle = /(?<![\p{L}\p{M}])first\s*name/iu.test(clean) && /(?<![\p{L}\p{M}])middle\s*(?:initial|name)/iu.test(clean);
+
     let bestMatch = null;
     let bestScore = -1;
 
@@ -101,6 +114,10 @@ export function resolveSemanticProps(rawLabel, defaultType = "textField", usedNa
         }
         // Disqualify organization if EIN is specified
         if (isEin && item.id === "organization") {
+            continue;
+        }
+        // Disqualify middle initial if prompt begins with First Name
+        if (isFirstNameWithMiddle && (item.id === "middle_name" || item.id === "middle_initial")) {
             continue;
         }
 
@@ -254,6 +271,8 @@ export function computeFieldConfidence(field, siblingFields = [], stageAgreement
 
     if (verticalClusterCount >= 3) {
         base += 0.15;
+    } else if (verticalClusterCount === 2) {
+        base += 0.08;
     }
 
     // Clamp score

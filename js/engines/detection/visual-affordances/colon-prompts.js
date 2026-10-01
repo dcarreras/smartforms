@@ -78,12 +78,31 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
             if (cleanLabel.length < 2) continue;
             if (isUniversalStaticText(cleanLabel)) continue;
 
+            let fullCleanLabel = cleanLabel;
+            if (m.index === 0) {
+                const lineIdx = textLines.indexOf(line);
+                if (lineIdx > 0) {
+                    const prevLine = textLines[lineIdx - 1];
+                    const vDist = line.y - (prevLine.y + (prevLine.height || 12));
+                    const hAlign = Math.abs(prevLine.x - line.x);
+                    const prevStr = prevLine.str.trim();
+                    if (vDist >= -2 && vDist <= 8 && hAlign <= 18 &&
+                        !/[:\?\.!]$/.test(prevStr) &&
+                        !isUniversalStaticText(prevStr) &&
+                        prevStr.split(/\s+/).length <= 6 &&
+                        !prevLine.items?.some(it => /^[(\[]|[☐□▣■◻◼◽◾⬜⬛☑✓✔☒✗✘○●◯◎◦⬤⭕⭘⭙]/.test(it.str))) {
+                        fullCleanLabel = `${prevStr} ${cleanLabel}`;
+                    }
+                }
+            }
+
             // Skip questions, instructional clauses, and long phrases before colons
             const textAfterColon = text.slice(m.index + m[0].length).trim();
             const hasExplicitPlaceholder = /_{2,}|(?:\.\s*){5,}|[\.]{5,}|…{2,}/.test(textAfterColon);
-            const labelWithoutParentheticals = cleanLabel.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
-            const maxLabelLen = hasExplicitPlaceholder ? 65 : 40;
-            const maxLabelWords = hasExplicitPlaceholder ? 9 : 5;
+            const labelWithoutParentheticals = fullCleanLabel.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+            const isStandardFormPrompt = /(?:address|name|identification|social\s*security|telephone|residence|applicant|employer|physician|contact|insurance)/i.test(fullCleanLabel);
+            const maxLabelLen = (hasExplicitPlaceholder || isStandardFormPrompt) ? 80 : 40;
+            const maxLabelWords = (hasExplicitPlaceholder || isStandardFormPrompt) ? 12 : 5;
             if (cleanLabel.includes("?") || labelWithoutParentheticals.length > maxLabelLen || labelWithoutParentheticals.split(/\s+/).length > maxLabelWords) continue;
             if (/^(?:are|is|was|were|do|does|did|have|has|had|can|could|will|would|should|may|what|where|when|which|why|how|if|please|note|notice|caution|warning|section|part|step|item|for|to|include|includes|including|such|case|report|submit|provide)\b/i.test(cleanLabel)) continue;
             if (/\b(?:include\s+the\s+following|includes?|including|as\s+follows|such\s+as|case\s+if|for\s+example|select\s+one|check\s+only\s+one|choose\s+one)\b/i.test(cleanLabel)) continue;
@@ -104,7 +123,7 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
             const isAlreadyFilledStatic = valueChunk.length > 0 && !isBlankPlaceholder;
             if (isAlreadyFilledStatic) continue;
 
-            const preSem = resolveSemanticProps(cleanLabel);
+            const preSem = resolveSemanticProps(fullCleanLabel);
             const isSig = preSem.type === "signature";
             const isDate = preSem.type === "dateField";
             const isMulti = preSem.multiline;
@@ -161,7 +180,7 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
                 continue;
             }
 
-            const sem = resolveSemanticProps(cleanLabel, isSig ? "signature" : (isDate ? "dateField" : "textField"), usedNames);
+            const sem = resolveSemanticProps(fullCleanLabel, isSig ? "signature" : (isDate ? "dateField" : "textField"), usedNames);
             const fieldType = isSig ? "signature" : (isDate ? "dateField" : sem.type);
             const fieldName = sem.name;
             const isSingleOnLine = (maxAllowedX >= pageWidth - 45);
@@ -211,7 +230,7 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
                     (preSem.dataFormat && preSem.dataFormat !== "text") ||
                     preSem.autofill ||
                     (preSem.name && !/^(?:field|input|box|text)_\d+$/i.test(preSem.name) && preSem.name !== "field" && preSem.name !== "input") ||
-                    /^(?:name|first\s*name|last\s*name|full\s*name|address|street|city|state|zip|postal|phone|telephone|mobile|fax|email|e-mail|date|dob|birth|ssn|ein|tin|tax\s*id|title|signature|sign|amount|total|subtotal|quantity|qty|price|rate|company|employer|organization)$/i.test(cleanLabel.replace(/[:_.\s-]+$/, ""))
+                    /^(?:name|first\s*name|last\s*name|full\s*name|address|street|city|state|zip|postal|phone|telephone|mobile|fax|email|e-mail|date|dob|birth|ssn|ein|tin|tax\s*id|title|signature|sign|amount|total|subtotal|quantity|qty|price|rate|company|employer|organization)$/i.test(fullCleanLabel.replace(/[:_.\s-]+$/, ""))
                 );
                 if (!isRecognizedFormKey) {
                     continue;
@@ -266,10 +285,10 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
                 multiline: isMulti || sem.multiline || false,
                 autofill: sem.autofill || "",
                 dataFormat: isDate ? "date" : (sem.dataFormat || "text"),
-                label: cleanLabel,
+                label: fullCleanLabel,
                 labelX: line.x,
                 hasPlaceholder: Boolean(hasTextPlaceholder || matchingUnderline),
-                tooltip: (cleanLabel || fieldName).replace(/[:_—–-]+$/, '').trim(),
+                tooltip: (fullCleanLabel || fieldName).replace(/[:_—–-]+$/, '').trim(),
                 detectedBy: "affordance2_colon_prompt",
                 confidence: 0.65
             };
