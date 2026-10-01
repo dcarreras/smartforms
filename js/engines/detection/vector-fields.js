@@ -6,6 +6,7 @@ import { isOverlapping } from "../../utils/geometry.js";
 import { isUniversalStaticText, resolveSemanticProps } from "./semantic-resolver.js";
 import { clusterCombBoxes } from "./comb-fields.js";
 import { clusterRadioGroups } from "./radio-clustering.js";
+import { DEDUP_THRESHOLDS, CONFIDENCE } from "./config.js";
 
 // TODO(refactor-followup): Decompose detectVectorDrawnFields into smaller modular classification stages
 
@@ -390,7 +391,7 @@ export function resolveFieldTypeFromShape(box, labelText, options = {}) {
         tooltip: (labelText || fieldName).replace(/[:_—–-]+$/, '').trim(),
         originalBox: { x: box.x, y: box.y, width: box.width, height: box.height },
         detectedBy: inheritedCol ? "vector_drawn_table_grid_row" : "vector_drawn_input_box",
-        confidence: 0.98
+        confidence: CONFIDENCE.VECTOR_DRAWN
     };
 }
 
@@ -474,10 +475,10 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             maxLength: maxLen,
             tooltip: (labelText || sem.name).replace(/[:_—–-]+$/, '').trim(),
             detectedBy: "vector_drawn_comb",
-            confidence: 0.98
+            confidence: CONFIDENCE.VECTOR_DRAWN
         };
 
-        if (!isOverlapping(field, existingFields, 0.35) && !isOverlapping(field, fields, 0.35)) {
+        if (!isOverlapping(field, existingFields, DEDUP_THRESHOLDS.WITHIN_STAGE) && !isOverlapping(field, fields, DEDUP_THRESHOLDS.WITHIN_STAGE)) {
             fields.push(field);
             cluster.forEach(box => consumedRects.add(box));
         }
@@ -546,9 +547,9 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             dataFormat: "text",
             tooltip: (label || sem.label || sem.name).replace(/[:_—–-]+$/, '').trim(),
             detectedBy: "vector_drawn_checkbox",
-            confidence: 0.98
+            confidence: CONFIDENCE.VECTOR_DRAWN
         };
-        if (!isOverlapping(field, existingFields, 0.35) && !isOverlapping(field, fields, 0.35)) {
+        if (!isOverlapping(field, existingFields, DEDUP_THRESHOLDS.WITHIN_STAGE) && !isOverlapping(field, fields, DEDUP_THRESHOLDS.WITHIN_STAGE)) {
             fields.push(field);
         }
     }
@@ -603,7 +604,7 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             pageNum
         });
 
-        if (!isOverlapping(field, existingFields, 0.35) && !isOverlapping(field, fields, 0.35)) {
+        if (!isOverlapping(field, existingFields, DEDUP_THRESHOLDS.WITHIN_STAGE) && !isOverlapping(field, fields, DEDUP_THRESHOLDS.WITHIN_STAGE)) {
             fields.push(field);
         }
     }
@@ -788,10 +789,10 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             columnLabel: labelText,
             tooltip: (labelText || fieldName).replace(/[:_—–-]+$/, '').trim(),
             detectedBy: inheritedCol ? "vector_drawn_table_grid_row" : "vector_drawn_underline",
-            confidence: topLabelText ? 0.94 : (leftLabel ? 0.91 : (belowLabelText ? 0.88 : 0.82))
+            confidence: topLabelText ? CONFIDENCE.HIGH_LABEL : (leftLabel ? CONFIDENCE.MID_LABEL : (belowLabelText ? CONFIDENCE.PARTIAL_LABEL : CONFIDENCE.NO_LABEL))
         };
 
-        if (!isOverlapping(field, existingFields, 0.35) && !isOverlapping(field, fields, 0.35)) {
+        if (!isOverlapping(field, existingFields, DEDUP_THRESHOLDS.WITHIN_STAGE) && !isOverlapping(field, fields, DEDUP_THRESHOLDS.WITHIN_STAGE)) {
             fields.push(field);
         }
     }

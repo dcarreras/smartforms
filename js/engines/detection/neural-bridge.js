@@ -3,6 +3,7 @@
 
 import { generateFieldId } from "../../core/state.js";
 import { resolveSemanticProps } from "./semantic-resolver.js";
+import { CONFIDENCE } from "./config.js";
 
 export function enrichNeuralFieldsWithText(rawNeuralFields, rawBlocks, usedNames = new Set(), pageNum = 1) {
     if (!Array.isArray(rawNeuralFields) || rawNeuralFields.length === 0) return [];
@@ -56,7 +57,7 @@ export function enrichNeuralFieldsWithText(rawNeuralFields, rawBlocks, usedNames
             dataFormat: sem.dataFormat || "text",
             tooltip: (sem.label || nf.label || sem.name || "field").replace(/[:_—–-]+$/, '').trim(),
             detectedBy: "neural_vision",
-            confidence: nf.confidence || 0.85
+            confidence: nf.confidence || CONFIDENCE.NEURAL_DEFAULT
         });
     }
 

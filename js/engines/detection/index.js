@@ -4,7 +4,7 @@
 import { state } from "../../core/state.js";
 import { saveHistory } from "../../core/storage-manager.js";
 import { isOverlapping } from "../../utils/geometry.js";
-import { DEDUP_THRESHOLDS } from "./config.js";
+import { DEDUP_THRESHOLDS, CONFIDENCE } from "./config.js";
 import { getExistingWidgetFields, importExistingAcroFormFields, detect as detectAcroformWidgets } from "./acroform-passthrough.js";
 import { extractPdfVectorShapes, calculateDocumentColumnBoundaries } from "./vector-shapes.js";
 import { clusterCombBoxes } from "./comb-fields.js";
@@ -300,7 +300,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             // 4. Quality-Dependent Non-Maximum Suppression (NMS)
             for (const c of rawPageCandidates) {
                 const stagePri = STAGE_PRIORITIES[c.detectedBy] || (c.sourcedFrom === "acroform" ? 100 : 50);
-                const conf = typeof c.confidence === "number" ? c.confidence : 0.65;
+                const conf = typeof c.confidence === "number" ? c.confidence : CONFIDENCE.BASELINE;
                 c._sortScore = (conf * 1000) + stagePri;
             }
 
@@ -381,8 +381,8 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
         }
     }
 
-    const autoAccepted = finalUnique.filter(f => (f.confidence || 0) >= 0.90).length;
-    const reviewCount = finalUnique.filter(f => (f.confidence || 0) < 0.90).length;
+    const autoAccepted = finalUnique.filter(f => (f.confidence || 0) >= CONFIDENCE.ACCEPT).length;
+    const reviewCount = finalUnique.filter(f => (f.confidence || 0) < CONFIDENCE.ACCEPT).length;
 
     let returnedFields = finalUnique;
     if (typeof options.minConfidence === "number" && options.minConfidence > 0) {
@@ -422,7 +422,7 @@ export async function autoDetectFields(scope = "current", options = {}) {
         return !pageIsScanned || !isDetectorField;
     });
 
-    const minConfidence = typeof options.minConfidence === "number" ? options.minConfidence : 0.90;
+    const minConfidence = typeof options.minConfidence === "number" ? options.minConfidence : CONFIDENCE.ACCEPT;
 
     const result = await detectFormFieldsFromDoc(state.pdfDoc, {
         ...options,
@@ -455,6 +455,7 @@ export async function autoDetectFields(scope = "current", options = {}) {
         reviewCount: omittedCount,
         omittedCount,
         fields: acceptedFields,
+        telemetry: result.telemetry,
         valueOf() { return this.totalCount; },
         [Symbol.toPrimitive](hint) { return hint === "string" ? String(this.totalCount) : this.totalCount; }
     };

@@ -49,7 +49,7 @@ CUSTOM_ORIGINS = [
 ALLOWED_ORIGINS = list(dict.fromkeys(DEFAULT_ALLOWED_ORIGINS + CUSTOM_ORIGINS))
 
 # Regex matching local loopback on any port, official production domain, and Vercel preview domains
-ALLOWED_ORIGIN_REGEX = r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://formblatt\.dpdns\.org|https://[a-zA-Z0-9\-]+\.vercel\.app)$"
+ALLOWED_ORIGIN_REGEX = r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://formblatt\.dpdns\.org|https://formblatt-[a-zA-Z0-9\-]+\.vercel\.app)$"
 
 app.add_middleware(
     CORSMiddleware,

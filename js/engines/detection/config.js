@@ -7,20 +7,28 @@ export { SEMANTIC_DIMENSIONS };
 
 export const DEDUP_THRESHOLDS = Object.freeze({
     EXACT_OR_SIMILAR: 0.15,
-    CROSS_STAGE: 0.25,
-    TABLE_CELL: 0.30,
-    WITHIN_STAGE: 0.35,
-    CONTAINER_OVERLAP: 0.50
-});
-
-export const OVERLAP = Object.freeze({
-    EXACT_OR_SIMILAR: 0.15,
     UNDERLINE_CANDIDATE: 0.20,
     CROSS_STAGE: 0.25,
     TABLE_CELL: 0.30,
     WITHIN_STAGE: 0.35,
     COLON_PROMPT: 0.45,
     CONTAINER: 0.50
+});
+
+// Named confidence scores used across detection stages.
+// All stage modules must import from here; inline numeric literals are not permitted.
+export const CONFIDENCE = Object.freeze({
+    ACCEPT: 0.90,            // minimum to auto-accept without user review
+    BASELINE: 0.65,          // default when context evidence is absent
+    NEURAL_DEFAULT: 0.85,    // neural bridge when model produces no score
+    NO_LABEL: 0.82,          // field with no nearby label text; also table/grid base
+    UNDERLINE_BASE: 0.74,    // underline-detected field base
+    NEURAL_BASE: 0.68,       // ONNX / sidecar stage base
+    AFFORDANCE_BASE: 0.60,   // visual-affordance / colon-prompt stage base
+    PARTIAL_LABEL: 0.88,     // below-labeled or underline-detected box
+    MID_LABEL: 0.91,         // left-labeled field
+    HIGH_LABEL: 0.94,        // top-labeled or signature-typed field
+    VECTOR_DRAWN: 0.98       // directly confirmed vector-drawn box
 });
 
 export const COMB = Object.freeze({

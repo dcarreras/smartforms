@@ -4,6 +4,7 @@
 import { generateFieldId } from "../../../core/state.js";
 import { isOverlapping } from "../../../utils/geometry.js";
 import { isUniversalStaticText, resolveSemanticProps } from "../semantic-resolver.js";
+import { DEDUP_THRESHOLDS } from "../config.js";
 
 export const CHECKBOX_CHARS = new Set([
     "☐", "□", "▣", "■", "◻", "◼", "◽", "◾", "⬜", "⬛",
@@ -116,7 +117,7 @@ export function detectCheckboxGlyphs(textLines, rawBlocks, pageNum, usedNames, f
                 confidence: 0.70
             };
 
-            if (!isOverlapping(newField, fields, 0.45)) {
+            if (!isOverlapping(newField, fields, DEDUP_THRESHOLDS.COLON_PROMPT)) {
                 fields.push(newField);
             }
         }

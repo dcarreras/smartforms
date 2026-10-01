@@ -8,6 +8,7 @@ import { calculateDocumentColumnBoundaries } from "../vector-shapes.js";
 import { clusterIntoLines, cleanOcrWordToken, isOcrCheckboxArtifact } from "./line-clustering.js";
 import { TABLE_COL_DEFS, matchColumnKeyword } from "../table-grid.js";
 import { detectCheckboxGlyphs, CHECKBOX_CHARS } from "./checkbox-glyphs.js";
+import { DEDUP_THRESHOLDS } from "../config.js";
 import { detectColonPrompts } from "./colon-prompts.js";
 
 export { detectCheckboxGlyphs, CHECKBOX_CHARS, detectColonPrompts, clusterIntoLines, cleanOcrWordToken, isOcrCheckboxArtifact };
@@ -135,7 +136,7 @@ export function detectTaxScheduleLineAffordances(rawBlocks, viewport, pageNum, u
                         confidence: 0.92
                     };
 
-                    if (!isOverlapping(field, existingFields, 0.25) && !isOverlapping(field, fields, 0.25)) {
+                    if (!isOverlapping(field, existingFields, DEDUP_THRESHOLDS.CROSS_STAGE) && !isOverlapping(field, fields, DEDUP_THRESHOLDS.CROSS_STAGE)) {
                         fields.push(field);
                     }
                 }
@@ -366,7 +367,7 @@ export function detectVisualAffordances(rawBlocks, viewport, pageNum, usedNames,
                             confidence: 0.68
                         };
 
-                        if (!isOverlapping(cellField, fields, 0.35)) {
+                        if (!isOverlapping(cellField, fields, DEDUP_THRESHOLDS.WITHIN_STAGE)) {
                             fields.push(cellField);
                         }
                     }

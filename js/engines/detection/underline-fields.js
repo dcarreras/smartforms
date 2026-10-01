@@ -4,6 +4,7 @@
 import { generateFieldId } from "../../core/state.js";
 import { isOverlapping } from "../../utils/geometry.js";
 import { isUniversalStaticText, resolveSemanticProps } from "./semantic-resolver.js";
+import { CONFIDENCE } from "./config.js";
 
 export function detectUnderlineFields(grid, rawBlocks, pageNum, usedNames, existingFields = []) {
     const fields = [];
@@ -86,7 +87,7 @@ export function detectUnderlineFields(grid, rawBlocks, pageNum, usedNames, exist
             dataFormat: sem.dataFormat || "text",
             tooltip: (label || sem.name).replace(/[:_—–-]+$/, '').trim(),
             detectedBy: "boundary_underline",
-            confidence: isSig ? 0.94 : (isBox ? 0.88 : 0.82)
+            confidence: isSig ? CONFIDENCE.HIGH_LABEL : (isBox ? CONFIDENCE.PARTIAL_LABEL : CONFIDENCE.NO_LABEL)
         });
     }
     return fields;

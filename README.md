@@ -42,17 +42,13 @@ Fields with confidence below 90% (`< 0.90`) are omitted from auto-detection. Nam
 
 - Label-to-name matching uses Unicode-bounded regexes (`(?<![\p{L}])…(?![\p{L}])`). Results outside the supported languages (English, German, French, Spanish, Italian, Portuguese, Dutch, Nepali/Hindi) fall back to slugified text.
 - Size thresholds are in PDF points and were tuned on standard document form layouts.
-- Core document detection (vector shapes, tables, underlines, comb cells, radio groups, and visual affordances) along with scanned document geometric OCR is 100% client-side and runs completely offline in Airplane Mode. Tesseract.js optical character recognition and in-browser ONNX vision are optional augmentations loaded on-demand from a CDN when online, and automatically fall back to the built-in 100% offline geometric engine when offline.
+- Core document detection (vector shapes, tables, underlines, comb cells, radio groups, and visual affordances) is 100% client-side and runs completely offline in Airplane Mode. Scanned-page geometric analysis (box and line extraction) is also offline. **Tesseract.js text recognition** and **in-browser ONNX vision** are optional augmentations: they load from `/vendor/` if vendored, otherwise fall back to CDN when online, or degrade gracefully to geometric-only detection offline. A notice toast appears when either stage is unavailable.
 
 ### Accuracy
 
-<!-- Fill in from your dataset. Example layout: -->
+No formal evaluation has been run against a labelled dataset yet. Run `npm run test:detector` against `tests/samples/` to produce precision, recall, and type-accuracy metrics once a dataset is available.
 
-| Dataset | PDFs | Fields | Precision | Recall | Type accuracy | Name accuracy |
-|---|---|---|---|---|---|---|
-| (name) | | | | | | |
 
-Run the evaluation with `npm run test:detector`.
 
 ## Run locally
 

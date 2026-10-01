@@ -6,6 +6,7 @@ import { isOverlapping } from "../../../utils/geometry.js";
 import { isUniversalStaticText, resolveSemanticProps, SEMANTIC_DIMENSIONS } from "../semantic-resolver.js";
 import { CHECKBOX_REGEX } from "./checkbox-glyphs.js";
 import { cleanOcrWordToken, isOcrCheckboxArtifact } from "./line-clustering.js";
+import { CONFIDENCE, DEDUP_THRESHOLDS } from "../config.js";
 
 export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, usedNames, fields, docLayout, vectorShapes) {
     const pageWidth = viewport.width;
@@ -55,9 +56,9 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
                             hasPlaceholder: true,
                             tooltip: subText,
                             detectedBy: "affordance2_colon_prompt",
-                            confidence: 0.85
+                            confidence: CONFIDENCE.NEURAL_DEFAULT
                         };
-                        if (!isOverlapping(sigField, fields, 0.20)) {
+                        if (!isOverlapping(sigField, fields, DEDUP_THRESHOLDS.UNDERLINE_CANDIDATE)) {
                             fields.push(sigField);
                         }
                         continue;
@@ -290,10 +291,10 @@ export function detectColonPrompts(textLines, rawBlocks, viewport, pageNum, used
                 hasPlaceholder: Boolean(hasTextPlaceholder || matchingUnderline),
                 tooltip: (fullCleanLabel || fieldName).replace(/[:_—–-]+$/, '').trim(),
                 detectedBy: "affordance2_colon_prompt",
-                confidence: 0.65
+                confidence: CONFIDENCE.BASELINE
             };
 
-            if (!isOverlapping(newField, fields, 0.20)) {
+            if (!isOverlapping(newField, fields, DEDUP_THRESHOLDS.UNDERLINE_CANDIDATE)) {
                 fields.push(newField);
             }
         }

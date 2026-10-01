@@ -814,6 +814,15 @@ export function initEditorSubsystems() {
             const count = typeof result === "object" ? result.totalCount : result;
             const omittedCount = typeof result === "object" ? (result.omittedCount || result.reviewCount || 0) : 0;
 
+            // Surface any stage failures so the user knows if a detection layer was skipped
+            const stageErrors = result?.telemetry?.stageErrors || {};
+            if (stageErrors.ocr) {
+                showNoticeToast("OCR unavailable — scanned text was not read. Check your connection or add a vendor file.");
+            }
+            if (stageErrors.onnx_neural) {
+                showNoticeToast("Neural vision stage skipped (model not loaded). Geometric detection only.");
+            }
+
             if (count > 0) {
                 refreshUI();
                 

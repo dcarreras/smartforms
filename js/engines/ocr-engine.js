@@ -7,6 +7,23 @@
  * @param {Object} vectorShapes 
  * @returns {boolean}
  */
+
+// Minimum IoU above which two scanned-contour detections are treated as the same box.
+const OCR_DEDUP_IOU_THRESHOLD = 0.45;
+
+/**
+ * Standard symmetric Intersection-over-Union for two axis-aligned boxes.
+ * Used internally for deduplicating scanned contour detections.
+ */
+function calcBoxIoU(ax, ay, aw, ah, bx, by, bw, bh) {
+    const interW = Math.max(0, Math.min(ax + aw, bx + bw) - Math.max(ax, bx));
+    const interH = Math.max(0, Math.min(ay + ah, by + bh) - Math.max(ay, by));
+    const interArea = interW * interH;
+    if (interArea <= 0) return 0;
+    const unionArea = aw * ah + bw * bh - interArea;
+    return unionArea > 0 ? interArea / unionArea : 0;
+}
+
 export function isPageScannedOrFlattened(rawBlocks = [], vectorShapes = {}) {
     const textCount = rawBlocks.length;
     const rectCount = (vectorShapes.allRects || []).length;
@@ -164,10 +181,8 @@ export function detectScannedBoxContours(binary, width, height, scale = 1.0) {
 
                             // Prevent duplicate overlapping detections
                             const isDuplicate = detectedBoxes.some(b => {
-                                const iou = (Math.max(0, Math.min(b.x + b.width, boxX + boxWidth) - Math.max(b.x, boxX)) *
-                                             Math.max(0, Math.min(b.y + b.height, boxY + boxHeight) - Math.max(b.y, boxY))) /
-                                            ((b.width * b.height) + (boxWidth * boxHeight) - (Math.max(0, Math.min(b.x + b.width, boxX + boxWidth) - Math.max(b.x, boxX)) * Math.max(0, Math.min(b.y + b.height, boxY + boxHeight) - Math.max(b.y, boxY))));
-                                return iou > 0.45 || (Math.abs(b.x - boxX) < 8 && Math.abs(b.y - boxY) < 8);
+                                const iou = calcBoxIoU(b.x, b.y, b.width, b.height, boxX, boxY, boxWidth, boxHeight);
+                                return iou > OCR_DEDUP_IOU_THRESHOLD || (Math.abs(b.x - boxX) < 8 && Math.abs(b.y - boxY) < 8);
                             });
 
                             if (!isDuplicate) {
