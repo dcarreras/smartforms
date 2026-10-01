@@ -27,13 +27,37 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for localhost Formblatt editor instances
+# Allowed origins: Formblatt official production domains and local development instances.
+# Restrictive by design: Prevents malicious third-party websites in other browser tabs
+# from making cross-origin requests to this local sidecar API (127.0.0.1:8000).
+DEFAULT_ALLOWED_ORIGINS = [
+    "https://formblatt.dpdns.org",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+]
+
+# Allow custom origins via environment variable (e.g., custom local dev port or reverse proxy)
+CUSTOM_ORIGINS = [
+    orig.strip()
+    for orig in os.getenv("FORMOBLATT_ALLOWED_ORIGINS", "").split(",")
+    if orig.strip()
+]
+ALLOWED_ORIGINS = list(dict.fromkeys(DEFAULT_ALLOWED_ORIGINS + CUSTOM_ORIGINS))
+
+# Regex matching local loopback on any port, official production domain, and Vercel preview domains
+ALLOWED_ORIGIN_REGEX = r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://formblatt\.dpdns\.org|https://[a-zA-Z0-9\-]+\.vercel\.app)$"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept"],
 )
 
 # Global model state
