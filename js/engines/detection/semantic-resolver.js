@@ -1,6 +1,9 @@
 // js/engines/detection/semantic-resolver.js
 // Generic semantic property resolution and universal static text heuristics
 
+import { SEMANTIC_DIMENSIONS, CONFIDENCE } from "./config.js";
+export { SEMANTIC_DIMENSIONS };
+
 // ============================================================================
 // 1. GENERIC PATTERNS & PIPELINE CONSTANTS
 // ============================================================================
@@ -72,17 +75,6 @@ export const GENERIC_PATTERNS = [
     { regex: /(?<![\p{L}\p{M}])(?:संख्या|नं\.?\s*$|नम्बर)(?![\p{L}\p{M}])/iu, id: "number", type: "textField", priority: 0 }
 ];
 
-export const SEMANTIC_DIMENSIONS = {
-    signature: { width: 200, height: 40, type: "signature" },
-    dateField: { width: 110, height: 22, type: "dateField" },
-    zip: { width: 85, height: 22, type: "textField" },
-    state: { width: 65, height: 22, type: "textField" },
-    phone: { width: 130, height: 22, type: "textField" },
-    email: { width: 220, height: 22, type: "textField" },
-    ssn: { width: 120, height: 22, type: "textField" },
-    currency: { width: 100, height: 22, type: "textField" },
-    multiline: { width: 340, height: 60, type: "textField", multiline: true }
-};
 
 export function resolveSemanticProps(rawLabel, defaultType = "textField", usedNames = new Set()) {
     const clean = (rawLabel || "").trim().replace(/[:_.\s-]+$/, "");
@@ -210,17 +202,17 @@ export function computeFieldConfidence(field, siblingFields = [], stageAgreement
     const detectedBy = field.detectedBy || "unknown";
 
     // Base confidence by stage type
-    let base = 0.65;
+    let base = CONFIDENCE.BASELINE;
     if (["lattice_tables", "table_grid"].includes(detectedBy)) {
-        base = 0.82;
+        base = CONFIDENCE.TABLE_BASE;
     } else if (["vector_geometry", "vector_fields"].includes(detectedBy)) {
-        base = 0.78;
+        base = CONFIDENCE.VECTOR_BASE;
     } else if (detectedBy === "underline_fields") {
-        base = 0.74;
+        base = CONFIDENCE.UNDERLINE_BASE;
     } else if (["onnx_neural", "layoutlmv3_sidecar"].includes(detectedBy)) {
-        base = 0.68;
+        base = CONFIDENCE.NEURAL_BASE;
     } else if (["visual_affordances", "colon_prompts", "affordance2_colon_prompt", "checkbox_glyphs"].includes(detectedBy)) {
-        base = 0.60;
+        base = CONFIDENCE.AFFORDANCE_BASE;
     }
 
     // Signal 1: Clean geometric edge OR explicit visual placeholder (typed blanks/dots)

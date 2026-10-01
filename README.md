@@ -42,7 +42,7 @@ Fields with confidence below 90% (`< 0.90`) are omitted from auto-detection. Nam
 
 - Label-to-name matching uses Unicode-bounded regexes (`(?<![\p{L}])…(?![\p{L}])`). Results outside the supported languages (English, German, French, Spanish, Italian, Portuguese, Dutch, Nepali/Hindi) fall back to slugified text.
 - Size thresholds are in PDF points and were tuned on standard document form layouts.
-- Core document detection (vector shapes, tables, underlines, comb cells, radio groups, and visual affordances) is 100% client-side and runs completely offline in Airplane Mode. Scanned-page geometric analysis (box and line extraction) is also offline. **Tesseract.js text recognition** and **in-browser ONNX vision** are optional augmentations: they load from `/vendor/` if vendored, otherwise fall back to CDN when online, or degrade gracefully to geometric-only detection offline. A notice toast appears when either stage is unavailable.
+- Core document detection (vector shapes, tables, underlines, comb cells, radio groups, and visual affordances) is 100% client-side and runs completely offline in Airplane Mode. Scanned-page geometric analysis (box and line extraction) is also offline. **Tesseract.js text recognition** and **in-browser ONNX vision** are optional augmentations: they load from `/vendor/` if vendored, otherwise fall back to CDN when online, or degrade gracefully to geometric-only detection offline (see [vendor/README.md](vendor/README.md) for instructions on vendoring optional binary assets). A notice toast appears when either stage is unavailable.
 
 ### Accuracy
 

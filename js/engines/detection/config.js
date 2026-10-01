@@ -1,9 +1,17 @@
 // js/engines/detection/config.js
 // Centralized configuration and threshold constants for the modular detection pipeline
 
-import { SEMANTIC_DIMENSIONS } from "./semantic-resolver.js";
-
-export { SEMANTIC_DIMENSIONS };
+export const SEMANTIC_DIMENSIONS = Object.freeze({
+    signature: { width: 200, height: 40, type: "signature" },
+    dateField: { width: 110, height: 22, type: "dateField" },
+    zip: { width: 85, height: 22, type: "textField" },
+    state: { width: 65, height: 22, type: "textField" },
+    phone: { width: 130, height: 22, type: "textField" },
+    email: { width: 220, height: 22, type: "textField" },
+    ssn: { width: 120, height: 22, type: "textField" },
+    currency: { width: 100, height: 22, type: "textField" },
+    multiline: { width: 340, height: 60, type: "textField", multiline: true }
+});
 
 export const DEDUP_THRESHOLDS = Object.freeze({
     EXACT_OR_SIMILAR: 0.15,
@@ -21,7 +29,9 @@ export const CONFIDENCE = Object.freeze({
     ACCEPT: 0.90,            // minimum to auto-accept without user review
     BASELINE: 0.65,          // default when context evidence is absent
     NEURAL_DEFAULT: 0.85,    // neural bridge when model produces no score
-    NO_LABEL: 0.82,          // field with no nearby label text; also table/grid base
+    NO_LABEL: 0.82,          // field with no nearby label text
+    TABLE_BASE: 0.82,        // lattice tables / table grid stage base
+    VECTOR_BASE: 0.78,       // vector geometry / vector fields stage base
     UNDERLINE_BASE: 0.74,    // underline-detected field base
     NEURAL_BASE: 0.68,       // ONNX / sidecar stage base
     AFFORDANCE_BASE: 0.60,   // visual-affordance / colon-prompt stage base
