@@ -42,7 +42,7 @@ Fields with confidence below 90% (`< 0.90`) are omitted from auto-detection. Nam
 
 - Label-to-name matching uses Unicode-bounded regexes (`(?<![\p{L}])…(?![\p{L}])`). Results outside the supported languages (English, German, French, Spanish, Italian, Portuguese, Dutch, Nepali/Hindi) fall back to slugified text.
 - Size thresholds are in PDF points and were tuned on standard document form layouts.
-- OCR uses Tesseract.js from a CDN, so it needs a network connection on first load.
+- Core document detection (vector shapes, tables, underlines, comb cells, radio groups, and visual affordances) along with scanned document geometric OCR is 100% client-side and runs completely offline in Airplane Mode. Tesseract.js optical character recognition and in-browser ONNX vision are optional augmentations loaded on-demand from a CDN when online, and automatically fall back to the built-in 100% offline geometric engine when offline.
 
 ### Accuracy
 

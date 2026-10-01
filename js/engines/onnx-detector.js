@@ -6,7 +6,8 @@ import { generateFieldId } from "../core/state.js";
 
 // Model configuration constants
 export const ONNX_CONFIG = {
-    // CDN endpoints for onnxruntime-web with fallback
+    // Local vendor path first, then optional CDN endpoint with fallback
+    localOrtPath: "/vendor/ort.all.min.js",
     ortCdn: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.all.min.js",
     modelUrl: "/models/ffdnet_s_quantized.onnx",
     inputSize: 640,
@@ -76,6 +77,11 @@ export async function loadOnnxRuntime() {
     if (typeof window === "undefined") return null;
     if (window.ort) return window.ort;
 
+    // Fast-path offline check: never attempt external CDN requests in Airplane Mode
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        throw new Error("Offline mode active: ONNX runtime CDN is unavailable in Airplane Mode");
+    }
+
     return new Promise((resolve, reject) => {
         const existing = document.querySelector(`script[src*="onnxruntime"]`);
         if (existing) {
@@ -84,21 +90,32 @@ export async function loadOnnxRuntime() {
             return;
         }
 
-        const script = document.createElement("script");
-        script.src = ONNX_CONFIG.ortCdn;
-        script.async = true;
-        script.onload = () => {
-            if (window.ort) {
-                // Configure WASM paths for optimal web performance
-                window.ort.env.wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
-                window.ort.env.wasm.simd = true;
-                resolve(window.ort);
-            } else {
-                reject(new Error("ONNX Runtime loaded but window.ort is undefined"));
-            }
+        const loadScriptSrc = (src, onFail) => {
+            const script = document.createElement("script");
+            script.src = src;
+            script.async = true;
+            script.onload = () => {
+                if (window.ort) {
+                    window.ort.env.wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
+                    window.ort.env.wasm.simd = true;
+                    resolve(window.ort);
+                } else {
+                    reject(new Error("ONNX Runtime loaded but window.ort is undefined"));
+                }
+            };
+            script.onerror = onFail;
+            document.head.appendChild(script);
         };
-        script.onerror = () => reject(new Error("Failed to load onnxruntime-web script"));
-        document.head.appendChild(script);
+
+        // Try local vendor path first if available, then fallback to CDN
+        loadScriptSrc(ONNX_CONFIG.localOrtPath, () => {
+            if (typeof navigator !== "undefined" && navigator.onLine === false) {
+                return reject(new Error("Offline mode active: ONNX runtime unavailable in Airplane Mode"));
+            }
+            loadScriptSrc(ONNX_CONFIG.ortCdn, () => {
+                reject(new Error("Failed to load onnxruntime-web script from local vendor and CDN"));
+            });
+        });
     });
 }
 

@@ -493,18 +493,29 @@ export async function getTesseractWorker(lang = "eng", onProgress = null) {
 
     let Tesseract = window.Tesseract;
     if (!Tesseract) {
+        // Fast-path offline check: never attempt external CDN requests in Airplane Mode
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+            throw new Error("Offline mode active: Tesseract.js CDN is unavailable in Airplane Mode");
+        }
+
+        // Try local vendor first if present, then fall back to CDN when online
         try {
-            const mod = await import("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.esm.min.js");
-            Tesseract = mod.default || mod;
-        } catch (e) {
-            Tesseract = await new Promise((resolve, reject) => {
-                if (typeof document === "undefined") return reject(e);
-                const s = document.createElement("script");
-                s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
-                s.onload = () => resolve(window.Tesseract);
-                s.onerror = () => reject(new Error("Failed to load Tesseract.js from CDN"));
-                document.head.appendChild(s);
-            });
+            const localMod = await import("/vendor/tesseract.esm.min.js");
+            Tesseract = localMod.default || localMod;
+        } catch {
+            try {
+                const mod = await import("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.esm.min.js");
+                Tesseract = mod.default || mod;
+            } catch (e) {
+                Tesseract = await new Promise((resolve, reject) => {
+                    if (typeof document === "undefined") return reject(e);
+                    const s = document.createElement("script");
+                    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+                    s.onload = () => resolve(window.Tesseract);
+                    s.onerror = () => reject(new Error("Failed to load Tesseract.js from CDN"));
+                    document.head.appendChild(s);
+                });
+            }
         }
     }
 
@@ -599,11 +610,12 @@ export async function performScannedPageOcr(canvas, viewport, pageNum = 1, optio
     if (options.onProgress) options.onProgress("Extracting rectangular boxes & table cells...", 75);
     const detectedBoxes = detectScannedBoxContours(binary, canvas.width, canvas.height, renderScale);
 
-    // Pass 4: In-Browser Optical Character Recognition (Real Tesseract.js with contour fallback)
+    // Pass 4: In-Browser Optical Character Recognition (Real Tesseract.js when online/available, with 100% offline geometric fallback)
     let textBlocks = [];
     let ocrUsed = false;
+    const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
 
-    if (options.enableTesseract !== false && typeof window !== "undefined") {
+    if (!isOffline && options.enableTesseract !== false && typeof window !== "undefined") {
         try {
             if (options.onProgress) options.onProgress("Reading scanned characters via in-browser OCR...", 80);
             textBlocks = await recognizeScannedCanvasOcr(canvas, renderScale, options);
@@ -611,12 +623,16 @@ export async function performScannedPageOcr(canvas, viewport, pageNum = 1, optio
                 ocrUsed = true;
             }
         } catch (ocrErr) {
-            console.warn("Client-side Tesseract OCR failed, falling back to geometric segmentation:", ocrErr);
+            console.warn("Client-side Tesseract OCR unavailable, falling back to local geometric segmentation:", ocrErr?.message || ocrErr);
         }
     }
 
     if (!ocrUsed || textBlocks.length === 0) {
-        if (options.onProgress) options.onProgress("Mapping visual text blocks (geometric fallback)...", 90);
+        if (options.onProgress) {
+            options.onProgress(isOffline
+                ? "Airplane Mode: Mapping visual text blocks (100% offline geometric engine)..."
+                : "Mapping visual text blocks (100% offline geometric engine)...", 90);
+        }
         textBlocks = extractScannedTextLines(binary, canvas.width, canvas.height, renderScale);
     }
 

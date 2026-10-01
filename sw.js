@@ -1,7 +1,7 @@
 // ── Formblatt Offline Service Worker (sw.js) ──────────────────────────
 // Enables 100% client-side offline execution (PWA) — works in Airplane Mode.
 
-const CACHE_NAME = "formblatt-cache-v3.10";
+const CACHE_NAME = "formblatt-cache-v3.11";
 const STATIC_ASSETS = [
     "/",
     "/index.html",
@@ -38,6 +38,22 @@ const STATIC_ASSETS = [
     "/js/engines/auto-detector.js",
     "/js/engines/onnx-detector.js",
     "/js/engines/ocr-engine.js",
+    "/js/engines/detection/index.js",
+    "/js/engines/detection/config.js",
+    "/js/engines/detection/types.js",
+    "/js/engines/detection/acroform-passthrough.js",
+    "/js/engines/detection/vector-shapes.js",
+    "/js/engines/detection/vector-fields.js",
+    "/js/engines/detection/comb-fields.js",
+    "/js/engines/detection/radio-clustering.js",
+    "/js/engines/detection/table-grid.js",
+    "/js/engines/detection/underline-fields.js",
+    "/js/engines/detection/semantic-resolver.js",
+    "/js/engines/detection/neural-bridge.js",
+    "/js/engines/detection/visual-affordances/index.js",
+    "/js/engines/detection/visual-affordances/checkbox-glyphs.js",
+    "/js/engines/detection/visual-affordances/colon-prompts.js",
+    "/js/engines/detection/visual-affordances/line-clustering.js",
     "/js/engines/templates-engine.js",
     "/js/controllers/editor-app.js",
     "/js/controllers/landing-controller.js",
@@ -51,7 +67,8 @@ const STATIC_ASSETS = [
     "/js/ui/gradient-waves.js",
     "/js/utils/toast.js",
     "/js/utils/tooltip.js",
-    "/js/utils/haptics.js"
+    "/js/utils/haptics.js",
+    "/js/utils/geometry.js"
 ];
 
 // Install event: cache all core static assets
