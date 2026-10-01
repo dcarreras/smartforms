@@ -123,8 +123,12 @@ export function updateToolIndicator() {
     if (activeBtn) {
         const applyIndicator = () => {
             if (!activeBtn.isConnected) return;
-            const left = activeBtn.offsetLeft;
-            const width = activeBtn.offsetWidth;
+            const toolbar = activeBtn.closest(".segmented-toolbar");
+            if (!toolbar) return;
+            const btnRect = activeBtn.getBoundingClientRect();
+            const barRect = toolbar.getBoundingClientRect();
+            const left = btnRect.left - barRect.left + toolbar.scrollLeft;
+            const width = btnRect.width;
             if (width > 0) {
                 indicator.style.transform = `translateX(${left}px)`;
                 indicator.style.width = `${width}px`;
@@ -147,8 +151,12 @@ export function updateModeIndicator() {
     if (activeBtn) {
         const applyIndicator = () => {
             if (!activeBtn.isConnected) return;
-            const left = activeBtn.offsetLeft;
-            const width = activeBtn.offsetWidth;
+            const toggle = activeBtn.closest(".mode-segmented-toggle");
+            if (!toggle) return;
+            const btnRect = activeBtn.getBoundingClientRect();
+            const toggleRect = toggle.getBoundingClientRect();
+            const left = btnRect.left - toggleRect.left;
+            const width = btnRect.width;
             if (width > 0) {
                 indicator.style.transform = `translateX(${left}px)`;
                 indicator.style.width = `${width}px`;
@@ -313,7 +321,26 @@ export function initEditorSubsystems() {
     if (tableBtn && tablePopover) {
         tableBtn.addEventListener("click", (e) => {
             const isVisible = tablePopover.style.display === "block";
-            tablePopover.style.display = isVisible ? "none" : "block";
+            if (!isVisible) {
+                tablePopover.style.display = "block";
+                // Adjust popover if it would bleed off-screen horizontally
+                const rect = tablePopover.getBoundingClientRect();
+                if (rect.right > window.innerWidth - 8) {
+                    tablePopover.style.left = "auto";
+                    tablePopover.style.right = "0px";
+                    tablePopover.style.transform = "none";
+                } else if (rect.left < 8) {
+                    tablePopover.style.left = "0px";
+                    tablePopover.style.right = "auto";
+                    tablePopover.style.transform = "none";
+                } else {
+                    tablePopover.style.left = "50%";
+                    tablePopover.style.right = "auto";
+                    tablePopover.style.transform = "translateX(-50%)";
+                }
+            } else {
+                tablePopover.style.display = "none";
+            }
         });
     }
 

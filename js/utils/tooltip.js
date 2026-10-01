@@ -112,15 +112,19 @@ function renderTooltip(el) {
 
     // Viewport clamping
     const margin = 8;
-    if (left < margin) left = margin;
     if (left + tooltipRect.width > window.innerWidth - margin) {
         left = window.innerWidth - margin - tooltipRect.width;
     }
+    if (left < margin) left = margin;
 
     if (pos === "bottom" && top + tooltipRect.height > window.innerHeight - margin) {
         top = targetRect.top - tooltipRect.height - 7;
     } else if (pos === "top" && top < margin) {
         top = targetRect.bottom + 7;
+    }
+    if (top < margin) top = margin;
+    if (top + tooltipRect.height > window.innerHeight - margin) {
+        top = Math.max(margin, window.innerHeight - margin - tooltipRect.height);
     }
 
     tooltipEl.style.top = `${Math.round(top)}px`;

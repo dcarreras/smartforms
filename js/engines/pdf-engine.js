@@ -164,6 +164,18 @@ export function clampPanOffset() {
     const scaledW = docWidth * scale;
     const scaledH = docHeight * scale;
 
+    const unscaledW = container.offsetWidth || docWidth;
+    const unscaledH = container.offsetHeight || docHeight;
+    const containerLeft = (typeof container.offsetLeft === "number" && !isNaN(container.offsetLeft))
+        ? container.offsetLeft
+        : (wrapperW - unscaledW) / 2;
+    const containerTop = (typeof container.offsetTop === "number" && !isNaN(container.offsetTop))
+        ? container.offsetTop
+        : (wrapperH - unscaledH) / 2;
+
+    const centerOffsetX = (wrapperW / 2) - (containerLeft + unscaledW / 2);
+    const centerOffsetY = (wrapperH / 2) - (containerTop + unscaledH / 2);
+
     // Minimum visible document footprint inside workbench (in px)
     const minVisibleX = Math.min(160, scaledW * 0.4);
     const minVisibleY = Math.min(160, scaledH * 0.4);
@@ -171,11 +183,13 @@ export function clampPanOffset() {
     const maxPanX = Math.max(0, (wrapperW / 2) + (scaledW / 2) - minVisibleX);
     const maxPanY = Math.max(0, (wrapperH / 2) + (scaledH / 2) - minVisibleY);
 
-    const minPanX = -maxPanX;
-    const minPanY = -maxPanY;
+    const minPanX = centerOffsetX - maxPanX;
+    const maxPanXBound = centerOffsetX + maxPanX;
+    const minPanY = centerOffsetY - maxPanY;
+    const maxPanYBound = centerOffsetY + maxPanY;
 
-    state.panOffset.x = Math.min(Math.max(state.panOffset.x, minPanX), maxPanX);
-    state.panOffset.y = Math.min(Math.max(state.panOffset.y, minPanY), maxPanY);
+    state.panOffset.x = Math.min(Math.max(state.panOffset.x, minPanX), maxPanXBound);
+    state.panOffset.y = Math.min(Math.max(state.panOffset.y, minPanY), maxPanYBound);
 
     return state.panOffset;
 }
@@ -236,10 +250,10 @@ export function fitToWidth(onRerender) {
     const wrapper = document.getElementById("centerCanvas") || document.querySelector(".canvas-workbench") || document.getElementById("canvasContainer")?.parentElement;
     if (!wrapper) return;
 
-    state.panOffset = { x: 0, y: 0 };
     const style = window.getComputedStyle(wrapper);
     const padLeft = parseFloat(style.paddingLeft) || 0;
     const padRight = parseFloat(style.paddingRight) || 0;
+    const padTop = parseFloat(style.paddingTop) || 0;
 
     const innerWidth = wrapper.clientWidth - (padLeft + padRight);
     const availableWidth = Math.max(160, innerWidth - 32);
@@ -248,8 +262,36 @@ export function fitToWidth(onRerender) {
     const docWidth = (state.pdfViewport && state.pdfViewport.width)
         ? state.pdfViewport.width
         : (container && container.offsetWidth ? container.offsetWidth : 595.28);
+    const docHeight = (state.pdfViewport && state.pdfViewport.height)
+        ? state.pdfViewport.height
+        : (container && container.offsetHeight ? container.offsetHeight : 841.89);
 
     const newScale = Math.min(Math.max(availableWidth / docWidth, 0.25), 4.0);
+
+    if (container) {
+        const unscaledW = container.offsetWidth || docWidth;
+        const unscaledH = container.offsetHeight || docHeight;
+        const containerLeft = (typeof container.offsetLeft === "number" && !isNaN(container.offsetLeft))
+            ? container.offsetLeft
+            : (wrapper.clientWidth - unscaledW) / 2;
+        const containerTop = (typeof container.offsetTop === "number" && !isNaN(container.offsetTop))
+            ? container.offsetTop
+            : (wrapper.clientHeight - unscaledH) / 2;
+
+        const containerCenterX = containerLeft + unscaledW / 2;
+        const targetCenterX = wrapper.clientWidth / 2;
+        const panX = targetCenterX - containerCenterX;
+
+        const scaledH = docHeight * newScale;
+        const containerCenterY = containerTop + unscaledH / 2;
+        const targetCenterY = padTop + 16 + (scaledH / 2);
+        const panY = targetCenterY - containerCenterY;
+
+        state.panOffset = { x: Math.round(panX), y: Math.round(panY) };
+    } else {
+        state.panOffset = { x: 0, y: 0 };
+    }
+
     setTransformScale(newScale, onRerender);
 }
 
@@ -257,15 +299,21 @@ export function fitToPage(onRerender) {
     const wrapper = document.getElementById("centerCanvas") || document.querySelector(".canvas-workbench") || document.getElementById("canvasContainer")?.parentElement;
     if (!wrapper) return;
 
-    state.panOffset = { x: 0, y: 0 };
     const style = window.getComputedStyle(wrapper);
     const padLeft = parseFloat(style.paddingLeft) || 0;
     const padRight = parseFloat(style.paddingRight) || 0;
     const padTop = parseFloat(style.paddingTop) || 0;
     const padBottom = parseFloat(style.paddingBottom) || 0;
 
+    const dockedFooter = document.querySelector(".canvas-docked-footer") || document.querySelector(".canvas-floating-dock");
+    let dockedFooterHeight = 0;
+    if (dockedFooter && window.getComputedStyle(dockedFooter).display !== "none") {
+        dockedFooterHeight = (dockedFooter.offsetHeight || 44) + 16;
+    }
+    const effectivePadBottom = Math.max(padBottom, dockedFooterHeight);
+
     const availableWidth = Math.max(160, wrapper.clientWidth - (padLeft + padRight) - 32);
-    const availableHeight = Math.max(160, wrapper.clientHeight - (padTop + padBottom) - 32);
+    const availableHeight = Math.max(160, wrapper.clientHeight - padTop - effectivePadBottom - 24);
 
     const container = document.getElementById("canvasContainer");
     const docWidth = (state.pdfViewport && state.pdfViewport.width)
@@ -278,6 +326,30 @@ export function fitToPage(onRerender) {
     const scaleX = availableWidth / docWidth;
     const scaleY = availableHeight / docHeight;
     const newScale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.25), 4.0);
+
+    if (container) {
+        const unscaledW = container.offsetWidth || docWidth;
+        const unscaledH = container.offsetHeight || docHeight;
+        const containerLeft = (typeof container.offsetLeft === "number" && !isNaN(container.offsetLeft))
+            ? container.offsetLeft
+            : (wrapper.clientWidth - unscaledW) / 2;
+        const containerTop = (typeof container.offsetTop === "number" && !isNaN(container.offsetTop))
+            ? container.offsetTop
+            : (wrapper.clientHeight - unscaledH) / 2;
+
+        const containerCenterX = containerLeft + unscaledW / 2;
+        const targetCenterX = wrapper.clientWidth / 2;
+        const panX = targetCenterX - containerCenterX;
+
+        const containerCenterY = containerTop + unscaledH / 2;
+        const targetCenterY = padTop + (availableHeight / 2);
+        const panY = targetCenterY - containerCenterY;
+
+        state.panOffset = { x: Math.round(panX), y: Math.round(panY) };
+    } else {
+        state.panOffset = { x: 0, y: 0 };
+    }
+
     setTransformScale(newScale, onRerender);
 }
 

@@ -834,7 +834,12 @@ body.is-panning,body.is-panning *{cursor:grabbing !important;user-select:none !i
   transform:translateX(-50%);
   animation:quickBarPop 0.14s cubic-bezier(0.16,1,0.3,1) forwards;
   white-space:nowrap;
+  max-width:calc(100% - 16px);
+  overflow-x:auto;
+  scrollbar-width:none;
+  box-sizing:border-box;
 }
+.contextual-quick-bar::-webkit-scrollbar{display:none;}
 @keyframes quickBarPop{from{opacity:0;transform:translateX(-50%) translateY(4px) scale(0.96)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
 .contextual-quick-bar .quick-bar-btn{
   display:inline-flex;

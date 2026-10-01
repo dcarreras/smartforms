@@ -1266,6 +1266,29 @@ export function renderContextualQuickBar(container, selectedFieldsOnPage, handle
     }
 
     container.appendChild(bar);
+    positionContextualQuickBar(bar, minX, maxX, minY, maxY);
+}
+
+function positionContextualQuickBar(bar, minX, maxX, minY, maxY) {
+    if (!bar) return;
+    const pageWidth = (state.pdfViewport && state.pdfViewport.width) ? state.pdfViewport.width : 595.28;
+    const centerX = Math.round((minX + maxX) / 2);
+    let topY = minY - 38;
+    if (topY < 6) {
+        topY = maxY + 10;
+    }
+
+    const barWidth = bar.offsetWidth || 0;
+    let finalX = centerX;
+    if (barWidth > 0) {
+        const halfWidth = barWidth / 2;
+        const minCenter = halfWidth + 8;
+        const maxCenter = Math.max(minCenter, pageWidth - halfWidth - 8);
+        finalX = Math.min(Math.max(centerX, minCenter), maxCenter);
+    }
+
+    bar.style.left = Math.round(finalX) + "px";
+    bar.style.top = Math.round(topY) + "px";
 }
 
 export function updateOverlayPositionsDirectly() {
@@ -1303,11 +1326,7 @@ export function updateOverlayPositionsDirectly() {
 
         const quickBar = document.getElementById("contextualQuickBar");
         if (quickBar) {
-            const centerX = Math.round((minX + maxX) / 2);
-            let topY = minY - 38;
-            if (topY < 6) topY = maxY + 10;
-            quickBar.style.left = centerX + "px";
-            quickBar.style.top = topY + "px";
+            positionContextualQuickBar(quickBar, minX, maxX, minY, maxY);
         }
     }
 
