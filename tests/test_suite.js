@@ -2199,6 +2199,9 @@ async function runAllTests() {
         const { loadOnnxRuntime } = await import(path.join(WEB_DIR, 'js', 'engines', 'onnx-detector.js'));
 
         // Mock offline navigator in Node.js
+        if (!global.navigator) {
+            global.navigator = {};
+        }
         const origDescriptor = Object.getOwnPropertyDescriptor(global.navigator, 'onLine');
         Object.defineProperty(global.navigator, 'onLine', { value: false, configurable: true });
         global.window = global.window || {};
