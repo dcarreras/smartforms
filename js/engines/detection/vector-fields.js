@@ -8,8 +8,6 @@ import { clusterCombBoxes } from "./comb-fields.js";
 import { clusterRadioGroups } from "./radio-clustering.js";
 import { DEDUP_THRESHOLDS, CONFIDENCE } from "./config.js";
 
-// TODO(refactor-followup): Decompose detectVectorDrawnFields into smaller modular classification stages
-
 // meaning it is a label container, line badge, table header, or pre-filled cell — not a blank input.
 export function rectContainsSignificantText(rect, textBlocks) {
     if (!textBlocks || textBlocks.length === 0) return false;
@@ -395,15 +393,10 @@ export function resolveFieldTypeFromShape(box, labelText, options = {}) {
     };
 }
 
-export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNames, existingFields = [], options = {}) {
-    const fields = [];
-    if (!vectorShapes) return fields;
-    const { checkboxRects = [], inputBoxRects = [], allRects = [] } = vectorShapes;
-
-    const consumedRects = new Set();
-    const candidateRects = allRects.length > 0 ? allRects : [...checkboxRects, ...inputBoxRects.filter(b => b.width <= 40)];
-
-    // 1. Detect Comb / Segmented Character Fields (SSN, Date, TIN, Account #)
+/**
+ * Detects comb / segmented character fields (SSN, Date, TIN, Routing, Account #).
+ */
+export function detectVectorCombFields(candidateRects, rawBlocks, pageNum, usedNames, existingFields, fields, consumedRects) {
     const combClusters = clusterCombBoxes(candidateRects);
     for (const cluster of combClusters) {
         const minX = Math.min(...cluster.map(b => b.x));
@@ -483,8 +476,12 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             cluster.forEach(box => consumedRects.add(box));
         }
     }
+}
 
-    // 2. Match Vector Checkbox Squares (excluding consumed comb boxes)
+/**
+ * Matches standalone vector checkbox squares and associates adjacent text labels.
+ */
+export function detectVectorCheckboxFields(checkboxRects, rawBlocks, pageNum, usedNames, existingFields, fields, consumedRects, vectorShapes) {
     for (const cbox of checkboxRects) {
         if (consumedRects.has(cbox)) continue;
         // Skip boxes that already contain label text inside (table header cells, etc.)
@@ -553,9 +550,12 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             fields.push(field);
         }
     }
+}
 
-
-    // 3. Match Vector Input Rectangles (excluding consumed comb boxes)
+/**
+ * Matches vector input rectangles, classifies field type, and attaches prompt labels.
+ */
+export function detectVectorInputBoxFields(inputBoxRects, rawBlocks, checkboxRects, pageNum, usedNames, existingFields, fields, consumedRects) {
     const sortedInputBoxes = [...inputBoxRects].sort((a, b) => a.y - b.y || a.x - b.x);
     for (const box of sortedInputBoxes) {
         if (consumedRects.has(box)) continue;
@@ -608,9 +608,12 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             fields.push(field);
         }
     }
+}
 
-    // 4. Match Vector Underlines (e.g. from scanned docs or vector path underlines)
-    const underlineLines = vectorShapes.underlines || [];
+/**
+ * Matches drawn vector underlines and converts them to baseline inputs or signature lines.
+ */
+export function detectVectorUnderlineFields(underlineLines, rawBlocks, vectorShapes, pageNum, usedNames, existingFields, fields) {
     for (const u of underlineLines) {
         if (u.width < 25) continue;
         const uX = u.x;
@@ -651,7 +654,7 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
 
         // Skip underlines that are the top or bottom border stroke of a known inputBoxRect or checkboxRect.
         // These are rectangle edges, not standalone fill-in underlines.
-        const isRectEdge = [...(vectorShapes.inputBoxRects || []), ...(vectorShapes.checkboxRects || [])].some(box => {
+        const isRectEdge = [...(vectorShapes?.inputBoxRects || []), ...(vectorShapes?.checkboxRects || [])].some(box => {
             // Same x-span (within 8pt) and y is near top or bottom of the box
             const xMatch = Math.abs(uX - box.x) <= 8 && Math.abs((uX + uW) - (box.x + box.width)) <= 8;
             if (!xMatch) return false;
@@ -660,7 +663,6 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             return nearTop || nearBottom;
         });
         if (isRectEdge) continue;
-
 
         // 1. Search for prompt words directly above the underline
         const wordsAbove = rawBlocks.filter(tb => 
@@ -796,6 +798,30 @@ export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNa
             fields.push(field);
         }
     }
+}
+
+/**
+ * Orchestrates geometric vector-drawn field detection across combs, checkboxes, input boxes, and underlines.
+ */
+export function detectVectorDrawnFields(vectorShapes, rawBlocks, pageNum, usedNames, existingFields = [], options = {}) {
+    const fields = [];
+    if (!vectorShapes) return fields;
+    const { checkboxRects = [], inputBoxRects = [], allRects = [], underlines = [] } = vectorShapes;
+
+    const consumedRects = new Set();
+    const candidateRects = allRects.length > 0 ? allRects : [...checkboxRects, ...inputBoxRects.filter(b => b.width <= 40)];
+
+    // 1. Detect Comb / Segmented Character Fields (SSN, Date, TIN, Account #)
+    detectVectorCombFields(candidateRects, rawBlocks, pageNum, usedNames, existingFields, fields, consumedRects);
+
+    // 2. Match Vector Checkbox Squares (excluding consumed comb boxes)
+    detectVectorCheckboxFields(checkboxRects, rawBlocks, pageNum, usedNames, existingFields, fields, consumedRects, vectorShapes);
+
+    // 3. Match Vector Input Rectangles (excluding consumed comb boxes)
+    detectVectorInputBoxFields(inputBoxRects, rawBlocks, checkboxRects, pageNum, usedNames, existingFields, fields, consumedRects);
+
+    // 4. Match Vector Underlines (e.g. from scanned docs or vector path underlines)
+    detectVectorUnderlineFields(underlines, rawBlocks, vectorShapes, pageNum, usedNames, existingFields, fields);
 
     if (options && options.clusterRadios) {
         clusterRadioGroups(fields, rawBlocks, usedNames);

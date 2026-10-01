@@ -34,10 +34,12 @@ export function matchColumnKeyword(text) {
     return null;
 }
 
-export function reconstructTableGridBoxes(hLines, vLines = []) {
-    if (!hLines || hLines.length < 2) return [];
-
-    const cells = [];
+/**
+ * Clusters horizontal lines by rounded Y coordinate (tolerance ±2pt).
+ * @param {Array<{ x1: number, x2: number, y: number }>} hLines
+ * @returns {Map<number, Array<{ x1: number, x2: number, y: number }>>}
+ */
+export function groupHorizontalLinesByY(hLines) {
     const yMap = new Map();
     hLines.forEach(l => {
         const roundedY = Math.round(l.y);
@@ -54,7 +56,99 @@ export function reconstructTableGridBoxes(hLines, vLines = []) {
             yMap.get(matchY).push(l);
         }
     });
+    return yMap;
+}
 
+/**
+ * Validates that a candidate row pair belongs to a genuine multi-row table grid.
+ * Real table grids have ≥1 additional sibling rows with similar height and matching x-span.
+ */
+export function isRowConsistentWithTableGrid(yTop, rowH, topH, uniqueYs, yMap) {
+    const consistentRows = uniqueYs.filter((y, idx) => {
+        if (y === yTop) return false;
+        const nextY = uniqueYs[idx + 1];
+        if (nextY === undefined) return false;
+        const candidateH = nextY - y;
+        if (candidateH < 8 || candidateH > 75) return false;
+        // Height within 40% of current row
+        if (Math.abs(candidateH - rowH) > rowH * 0.4) return false;
+        // x-span must match within 14pt on each side for at least one line pair
+        const cTopH = yMap.get(y) || [];
+        const cBotH = yMap.get(nextY) || [];
+        return topH.some(tl =>
+            cTopH.some(cl => Math.abs(cl.x1 - tl.x1) <= 14 && Math.abs(cl.x2 - tl.x2) <= 14) ||
+            cBotH.some(cl => Math.abs(cl.x1 - tl.x1) <= 14 && Math.abs(cl.x2 - tl.x2) <= 14)
+        );
+    });
+    return consistentRows.length >= 1;
+}
+
+/**
+ * Extracts orthogonal cell rectangles for a single row band sliced by vertical dividers.
+ */
+export function extractCellsFromRowBands(yTop, yBottom, topH, botH, vLines) {
+    const rowCells = [];
+    const h = yBottom - yTop;
+
+    for (const tLine of topH) {
+        for (const bLine of botH) {
+            const x1 = Math.max(tLine.x1, bLine.x1);
+            const x2 = Math.min(tLine.x2, bLine.x2);
+            if (x2 - x1 < 25) continue;
+
+            // Find vertical divider lines spanning between yTop and yBottom
+            const dividers = [x1];
+            if (vLines && vLines.length > 0) {
+                for (const vl of vLines) {
+                    if (vl.y1 <= yTop + 4 && vl.y2 >= yBottom - 4) {
+                        if (vl.x >= x1 + 10 && vl.x <= x2 - 10) {
+                            dividers.push(Math.round(vl.x));
+                        }
+                    }
+                }
+            }
+            dividers.push(x2);
+            const sortedDividers = Array.from(new Set(dividers)).sort((a, b) => a - b);
+
+            for (let d = 0; d < sortedDividers.length - 1; d++) {
+                const cellLeft = sortedDividers[d];
+                const cellRight = sortedDividers[d + 1];
+                const w = cellRight - cellLeft;
+                if (w >= 15 && w <= 555) {
+                    rowCells.push({
+                        x: Math.round(cellLeft),
+                        y: Math.round(yTop),
+                        width: Math.round(w),
+                        height: Math.round(h)
+                    });
+                }
+            }
+        }
+    }
+    return rowCells;
+}
+
+/**
+ * Deduplicates adjacent or identical bounding boxes in table grid cells.
+ */
+export function deduplicateGridCells(cells) {
+    const uniqueCells = [];
+    for (const c of cells) {
+        if (!uniqueCells.some(u => Math.abs(u.x - c.x) <= 3 && Math.abs(u.y - c.y) <= 3 && Math.abs(u.width - c.width) <= 4 && Math.abs(u.height - c.height) <= 4)) {
+            uniqueCells.push(c);
+        }
+    }
+    return uniqueCells;
+}
+
+/**
+ * Reconstructs individual table grid input cells from intersecting horizontal and vertical ruling lines.
+ */
+export function reconstructTableGridBoxes(hLines, vLines = []) {
+    if (!hLines || hLines.length < 2) return [];
+
+    const cells = [];
+    const yMap = groupHorizontalLinesByY(hLines);
     const uniqueYs = Array.from(yMap.keys()).sort((a, b) => a - b);
 
     for (let i = 0; i < uniqueYs.length - 1; i++) {
@@ -68,72 +162,152 @@ export function reconstructTableGridBoxes(hLines, vLines = []) {
 
         // Only generate cells for rows that are part of a genuine table grid.
         // A real table grid has ≥2 additional rows at a similar x-span and similar row height.
-        // This prevents isolated section-header hLine pairs from producing phantom input cells.
-        const rowH = h;
-        const consistentRows = uniqueYs.filter((y, idx) => {
-            if (y === yTop) return false;
-            const nextY = uniqueYs[idx + 1];
-            if (nextY === undefined) return false;
-            const candidateH = nextY - y;
-            if (candidateH < 8 || candidateH > 75) return false;
-            // Height within 30% of current row
-            if (Math.abs(candidateH - rowH) > rowH * 0.4) return false;
-            // x-span must match within 12pt on each side for at least one line pair
-            const cTopH = yMap.get(y) || [];
-            const cBotH = yMap.get(nextY) || [];
-            return topH.some(tl =>
-                cTopH.some(cl => Math.abs(cl.x1 - tl.x1) <= 14 && Math.abs(cl.x2 - tl.x2) <= 14) ||
-                cBotH.some(cl => Math.abs(cl.x1 - tl.x1) <= 14 && Math.abs(cl.x2 - tl.x2) <= 14)
-            );
-        });
-        if (consistentRows.length < 1) continue;
+        if (!isRowConsistentWithTableGrid(yTop, h, topH, uniqueYs, yMap)) {
+            continue;
+        }
 
-        for (const tLine of topH) {
-            for (const bLine of botH) {
-                const x1 = Math.max(tLine.x1, bLine.x1);
-                const x2 = Math.min(tLine.x2, bLine.x2);
-                if (x2 - x1 < 25) continue;
+        const rowCells = extractCellsFromRowBands(yTop, yBottom, topH, botH, vLines);
+        cells.push(...rowCells);
+    }
 
-                // Find vertical divider lines spanning between yTop and yBottom
-                const dividers = [x1];
-                if (vLines && vLines.length > 0) {
-                    for (const vl of vLines) {
-                        if (vl.y1 <= yTop + 4 && vl.y2 >= yBottom - 4) {
-                            if (vl.x >= x1 + 10 && vl.x <= x2 - 10) {
-                                dividers.push(Math.round(vl.x));
-                            }
-                        }
-                    }
+    return deduplicateGridCells(cells);
+}
+
+/**
+ * Merges adjacent line coordinates within maxGap tolerance.
+ */
+export function mergeAdjacentCoordinates(candidates, maxGap = 3) {
+    const merged = [];
+    let clusterStart = null, clusterEnd = null;
+    for (const c of candidates) {
+        if (clusterStart === null) {
+            clusterStart = clusterEnd = c;
+        } else if (c - clusterEnd <= maxGap) {
+            clusterEnd = c;
+        } else {
+            merged.push(Math.round((clusterStart + clusterEnd) / 2));
+            clusterStart = clusterEnd = c;
+        }
+    }
+    if (clusterStart !== null) merged.push(Math.round((clusterStart + clusterEnd) / 2));
+    return merged;
+}
+
+/**
+ * Extracts vector boundary ruling lines from PDF drawing operator stream.
+ */
+export async function getVectorBoundaryLines(page, scale = 2) {
+    const result = { horizontal: [], vertical: [] };
+    if (!page.getOperatorList || typeof pdfjsLib === "undefined" || !pdfjsLib.OPS) return result;
+
+    let operatorList;
+    try {
+        operatorList = await page.getOperatorList();
+    } catch (err) {
+        console.warn("Could not read PDF drawing operators:", err);
+        return result;
+    }
+
+    const OPS = pdfjsLib.OPS;
+    const stack = [];
+    let matrix = [1, 0, 0, 1, 0, 0];
+    let pathStart = null;
+    let current = null;
+    const multiply = (left, right) => [
+        left[0] * right[0] + left[2] * right[1],
+        left[1] * right[0] + left[3] * right[1],
+        left[0] * right[2] + left[2] * right[3],
+        left[1] * right[2] + left[3] * right[3],
+        left[0] * right[4] + left[2] * right[5] + left[4],
+        left[1] * right[4] + left[3] * right[5] + left[5]
+    ];
+    const point = (x, y) => {
+        const pdfPoint = [
+            matrix[0] * x + matrix[2] * y + matrix[4],
+            matrix[1] * x + matrix[3] * y + matrix[5]
+        ];
+        const viewportPoint = page.getViewport({ scale }).convertToViewportPoint(...pdfPoint);
+        return { x: viewportPoint[0], y: viewportPoint[1] };
+    };
+    const addSegment = (a, b) => {
+        if (!a || !b) return;
+        const dx = Math.abs(a.x - b.x);
+        const dy = Math.abs(a.y - b.y);
+        if (dx >= 80 && dy <= 3) result.horizontal.push({ offset: Math.round((a.y + b.y) / 2), start: Math.round(Math.min(a.x, b.x)), end: Math.round(Math.max(a.x, b.x)) });
+        if (dy >= 80 && dx <= 3) result.vertical.push({ offset: Math.round((a.x + b.x) / 2), start: Math.round(Math.min(a.y, b.y)), end: Math.round(Math.max(a.y, b.y)) });
+    };
+
+    for (let i = 0; i < operatorList.fnArray.length; i++) {
+        const fn = operatorList.fnArray[i];
+        const args = operatorList.argsArray[i] || [];
+        if (fn === OPS.save) stack.push(matrix);
+        else if (fn === OPS.restore) matrix = stack.pop() || matrix;
+        else if (fn === OPS.transform) matrix = multiply(matrix, args);
+        else if (fn === OPS.moveTo) {
+            current = point(args[0], args[1]);
+            pathStart = current;
+        } else if (fn === OPS.lineTo) {
+            const next = point(args[0], args[1]);
+            addSegment(current, next);
+            current = next;
+        } else if (fn === OPS.rectangle) {
+            const [x, y, w, h] = args;
+            const p1 = point(x, y), p2 = point(x + w, y);
+            const p3 = point(x + w, y + h), p4 = point(x, y + h);
+            addSegment(p1, p2);
+            addSegment(p2, p3);
+            addSegment(p3, p4);
+            addSegment(p4, p1);
+            current = p1;
+            pathStart = p1;
+        } else if (fn === OPS.closePath && current && pathStart) {
+            addSegment(current, pathStart);
+            current = pathStart;
+        }
+    }
+    return result;
+}
+
+/**
+ * Scans raster bitmap pixel array to extract contiguous dark line segments.
+ */
+export function findRasterLineSegments(width, height, isDark, minRun, horizontal) {
+    const segments = [];
+    const limit = horizontal ? height : width;
+    for (let offset = 0; offset < limit; offset++) {
+        let bestStart = -1, bestEnd = -1, runStart = -1;
+        const span = horizontal ? width : height;
+        for (let cursor = 0; cursor <= span; cursor++) {
+            const dark = cursor < span && (horizontal ? isDark(cursor, offset) : isDark(offset, cursor));
+            if (dark && runStart < 0) runStart = cursor;
+            if ((!dark || cursor === span) && runStart >= 0) {
+                if (cursor - runStart > bestEnd - bestStart) {
+                    bestStart = runStart;
+                    bestEnd = cursor;
                 }
-                dividers.push(x2);
-                const sortedDividers = Array.from(new Set(dividers)).sort((a, b) => a - b);
-
-                for (let d = 0; d < sortedDividers.length - 1; d++) {
-                    const cellLeft = sortedDividers[d];
-                    const cellRight = sortedDividers[d + 1];
-                    const w = cellRight - cellLeft;
-                    if (w >= 15 && w <= 555) {
-                        cells.push({
-                            x: Math.round(cellLeft),
-                            y: Math.round(yTop),
-                            width: Math.round(w),
-                            height: Math.round(h)
-                        });
-                    }
-                }
+                runStart = -1;
             }
         }
-    }
-
-    // Deduplicate any cells that share essentially the same bounding box
-    const uniqueCells = [];
-    for (const c of cells) {
-        if (!uniqueCells.some(u => Math.abs(u.x - c.x) <= 3 && Math.abs(u.y - c.y) <= 3 && Math.abs(u.width - c.width) <= 4 && Math.abs(u.height - c.height) <= 4)) {
-            uniqueCells.push(c);
+        if (bestEnd - bestStart >= minRun) {
+            segments.push({ offset, start: bestStart, end: bestEnd });
         }
     }
 
-    return uniqueCells;
+    const merged = [];
+    for (const segment of segments) {
+        const previous = merged[merged.length - 1];
+        if (previous &&
+            segment.offset - previous.offset <= 3 &&
+            segment.start <= previous.end + 6 &&
+            segment.end >= previous.start - 6) {
+            previous.offset = Math.round((previous.offset + segment.offset) / 2);
+            previous.start = Math.min(previous.start, segment.start);
+            previous.end = Math.max(previous.end, segment.end);
+        } else {
+            merged.push({ ...segment });
+        }
+    }
+    return merged;
 }
 
 export async function detectTableGridLines(page) {
@@ -194,119 +368,8 @@ export async function detectTableGridLines(page) {
         colBestRun[x] = best;
     }
 
-    function findLineSegments(minRun, horizontal) {
-        const segments = [];
-        const limit = horizontal ? height : width;
-        for (let offset = 0; offset < limit; offset++) {
-            let bestStart = -1, bestEnd = -1, runStart = -1;
-            const span = horizontal ? width : height;
-            for (let cursor = 0; cursor <= span; cursor++) {
-                const dark = cursor < span && (horizontal ? isDark(cursor, offset) : isDark(offset, cursor));
-                if (dark && runStart < 0) runStart = cursor;
-                if ((!dark || cursor === span) && runStart >= 0) {
-                    if (cursor - runStart > bestEnd - bestStart) {
-                        bestStart = runStart;
-                        bestEnd = cursor;
-                    }
-                    runStart = -1;
-                }
-            }
-            if (bestEnd - bestStart >= minRun) {
-                segments.push({ offset, start: bestStart, end: bestEnd });
-            }
-        }
-
-        const merged = [];
-        for (const segment of segments) {
-            const previous = merged[merged.length - 1];
-            if (previous &&
-                segment.offset - previous.offset <= 3 &&
-                segment.start <= previous.end + 6 &&
-                segment.end >= previous.start - 6) {
-                previous.offset = Math.round((previous.offset + segment.offset) / 2);
-                previous.start = Math.min(previous.start, segment.start);
-                previous.end = Math.max(previous.end, segment.end);
-            } else {
-                merged.push({ ...segment });
-            }
-        }
-        return merged;
-    }
-
-    async function getVectorBoundaryLines(page, scale = 2) {
-        const result = { horizontal: [], vertical: [] };
-        if (!page.getOperatorList || typeof pdfjsLib === "undefined" || !pdfjsLib.OPS) return result;
-
-        let operatorList;
-        try {
-            operatorList = await page.getOperatorList();
-        } catch (err) {
-            console.warn("Could not read PDF drawing operators:", err);
-            return result;
-        }
-
-        const OPS = pdfjsLib.OPS;
-        const stack = [];
-        let matrix = [1, 0, 0, 1, 0, 0];
-        let pathStart = null;
-        let current = null;
-        const multiply = (left, right) => [
-            left[0] * right[0] + left[2] * right[1],
-            left[1] * right[0] + left[3] * right[1],
-            left[0] * right[2] + left[2] * right[3],
-            left[1] * right[2] + left[3] * right[3],
-            left[0] * right[4] + left[2] * right[5] + left[4],
-            left[1] * right[4] + left[3] * right[5] + left[5]
-        ];
-        const point = (x, y) => {
-            const pdfPoint = [
-                matrix[0] * x + matrix[2] * y + matrix[4],
-                matrix[1] * x + matrix[3] * y + matrix[5]
-            ];
-            const viewportPoint = page.getViewport({ scale }).convertToViewportPoint(...pdfPoint);
-            return { x: viewportPoint[0], y: viewportPoint[1] };
-        };
-        const addSegment = (a, b) => {
-            if (!a || !b) return;
-            const dx = Math.abs(a.x - b.x);
-            const dy = Math.abs(a.y - b.y);
-            if (dx >= 80 && dy <= 3) result.horizontal.push({ offset: Math.round((a.y + b.y) / 2), start: Math.round(Math.min(a.x, b.x)), end: Math.round(Math.max(a.x, b.x)) });
-            if (dy >= 80 && dx <= 3) result.vertical.push({ offset: Math.round((a.x + b.x) / 2), start: Math.round(Math.min(a.y, b.y)), end: Math.round(Math.max(a.y, b.y)) });
-        };
-
-        for (let i = 0; i < operatorList.fnArray.length; i++) {
-            const fn = operatorList.fnArray[i];
-            const args = operatorList.argsArray[i] || [];
-            if (fn === OPS.save) stack.push(matrix);
-            else if (fn === OPS.restore) matrix = stack.pop() || matrix;
-            else if (fn === OPS.transform) matrix = multiply(matrix, args);
-            else if (fn === OPS.moveTo) {
-                current = point(args[0], args[1]);
-                pathStart = current;
-            } else if (fn === OPS.lineTo) {
-                const next = point(args[0], args[1]);
-                addSegment(current, next);
-                current = next;
-            } else if (fn === OPS.rectangle) {
-                const [x, y, w, h] = args;
-                const p1 = point(x, y), p2 = point(x + w, y);
-                const p3 = point(x + w, y + h), p4 = point(x, y + h);
-                addSegment(p1, p2);
-                addSegment(p2, p3);
-                addSegment(p3, p4);
-                addSegment(p4, p1);
-                current = p1;
-                pathStart = p1;
-            } else if (fn === OPS.closePath && current && pathStart) {
-                addSegment(current, pathStart);
-                current = pathStart;
-            }
-        }
-        return result;
-    }
-
-    const horizontalLines = findLineSegments(MIN_BOUNDARY_RUN, true);
-    const verticalLines = findLineSegments(MIN_BOUNDARY_RUN, false);
+    const horizontalLines = findRasterLineSegments(width, height, isDark, MIN_BOUNDARY_RUN, true);
+    const verticalLines = findRasterLineSegments(width, height, isDark, MIN_BOUNDARY_RUN, false);
     const vectorLines = await getVectorBoundaryLines(page, RENDER_SCALE);
     if (vectorLines?.horizontal?.length) {
         for (const l of vectorLines.horizontal) horizontalLines.push(l);
@@ -315,30 +378,13 @@ export async function detectTableGridLines(page) {
         for (const l of vectorLines.vertical) verticalLines.push(l);
     }
 
-    function mergeAdjacent(candidates, maxGap = 3) {
-        const merged = [];
-        let clusterStart = null, clusterEnd = null;
-        for (const c of candidates) {
-            if (clusterStart === null) {
-                clusterStart = clusterEnd = c;
-            } else if (c - clusterEnd <= maxGap) {
-                clusterEnd = c;
-            } else {
-                merged.push(Math.round((clusterStart + clusterEnd) / 2));
-                clusterStart = clusterEnd = c;
-            }
-        }
-        if (clusterStart !== null) merged.push(Math.round((clusterStart + clusterEnd) / 2));
-        return merged;
-    }
-
     const hCandidates = [];
     for (let y = 0; y < height; y++) if (rowBestRun[y] >= MIN_LINE_RUN) hCandidates.push(y);
     const vCandidates = [];
     for (let x = 0; x < width; x++) if (colBestRun[x] >= MIN_LINE_RUN) vCandidates.push(x);
 
-    const hLinesPx = mergeAdjacent(hCandidates);
-    const vLinesPx = mergeAdjacent(vCandidates);
+    const hLinesPx = mergeAdjacentCoordinates(hCandidates);
+    const vLinesPx = mergeAdjacentCoordinates(vCandidates);
 
     // Need at least 2 rows (3 horizontal boundaries) and 2 columns (3
     // vertical boundaries) to call this a real table grid rather than a
