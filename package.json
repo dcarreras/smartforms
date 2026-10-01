@@ -28,7 +28,7 @@
     "open-source"
   ],
   "author": "Sagar Shrestha",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@vercel/analytics": "^2.0.1"
   },

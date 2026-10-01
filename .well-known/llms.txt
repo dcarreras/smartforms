@@ -7,7 +7,7 @@ Formblatt is a browser-based PDF editor for creating fillable forms and AcroForm
 - Production: https://formblatt.dpdns.org
 - Source Code: https://github.com/sshrestha-design/formblatt
 - Full Context: https://formblatt.dpdns.org/llms-full.txt
-- License: MIT
+- License: GNU AGPLv3
 
 ## Core Features
 

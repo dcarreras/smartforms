@@ -110,4 +110,4 @@ Bug reports with a sample PDF (or a description of its layout) are the most usef
 
 ## License
 
-MIT
+GNU Affero General Public License v3.0 (AGPLv3). See [LICENSE](LICENSE) for details.

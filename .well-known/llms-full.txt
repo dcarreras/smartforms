@@ -4,7 +4,7 @@ Formblatt is a client-side PDF editor and ISO 32000-1 AcroForm compiler. It runs
 
 - Production: https://formblatt.dpdns.org
 - Source Code: https://github.com/sshrestha-design/formblatt
-- License: MIT
+- License: GNU AGPLv3
 
 ---
 
@@ -36,7 +36,7 @@ pdf_form_builder_web/
 ├── llms.txt                    # Compact LLM discovery documentation
 ├── llms-full.txt               # Full technical manual and schema reference
 ├── README.md                   # Project overview and instructions
-├── LICENSE                     # MIT license
+├── LICENSE                     # GNU AGPLv3 license
 │
 ├── docs/                       # Project Documentation
 │   ├── DOCUMENTATION.md        # Technical architecture and API specification
