@@ -60,3 +60,12 @@ export function showToast(msg, type = "info") {
         setTimeout(() => toast.remove(), 280);
     }, 3200);
 }
+
+export const Toast = {
+    show: showToast,
+    info: (msg) => showToast(msg, "info"),
+    success: (msg) => showToast(msg, "success"),
+    warning: (msg) => showToast(msg, "warning"),
+    error: (msg) => showToast(msg, "error")
+};
+

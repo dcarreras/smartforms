@@ -2,6 +2,8 @@ import { state, getSelectedField, setSelectedField, setSelectedFields, duplicate
 import { saveHistory } from "../core/storage-manager.js";
 import { openSignatureModal } from "./signature-pad.js";
 import { toggleListFormat, addRowToTable, removeRowFromTable, addColumnToTable, removeColumnFromTable, deleteTable } from "../engines/text-engine.js";
+import { detectInstalledFonts, populateDetectedFontsInSelect, loadCustomFontFile } from "../utils/font-detector.js";
+import { Toast } from "../utils/toast.js";
 
 function safeQuerySelectorAll(selector) {
     if (typeof document === "undefined" || typeof document.querySelectorAll !== "function") return [];
@@ -745,6 +747,16 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
     const fieldDefaultChecked = document.getElementById("fieldDefaultChecked");
     const fieldCheckboxMark = document.getElementById("fieldCheckboxMark");
 
+    // Auto-detect installed system fonts across macOS, Windows, Linux via canvas metrics
+    try {
+        const detected = detectInstalledFonts();
+        if (detected && detected.length > 0 && fieldFontFamily) {
+            populateDetectedFontsInSelect(fieldFontFamily, detected);
+        }
+    } catch (e) {
+        console.warn("Could not auto-detect system fonts:", e);
+    }
+
     const fieldTypeSelect = document.getElementById("fieldType");
     fieldTypeSelect?.addEventListener("change", e => {
         const newType = e.target.value;
@@ -914,8 +926,8 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
     fieldPlaceholderInput?.addEventListener("change", e => syncChange(f => f.placeholder = e.target.value, true, "Set Placeholder"));
     fieldFontFamily?.addEventListener("change", async e => {
         const val = e.target.value;
-        if (typeof window !== "undefined" && typeof val === "string" && val.startsWith("local:")) {
-            const fam = val.replace(/^local:/, "");
+        if (typeof window !== "undefined" && typeof val === "string" && (val.startsWith("local:") || val.startsWith("custom:"))) {
+            const fam = val.replace(/^(local|custom):/, "");
             const fontData = window._localFontDataMap?.get(fam);
             if (fontData && typeof fontData.blob === "function") {
                 try {
@@ -969,24 +981,76 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
                     btnLoadDeviceFonts.innerHTML = `<span>✓ ${uniqueFamilies.length} Device Fonts Loaded</span>`;
                     setTimeout(() => {
                         btnLoadDeviceFonts.disabled = false;
-                        btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Rescan Device Fonts...</span>`;
+                        btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Scan System</span>`;
                     }, 3000);
                 } else {
                     btnLoadDeviceFonts.disabled = false;
-                    btnLoadDeviceFonts.innerHTML = `<span>Device Fonts Available Above</span>`;
+                    btnLoadDeviceFonts.innerHTML = `<span>No extra fonts found</span>`;
+                    setTimeout(() => {
+                        btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Scan System</span>`;
+                    }, 2500);
                 }
             } catch (err) {
                 btnLoadDeviceFonts.disabled = false;
-                btnLoadDeviceFonts.innerHTML = `<span>Device Fonts Available Above</span>`;
+                btnLoadDeviceFonts.innerHTML = `<span>Permission denied</span>`;
                 setTimeout(() => {
-                    btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Scan Device Fonts...</span>`;
+                    btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Scan System</span>`;
                 }, 2500);
             }
         } else {
-            btnLoadDeviceFonts.innerHTML = `<span>Device Fonts Ready Above</span>`;
+            // Safari / Firefox fallback: Run our canvas detector and explain
+            const detected = detectInstalledFonts();
+            if (detected.length > 0 && fieldFontFamily) {
+                populateDetectedFontsInSelect(fieldFontFamily, detected);
+            }
+            btnLoadDeviceFonts.innerHTML = `<span>✓ ${detected.length} Detected</span>`;
+            if (Toast && typeof Toast.show === "function") {
+                Toast.show(`Detected ${detected.length} system fonts! Safari & Firefox block direct disk access — use "+ Add Font" to drop any .ttf / .otf file.`, "info", 5000);
+            }
             setTimeout(() => {
-                btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Scan Device Fonts...</span>`;
+                btnLoadDeviceFonts.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Scan System</span>`;
+            }, 3000);
+        }
+    });
+
+    // Custom Font Upload Button & File Input
+    const btnUploadCustomFont = document.getElementById("btnUploadCustomFont");
+    const customFontFileInput = document.getElementById("customFontFileInput");
+
+    btnUploadCustomFont?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        customFontFileInput?.click();
+    });
+
+    customFontFileInput?.addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            btnUploadCustomFont.disabled = true;
+            btnUploadCustomFont.innerHTML = `<span>Loading...</span>`;
+            const fam = await loadCustomFontFile(file, fieldFontFamily);
+            syncChange(f => f.fontFamily = `custom:${fam}`, true, `Use Custom Font ${fam}`);
+            btnUploadCustomFont.disabled = false;
+            btnUploadCustomFont.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>✓ ${fam}</span>`;
+            if (Toast && typeof Toast.show === "function") {
+                Toast.show(`Loaded font "${fam}"! Embedded and ready for PDF export.`, "success");
+            }
+            setTimeout(() => {
+                btnUploadCustomFont.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>+ Add Font</span>`;
+            }, 3000);
+        } catch (err) {
+            console.error("Font upload error:", err);
+            btnUploadCustomFont.disabled = false;
+            btnUploadCustomFont.innerHTML = `<span>Error</span>`;
+            if (Toast && typeof Toast.show === "function") {
+                Toast.show("Could not load font file. Please provide a valid .ttf, .otf, or .woff file.", "error");
+            }
+            setTimeout(() => {
+                btnUploadCustomFont.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>+ Add Font</span>`;
             }, 2500);
+        } finally {
+            customFontFileInput.value = "";
         }
     });
     

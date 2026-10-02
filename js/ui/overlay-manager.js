@@ -40,8 +40,8 @@ export function getFieldCssFont(field) {
         weight = "600";
     } else if (family === "cedarville") {
         fam = "'Cedarville Cursive', cursive";
-    } else if (typeof family === "string" && (family.startsWith("device:") || family.startsWith("local:"))) {
-        const rawName = family.replace(/^(device|local):/, "").trim();
+    } else if (typeof family === "string" && (family.startsWith("device:") || family.startsWith("local:") || family.startsWith("custom:"))) {
+        const rawName = family.replace(/^(device|local|custom):/, "").trim();
         if (rawName === "system-ui") {
             fam = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif";
         } else if (/mono|code|consolas|courier|menlo|monaco/i.test(rawName)) {

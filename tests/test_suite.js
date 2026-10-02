@@ -3905,6 +3905,56 @@ async function runAllTests() {
         assert.ok(!editorCss.includes('\nh1, h2,'), "editor.css does not use bare unscoped headings");
     });
 
+    // ── Suite 50: Cross-Browser System Font Detection & Custom Font Uploader ──
+    console.log("\n🔤 Suite 50: Cross-Browser System Font Detection & Custom Font Uploader");
+
+    it("index.html defines Scan System button, + Add Font button, and accessible file input", () => {
+        const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        assert.ok(indexHtml.includes('id="btnLoadDeviceFonts"'), "index.html defines #btnLoadDeviceFonts");
+        assert.ok(indexHtml.includes('id="btnUploadCustomFont"'), "index.html defines #btnUploadCustomFont");
+        assert.ok(indexHtml.includes('id="customFontFileInput"'), "index.html defines #customFontFileInput");
+        assert.ok(indexHtml.includes('class="font-action-buttons-row"'), "index.html wraps buttons in .font-action-buttons-row");
+    });
+
+    it("styles/editor/specialized-props.css styles font-action-buttons-row and btn-upload-custom-font", () => {
+        const css = fs.readFileSync(path.join(WEB_DIR, 'styles', 'editor', 'specialized-props.css'), 'utf8');
+        assert.ok(css.includes('.font-action-buttons-row'), "styles .font-action-buttons-row");
+        assert.ok(css.includes('.btn-upload-custom-font'), "styles .btn-upload-custom-font");
+    });
+
+    await asyncIt("font-detector.js exports SYSTEM_FONT_CATALOG, isFontAvailable, detectInstalledFonts, and loadCustomFontFile", async () => {
+        const fontDetector = await import(path.join(WEB_DIR, 'js', 'utils', 'font-detector.js'));
+        assert.ok(Array.isArray(fontDetector.SYSTEM_FONT_CATALOG), "Exports SYSTEM_FONT_CATALOG array");
+        assert.ok(fontDetector.SYSTEM_FONT_CATALOG.length >= 80, "Catalog contains 80+ curated system fonts");
+        assert.ok(fontDetector.SYSTEM_FONT_CATALOG.includes("SF Pro"), "Includes Apple SF Pro");
+        assert.ok(fontDetector.SYSTEM_FONT_CATALOG.includes("Aptos"), "Includes Microsoft Aptos");
+        assert.ok(fontDetector.SYSTEM_FONT_CATALOG.includes("Helvetica Neue"), "Includes Helvetica Neue");
+        assert.equal(typeof fontDetector.isFontAvailable, 'function', "Exports isFontAvailable");
+        assert.equal(typeof fontDetector.detectInstalledFonts, 'function', "Exports detectInstalledFonts");
+        assert.equal(typeof fontDetector.populateDetectedFontsInSelect, 'function', "Exports populateDetectedFontsInSelect");
+        assert.equal(typeof fontDetector.loadCustomFontFile, 'function', "Exports loadCustomFontFile");
+    });
+
+    await asyncIt("overlay-manager.js formats custom: font families for live canvas rendering", async () => {
+        const { getFieldCssFont } = await import(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
+        const customFontCss = getFieldCssFont({ fontFamily: "custom:Gilroy" });
+        assert.ok(customFontCss.fam.includes('"Gilroy"'), "Extracts font family name and wraps in quotes");
+    });
+
+    await asyncIt("loadCustomFontFile caches raw font bytes for PDF-Lib embedding", async () => {
+        const { loadCustomFontFile } = await import(path.join(WEB_DIR, 'js', 'utils', 'font-detector.js'));
+        const dummyBytes = new Uint8Array([0, 1, 0, 0, 0, 12, 0, 128]);
+        const mockFile = {
+            name: "StudioCustom.ttf",
+            async arrayBuffer() { return dummyBytes.buffer; }
+        };
+
+        const fam = await loadCustomFontFile(mockFile);
+        assert.equal(fam, "StudioCustom", "Extracts family name from filename");
+        assert.ok(globalThis._localFontBytesCache instanceof Map, "_localFontBytesCache initialized");
+        assert.ok(globalThis._localFontBytesCache.has("StudioCustom"), "Caches raw bytes under font family name");
+    });
+
     // ── Summary ──
     console.log("\n=================================================");
     console.log(`🏁 TEST RUN SUMMARY:`);

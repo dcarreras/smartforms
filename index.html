@@ -2441,10 +2441,17 @@
                                     <option value="cedarville">Cedarville Cursive (Signature Script)</option>
                                 </optgroup>
                             </select>
-                            <button type="button" class="btn-load-device-fonts" id="btnLoadDeviceFonts" title="Scan and load all installed fonts from this device">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                                <span>Scan Device Fonts...</span>
-                            </button>
+                            <div class="font-action-buttons-row">
+                                <button type="button" class="btn-load-device-fonts" id="btnLoadDeviceFonts" title="Scan all installed fonts from this device (Chrome/Edge)">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                                    <span>Scan System</span>
+                                </button>
+                                <button type="button" class="btn-load-device-fonts btn-upload-custom-font" id="btnUploadCustomFont" title="Add custom font file (.ttf, .otf, .woff)">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                    <span>+ Add Font</span>
+                                </button>
+                                <input type="file" id="customFontFileInput" accept=".ttf,.otf,.woff,.woff2" style="display: none;" aria-label="Upload custom font file">
+                            </div>
                         </div>
 
                         <div class="prop-grid-2">

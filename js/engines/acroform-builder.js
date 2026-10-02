@@ -284,15 +284,15 @@ export async function buildPdf(pdfBytesOrOptions = {}, maybeFields = null, maybe
     const embeddedCustomFonts = new Map();
 
     for (const f of targetFields) {
-        if (f.fontFamily && f.fontFamily.startsWith("local:")) {
-            const fam = f.fontFamily.replace(/^local:/, "");
+        if (f.fontFamily && (f.fontFamily.startsWith("local:") || f.fontFamily.startsWith("custom:"))) {
+            const fam = f.fontFamily.replace(/^(local|custom):/, "");
             if (!embeddedCustomFonts.has(f.fontFamily) && localFontCache.has(fam)) {
                 try {
                     const bytes = localFontCache.get(fam);
                     const embedded = await doc.embedFont(bytes);
                     embeddedCustomFonts.set(f.fontFamily, embedded);
                 } catch(err) {
-                    console.warn(`Could not embed local font ${fam}:`, err);
+                    console.warn(`Could not embed local or custom font ${fam}:`, err);
                 }
             }
         }
