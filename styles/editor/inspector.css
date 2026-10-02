@@ -174,7 +174,7 @@
     transition: transform 0.2s ease !important;
 }
 
-/* Collapsed state: hide content, rotate chevron, maintain bold heading font */
+/* Collapsed state: hide content, rotate chevron rightwards (pointing right), maintain bold heading font */
 .prop-group.collapsed {
     padding-bottom: 0 !important;
 }
@@ -189,6 +189,9 @@
 }
 .prop-group.collapsed .prop-chevron {
     transform: rotate(-90deg) !important;
+}
+.prop-group:not(.collapsed) .prop-chevron {
+    transform: rotate(0deg) !important;
 }
 
 /* ── Field rows inside sections ── */
@@ -292,6 +295,17 @@
 }
 
 /* ── Typography section tweaks ── */
+.prop-typography-cluster {
+    display: grid !important;
+    grid-template-columns: 80px 1fr 38px !important;
+    gap: 8px !important;
+    padding: 0 16px 12px !important;
+    margin: 0 !important;
+}
+.prop-typography-cluster .prop-field {
+    padding: 0 !important;
+    margin: 0 !important;
+}
 .typography-row {
     display: flex !important;
     gap: 8px !important;

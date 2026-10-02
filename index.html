@@ -2112,7 +2112,7 @@
                             <input type="text" id="fieldName" class="prop-input" placeholder="e.g. permanent_address">
                         </div>
 
-                        <div class="prop-field">
+                        <div class="prop-field" id="fieldTypeGroup" style="display: none;">
                             <label class="prop-label" for="fieldType">Field Type</label>
                             <select id="fieldType" class="prop-select">
                                 <option value="textField">Text Field</option>
@@ -2403,7 +2403,7 @@
                         
                         <div class="prop-field">
                             <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <label class="prop-label" for="fieldFontFamily">Font family</label>
+                                <label class="prop-label" for="fieldFontFamily">Font</label>
                             </div>
                             <select id="fieldFontFamily" class="prop-select">
                                 <optgroup label="Standard PDF Core Fonts">
@@ -2454,24 +2454,13 @@
                             </div>
                         </div>
 
-                        <div class="prop-grid-2">
-                            <div class="prop-field">
-                                <label class="prop-label scrubbable" for="fontSize">Size (pt)</label>
-                                <input type="number" id="fontSize" class="prop-input" placeholder="11" min="6" max="72">
+                        <div class="prop-typography-cluster" style="display: grid; grid-template-columns: 80px 1fr 38px; gap: 8px; padding: 0 16px 12px;">
+                            <div class="prop-field" style="padding: 0 !important;">
+                                <label class="prop-label scrubbable" for="fontSize">Size</label>
+                                <input type="number" id="fontSize" class="prop-input" placeholder="10" min="6" max="72">
                             </div>
-                            <div class="prop-field">
-                                <label class="prop-label" for="textAlignment">Align</label>
-                                <select id="textAlignment" class="prop-select">
-                                    <option value="left">Left</option>
-                                    <option value="center">Center</option>
-                                    <option value="right">Right</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="prop-grid-2">
-                            <div class="prop-field">
-                                <label class="prop-label" for="fontStyleSelect">Weight / Style</label>
+                            <div class="prop-field" style="padding: 0 !important;">
+                                <label class="prop-label" for="fontStyleSelect">Weight</label>
                                 <select id="fontStyleSelect" class="prop-select">
                                     <option value="regular">Regular</option>
                                     <option value="bold">Bold</option>
@@ -2479,13 +2468,20 @@
                                     <option value="bold-italic">Bold Italic</option>
                                 </select>
                             </div>
-                            <div class="prop-field">
-                                <label class="prop-label">Format</label>
-                                <div class="font-format-btn-group">
-                                    <button type="button" class="btn-font-format" id="btnToggleBold" title="Bold (⌘B)" style="flex: 1; font-weight: 800; font-size: 13px;">B</button>
-                                    <button type="button" class="btn-font-format" id="btnToggleItalic" title="Italic (⌘I)" style="flex: 1; font-style: italic; font-weight: 700; font-family: Georgia, serif; font-size: 13px;">I</button>
-                                </div>
+                            <div class="prop-field" style="padding: 0 !important;">
+                                <label class="prop-label" style="text-align: center;">Italic</label>
+                                <button type="button" class="btn-font-format" id="btnToggleItalic" title="Italic (⌘I)" style="width: 38px; height: 34px; font-style: italic; font-weight: 700; font-family: Georgia, serif; font-size: 13px;">I</button>
+                                <button type="button" class="btn-font-format" id="btnToggleBold" title="Bold (⌘B)" style="display: none;">B</button>
                             </div>
+                        </div>
+
+                        <div class="prop-field" style="display: none;" id="textAlignRow">
+                            <label class="prop-label" for="textAlignment">Align</label>
+                            <select id="textAlignment" class="prop-select">
+                                <option value="left">Left</option>
+                                <option value="center">Center</option>
+                                <option value="right">Right</option>
+                            </select>
                         </div>
                     </div>
 
