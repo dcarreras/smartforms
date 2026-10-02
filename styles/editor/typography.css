@@ -1,10 +1,27 @@
 /* ============================================================
-   FormBlatt Studio — Design System Typography & Ink Scale (Matching Main.dc.html)
-   styles/editor/typography.css
+   Formblatt — Typography System
+   Font: Inter (Google Fonts) with system-ui fallback
+   4-tier scale matching design spec:
+     - Section labels, helper text, chips: 12px, 600 (sentence case, no ALL-CAPS)
+     - Most UI (inputs, rows, buttons, inspector): 13px, 400–600
+     - Panel titles, field name in the inspector header: 14–16px, 700
+     - Start and home headings: 24–38px, 700
    ============================================================ */
 
+/* ── 0. Global font enforcement ──────────────────────────────── */
+#appEditorScreen,
+#appEditorScreen *:not(.font-preview-el):not([style*="font-family"]),
+.modal,
+.modal *:not([style*="font-family"]),
+.context-menu,
+.context-menu *,
+.command-palette-modal,
+.command-palette-modal * {
+    font-family: var(--font-ui) !important;
+}
+
 /* ══════════════════════════════════════════════════════════════
-   DESIGN REFERENCE 4-TIER TYPOGRAPHY & INK HIERARCHY (Main.dc.html)
+   DESIGN REFERENCE 4-TIER TYPOGRAPHY & INK HIERARCHY
    ══════════════════════════════════════════════════════════════ */
 
 /* 1. Active / Headings: 600 (SemiBold), #1c1f26 (Deep Charcoal) */
@@ -22,10 +39,32 @@
 .prop-panel-title,
 .sub-header-title,
 .modal-heading {
+    font-family: var(--font-ui) !important;
     font-weight: 600 !important;
     color: #1c1f26 !important;
     letter-spacing: -0.01em !important;
     text-transform: none !important;
+}
+
+/* Panel titles and field names in inspector header: 14–16px, 700 */
+.prop-panel-title,
+.sub-header-title,
+.modal-heading,
+#propFieldHeaderTitle,
+.toolbar-doc-title,
+.prop-drawer-summary,
+.prop-section-heading,
+.left-panel-title,
+.right-panel-title {
+    font-size: var(--type-title) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+}
+#appEditorScreen h1, #appEditorScreen h2, #appEditorScreen h3,
+.modal-content h1, .modal-content h2, .modal-content h3 {
+    font-size: var(--type-heading) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
 }
 
 /* Primary Action Buttons (Export PDF, Confirm, etc.) — crisp white text on blue background */
@@ -35,6 +74,7 @@
 #generatePdfBtn,
 #fillExportPdfBtn,
 .fill-action-pill-btn.primary {
+    font-family: var(--font-ui) !important;
     font-weight: 600 !important;
     color: #ffffff !important;
     background: #2f5bea !important;
@@ -48,7 +88,7 @@
     color: #ffffff !important;
 }
 
-/* 2. Field Labels (.lb): 600 (SemiBold), #4a505c (Medium Slate/Charcoal) */
+/* 2. Field Labels (.lb): 600 (SemiBold), #4a505c (Medium Slate/Charcoal) — sentence case, no ALL-CAPS */
 #appEditorScreen .prop-field > label,
 #appEditorScreen .field-props-wrapper label,
 #appEditorScreen .prop-group label,
@@ -58,7 +98,11 @@
 .lb,
 .field-label,
 .modal-label,
-.prop-group > .prop-field > .prop-label {
+.prop-group > .prop-field > .prop-label,
+.shortcut-group-title,
+.ctx-header,
+.command-group-heading {
+    font-family: var(--font-ui) !important;
     font-weight: 600 !important;
     color: #4a505c !important;
     letter-spacing: normal !important;
@@ -79,6 +123,7 @@
 .prop-hint,
 .fill-hud-desc,
 .doc-meta-details {
+    font-family: var(--font-ui) !important;
     font-weight: 400 !important;
     color: #5b6270 !important;
     font-size: 12px !important;
@@ -110,7 +155,32 @@
 .right-tab-btn:not(.active),
 .preset-pill-btn,
 .radio-choice-pill:not(.active) {
+    font-family: var(--font-ui) !important;
     font-weight: 500 !important;
+    font-size: 12px !important;
+}
+
+/* Most UI (inputs, rows, buttons, inspector): 13px, 400–600 */
+#appEditorScreen input,
+#appEditorScreen select,
+#appEditorScreen textarea,
+#appEditorScreen .row,
+#appEditorScreen .layer-name,
+#appEditorScreen .page-tree-name,
+.modal-content input,
+.modal-content select,
+.modal-content textarea,
+.ctx-item,
+.command-palette-item,
+.command-palette-input,
+.shortcut-row,
+.shortcut-desc,
+.prop-input,
+.prop-select,
+.prop-textarea {
+    font-family: var(--font-ui) !important;
+    font-size: 13px !important;
+    font-weight: 400;
 }
 
 ::placeholder,
@@ -121,3 +191,4 @@
     font-weight: 400 !important;
     opacity: 1 !important;
 }
+

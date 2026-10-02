@@ -101,10 +101,20 @@
   --anim-fast:0.15s var(--ease-spring);
   --anim-norm:0.22s var(--ease-spring);
   --anim-slow:0.35s var(--ease-spring);
+
+  /* ── Typography ────────────────────────────────────────────── */
+  --font-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Type scale — UI tiers (use these, not raw px) */
+  --type-label:  12px;   /* section labels, chips, helper text  → 600  */
+  --type-ui:     13px;   /* inputs, rows, buttons, inspector    → 400–600 */
+  --type-title:  14px;   /* panel titles, inspector field name  → 700  */
+  --type-heading:16px;   /* sub-headings                        → 700  */
+  --type-hero:   28px;   /* start / home headings               → 700  */
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{height:100%;height:100dvh}
-body{font-family:'DM Sans',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;color:var(--text-color);background:var(--canvas-bg);min-height:100vh;min-height:100dvh;height:100vh;height:100dvh;width:100%;overflow:hidden;display:flex;flex-direction:column;-webkit-user-select:none;user-select:none}
+body{font-family:var(--font-ui);-webkit-font-smoothing:antialiased;font-feature-settings:"cv02","cv03","cv04","cv11";color:var(--text-color);background:var(--canvas-bg);min-height:100vh;min-height:100dvh;height:100vh;height:100dvh;width:100%;overflow:hidden;display:flex;flex-direction:column;-webkit-user-select:none;user-select:none}
 input,textarea,select{-webkit-user-select:auto;user-select:auto}
 label:not(.nav-cta):not(.btn-primary):not(.btn-secondary):not(.btn-inverse):not(.btn){display:block;margin-bottom:var(--space-1);font-weight:600;font-size:var(--font-xs);color:var(--text-muted)}
 input[type="text"],input[type="number"],select,textarea{width:100%;height:var(--height-md);padding:0 10px;border:1px solid var(--border-color);border-radius:var(--radius-sm);font-size:var(--font-base);color:var(--text-color);background:#f8fafc;font-family:inherit;box-sizing:border-box;transition:border-color var(--anim-fast),background-color var(--anim-fast),box-shadow var(--anim-fast),transform var(--anim-fast)}
