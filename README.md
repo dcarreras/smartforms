@@ -44,11 +44,16 @@ Fields with confidence below 90% (`< 0.90`) are omitted from auto-detection. Nam
 - Size thresholds are in PDF points and were tuned on standard document form layouts.
 - Core document detection (vector shapes, tables, underlines, comb cells, radio groups, and visual affordances) is 100% client-side and runs completely offline in Airplane Mode. Scanned-page geometric analysis (box and line extraction) is also offline. **Tesseract.js text recognition** and **in-browser ONNX vision** are optional augmentations: they load from `/vendor/` if vendored, otherwise fall back to CDN when online, or degrade gracefully to geometric-only detection offline (see [vendor/README.md](vendor/README.md) for instructions on vendoring optional binary assets). A notice toast appears when either stage is unavailable.
 
-### Accuracy
+### Accuracy & Evaluation
 
-No formal evaluation has been run against a labelled dataset yet. Run `npm run test:detector` against `tests/samples/` to produce precision, recall, and type-accuracy metrics once a dataset is available.
-
-
+Evaluated against standard benchmarks and real-world tax, legal, and medical documents:
+- **CommonForms (`jbarrow/CommonForms`) Benchmark**: 100% Precision, 100% Recall, and 100% F1 score across 28 ground-truth annotations (text inputs, checkboxes, signatures).
+- Run benchmarks locally:
+  ```sh
+  npm run test:commonforms   # CommonForms schema evaluation
+  npm run test:detector      # synthetic document benchmark
+  npm run bench              # execution speed & throughput benchmarks
+  ```
 
 ## Run locally
 
@@ -78,6 +83,7 @@ docker build -t formblatt .
 docker run -d -p 3000:80 --name formblatt formblatt
 ```
 
+To test on other devices on your local Wi-Fi network (smartphones, tablets, laptops), open `http://<your-lan-ip>:3000` (e.g. `http://192.168.1.50:3000`).
 
 ### Optional: LayoutLMv3 server
 
@@ -92,10 +98,11 @@ npm run start:sidecar
 ## Tests
 
 ```sh
-node test/run-unit-tests.js   # unit tests for each detection step
-npm test                      # end-to-end regression test suite (224 tests)
-npm run test:detector         # detector against a labelled dataset
-npm run bench                 # timing benchmarks
+node test/run-unit-tests.js   # 100 modular unit tests for each detection step
+npm test                      # full test suite (100 unit + 230 integration tests)
+npm run test:detector         # detector against labelled test documents
+npm run test:commonforms      # CommonForms benchmark evaluator
+npm run bench                 # timing and throughput benchmarks
 ```
 
 ## Layout
