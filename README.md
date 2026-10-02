@@ -61,6 +61,24 @@ npm start          # static server, see server.cjs for the port
 
 No build step. The app is native ES modules.
 
+### Run with Docker
+
+Run Formblatt in an isolated container:
+
+```sh
+docker compose up -d
+```
+
+The web studio is now available at `http://localhost:3000`.
+
+Alternatively, build and run directly with the Docker CLI:
+
+```sh
+docker build -t formblatt .
+docker run -d -p 3000:80 --name formblatt formblatt
+```
+
+
 ### Optional: LayoutLMv3 server
 
 Off by default. The editor probes `http://127.0.0.1:8000` and uses it if it responds.
