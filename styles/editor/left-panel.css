@@ -1,0 +1,573 @@
+/* ============================================================
+   FormBlatt Studio — Left Panel — Pages Tree, Layers Panel & Filters
+   styles/editor/left-panel.css
+   ============================================================ */
+
+/* ── Phase 2: Left Sidebar Visual Clean-Up (Penpot Style) ────────────── */
+.left-panel-top-bar {
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+    padding: 0 8px 0 10px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    background: #ffffff;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+.left-panel-segmented-tabs {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 7px;
+    padding: 2.5px;
+    border: 1px solid #e2e8f0;
+    gap: 2px;
+    box-sizing: border-box;
+}
+
+.left-tab-btn {
+    flex: 1;
+    height: 26px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: #5b6270;
+    font-size: 11.5px;
+    font-weight: 500;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+    user-select: none;
+    white-space: nowrap;
+    padding: 0 6px;
+}
+
+.left-tab-btn:hover {
+    color: #1c1f26;
+}
+
+.left-tab-btn.active {
+    background: #ffffff;
+    color: #1c1f26;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.left-tab-btn svg,
+.left-tab-btn i {
+    width: 12.5px;
+    height: 12.5px;
+    flex-shrink: 0;
+    color: inherit;
+}
+
+.section-sub-header {
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f1f5f9;
+    background: #ffffff;
+    flex-shrink: 0;
+}
+
+.sub-header-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5b6270;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sub-header-action-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #5b6270;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.12s ease;
+}
+
+.sub-header-action-btn:hover {
+    background: #f1f5f9;
+    color: #1c1f26;
+    border-color: #94a3b8;
+}
+
+.group-selected-pill-btn {
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 5px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.12s ease;
+}
+
+.group-selected-pill-btn:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+/* Tree Item Pill Aesthetics (Clean rounded pills, soft light-gray hover & selection) */
+.layers-list,
+.pages-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #ffffff;
+}
+
+.layer-item,
+.page-tree-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 8px !important;
+    min-height: 32px !important;
+    height: 32px;
+    border-radius: 6px !important;
+    cursor: pointer;
+    border: none !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    font-size: 12px;
+    color: #1c1f26;
+    background: transparent;
+    transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+/* Soft light-gray hover state matching Penpot/OpenPencil */
+.layer-item:hover,
+.layer-item.canvas-hover-highlight,
+.page-tree-item:hover {
+    background: #f1f5f9 !important;
+    color: #1c1f26 !important;
+    border-left: none !important;
+}
+
+/* Subtle rounded item pill selection state matching Penpot/OpenPencil */
+.layer-item.selected,
+.page-tree-item.selected {
+    background: #e2e8f0 !important;
+    color: #1c1f26 !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    border-left: none !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+.layer-item.selected .layer-name,
+.page-tree-item.selected .page-tree-name {
+    color: #1c1f26 !important;
+    font-weight: 600 !important;
+}
+
+.layer-item.selected .layer-type-tag {
+    color: #2563eb !important;
+}
+
+.layer-item.selected .layer-index {
+    color: #2563eb !important;
+    font-weight: 700 !important;
+}
+
+.page-tree-icon {
+    width: 14px;
+    height: 14px;
+    color: #5b6270;
+    flex-shrink: 0;
+}
+
+.page-tree-item.selected .page-tree-icon {
+    color: #2563eb;
+}
+
+.page-tree-badge {
+    font-size: 10px;
+    color: #5b6270;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.page-tree-item.selected .page-tree-badge {
+    background: #ffffff;
+    color: #1c1f26;
+}
+
+/* Layer Group Styling */
+.layer-group {
+    border-bottom: none !important;
+    margin-bottom: 3px;
+}
+
+.layer-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px !important;
+    min-height: 32px;
+    height: 32px;
+    background: transparent;
+    border-radius: 6px !important;
+    border-left: none !important;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1c1f26;
+    transition: background 0.12s ease, color 0.12s ease;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.layer-group-header:hover {
+    background: #f1f5f9 !important;
+    color: #1c1f26 !important;
+}
+
+.layer-group-header.selected {
+    background: #e2e8f0 !important;
+    border-left-color: transparent !important;
+    color: #1c1f26 !important;
+}
+
+.layer-group-items {
+    padding-left: 10px;
+    margin-left: 10px;
+    border-left: 1.5px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 2px;
+}
+
+.layer-ungroup-dropzone {
+    padding: 6px 10px;
+    margin: 4px 6px;
+    border-radius: 6px;
+}
+
+
+/* ══════════════════════════════════════════
+   LEFT PANEL — Pages & Layers
+   ══════════════════════════════════════════ */
+.left-panel {
+    width: 272px !important;
+    min-width: 272px !important;
+    max-width: 272px !important;
+    background: #ffffff !important;
+    border-right: 1px solid #e3e6eb !important;
+    border-left: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    height: 100% !important;
+    max-height: none !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    align-self: stretch !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 10 !important;
+}
+
+/* Top bar: segmented tab row */
+.left-panel-top-bar {
+    padding: 12px 12px 8px !important;
+    background: #ffffff !important;
+    border-bottom: none !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Pill container for Pages / Layers tabs */
+.left-panel-segmented-tabs {
+    flex: 1 !important;
+    display: flex !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+}
+
+.left-tab-btn {
+    flex: 1 !important;
+    height: 30px !important;
+    border-radius: 8px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #4a505c !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.12s ease !important;
+    padding: 0 !important;
+}
+.left-tab-btn:hover {
+    background: #f4f5f7 !important;
+    color: #1c1f26 !important;
+}
+.left-tab-btn.active {
+    background: #eceef2 !important;
+    color: #1c1f26 !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+}
+
+/* Search + Filter row */
+.layer-search-row {
+    padding: 4px 12px 8px !important;
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+    border-bottom: none !important;
+    flex-shrink: 0 !important;
+}
+.layer-search-input,
+.in.layer-search-input {
+    flex: 1 !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    border: 1px solid #d5d9e0 !important;
+    padding: 0 10px !important;
+    font-size: 13px !important;
+    color: #1c1f26 !important;
+    background: #ffffff !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease !important;
+    width: auto !important;
+}
+.layer-search-input:focus {
+    border-color: #2f5bea !important;
+    box-shadow: 0 0 0 2px rgba(47,91,234,0.15) !important;
+}
+.layer-filter-btn,
+#autoSortTabOrderBtn {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    border: 1px solid #d5d9e0 !important;
+    background: #ffffff !important;
+    color: #3a404c !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+    transition: background 0.12s ease !important;
+}
+.layer-filter-btn:hover,
+#autoSortTabOrderBtn:hover {
+    background: #f4f5f7 !important;
+}
+
+/* Layer list items */
+.layers-list {
+    padding: 4px 8px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+}
+.layer-item,
+.page-tree-item {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 8px 0 12px !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    color: #1c1f26 !important;
+    background: transparent !important;
+    transition: background 0.12s ease !important;
+    box-sizing: border-box !important;
+    user-select: none !important;
+    cursor: pointer !important;
+}
+.layer-item:hover,
+.layer-item.canvas-hover-highlight,
+.page-tree-item:hover {
+    background: #f4f5f7 !important;
+}
+.layer-item.selected,
+.page-tree-item.selected {
+    background: #e8eefc !important;
+    font-weight: 600 !important;
+    color: #1c1f26 !important;
+}
+.page-tree-item.selected .page-tree-icon {
+    color: #2f5bea !important;
+}
+.layer-type-tag {
+    width: 18px !important;
+    height: 18px !important;
+    background: transparent !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    border-radius: 0 !important;
+}
+.layer-name {
+    flex: 1 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+.layer-action-btn {
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 6px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #8a909c !important;
+    opacity: 0.9 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    transition: all 0.12s ease !important;
+    flex-shrink: 0 !important;
+}
+.layer-action-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+}
+.layer-item.selected .layer-action-btn {
+    color: #2f5bea !important;
+    opacity: 1 !important;
+}
+.layer-action-btn:hover {
+    background: rgba(0,0,0,0.06) !important;
+    color: #1c1f26 !important;
+}
+.layer-grip-handle,
+.layer-index,
+.layer-rename-btn {
+    display: none !important;
+}
+
+/* ══════════════════════════════════════════
+   VERTICAL TOOL RAIL (pinned left of canvas)
+   ══════════════════════════════════════════ */
+.vertical-tool-rail {
+    position: absolute !important;
+    left: 16px !important;
+    top: 16px !important;
+    bottom: auto !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 44px !important;
+    height: auto !important;
+    padding: 6px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    border: 1px solid #e3e6eb !important;
+    box-shadow: 0 2px 8px rgba(20,24,32,0.06) !important;
+    gap: 2px !important;
+    z-index: 50 !important;
+    box-sizing: border-box !important;
+}
+.vertical-tool-rail .tool-btn {
+    width: 32px !important;
+    height: 32px !important;
+    border: 0 !important;
+    background: transparent !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #3a404c !important;
+    cursor: pointer !important;
+    transition: background 0.12s ease, color 0.12s ease !important;
+    padding: 0 !important;
+}
+.vertical-tool-rail .tool-btn:hover {
+    background: #eceef2 !important;
+    color: #1c1f26 !important;
+}
+.vertical-tool-rail .tool-btn.active {
+    background: #e8eefc !important;
+    color: #2f5bea !important;
+}
+.vertical-tool-rail .tool-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.7 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+.vertical-tool-rail .tool-btn.active svg {
+    stroke: #2f5bea !important;
+}
+.vertical-tool-rail .tool-divider {
+    height: 1px !important;
+    width: calc(100% - 4px) !important;
+    background: #e3e6eb !important;
+    margin: 4px 2px !important;
+    flex-shrink: 0 !important;
+}
+.vertical-tool-rail .table-preset-popover {
+    position: absolute !important;
+    left: calc(100% + 12px) !important;
+    top: 0 !important;
+    bottom: auto !important;
+    transform: none !important;
+}

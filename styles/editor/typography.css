@@ -1,0 +1,123 @@
+/* ============================================================
+   FormBlatt Studio — Design System Typography & Ink Scale (Matching Main.dc.html)
+   styles/editor/typography.css
+   ============================================================ */
+
+/* ══════════════════════════════════════════════════════════════
+   DESIGN REFERENCE 4-TIER TYPOGRAPHY & INK HIERARCHY (Main.dc.html)
+   ══════════════════════════════════════════════════════════════ */
+
+/* 1. Active / Headings: 600 (SemiBold), #1c1f26 (Deep Charcoal) */
+#appEditorScreen h1, #appEditorScreen h2, #appEditorScreen h3, #appEditorScreen h4, #appEditorScreen h5, #appEditorScreen h6,
+.modal-content h1, .modal-content h2, .modal-content h3, .modal-content h4, .modal-content h5, .modal-content h6,
+.prop-section-heading,
+.prop-drawer-summary,
+#propFieldHeaderTitle,
+.toolbar-doc-title,
+.mode-toggle-btn.active,
+.left-tab-btn.active,
+.right-tab-btn.active,
+.layer-item.selected .layer-name,
+.page-tree-item.selected .page-tree-name,
+.prop-panel-title,
+.sub-header-title,
+.modal-heading {
+    font-weight: 600 !important;
+    color: #1c1f26 !important;
+    letter-spacing: -0.01em !important;
+    text-transform: none !important;
+}
+
+/* Primary Action Buttons (Export PDF, Confirm, etc.) — crisp white text on blue background */
+.btn-export-pill,
+.toolbar-export-btn,
+.btn-primary,
+#generatePdfBtn,
+#fillExportPdfBtn,
+.fill-action-pill-btn.primary {
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    background: #2f5bea !important;
+}
+.btn-export-pill span,
+.toolbar-export-btn span,
+#generatePdfBtn span,
+#fillExportPdfBtn span,
+.fill-action-pill-btn.primary span,
+.btn-primary span {
+    color: #ffffff !important;
+}
+
+/* 2. Field Labels (.lb): 600 (SemiBold), #4a505c (Medium Slate/Charcoal) */
+#appEditorScreen .prop-field > label,
+#appEditorScreen .field-props-wrapper label,
+#appEditorScreen .prop-group label,
+.modal-content .form-group > label,
+.modal-content .modal-label,
+.prop-label,
+.lb,
+.field-label,
+.modal-label,
+.prop-group > .prop-field > .prop-label {
+    font-weight: 600 !important;
+    color: #4a505c !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+}
+
+/* 3. Meta / Subtitles: 400 (Regular), #5b6270 (Muted Gray) */
+.toolbar-doc-status,
+#propFieldHeaderSubtitle,
+.modal-subtitle,
+.prop-meta-badge,
+.field-meta,
+.empty-msg,
+.right-panel-empty-body p,
+#emptyState p,
+.prop-hint,
+.fill-hud-desc,
+.doc-meta-details {
+    font-weight: 400 !important;
+    color: #5b6270 !important;
+    font-size: 12px !important;
+    letter-spacing: normal !important;
+}
+
+/* 4. Inactive Icons / Tags: 500 (Medium), #8a909c (Soft Silver) */
+.prop-chevron,
+.prop-drawer-chevron,
+.layer-type-tag,
+.layer-action-btn,
+.row .tg,
+.ib svg,
+.ico,
+.ico-svg,
+.mode-toggle-btn:not(.active),
+.left-tab-btn:not(.active),
+.right-tab-btn:not(.active),
+.preset-pill-btn,
+.radio-choice-pill:not(.active),
+.prop-view-toggle-btn:not(.active),
+.modal-close-btn,
+.panel-collapse-btn {
+    color: #8a909c !important;
+}
+.layer-type-tag,
+.mode-toggle-btn:not(.active),
+.left-tab-btn:not(.active),
+.right-tab-btn:not(.active),
+.preset-pill-btn,
+.radio-choice-pill:not(.active) {
+    font-weight: 500 !important;
+}
+
+::placeholder,
+.prop-input::placeholder,
+.prop-textarea::placeholder,
+.in::placeholder {
+    color: #8a909c !important;
+    font-weight: 400 !important;
+    opacity: 1 !important;
+}

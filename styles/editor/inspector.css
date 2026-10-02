@@ -1,0 +1,525 @@
+/* ============================================================
+   FormBlatt Studio — Right Inspector Panel — Accordions, Properties & Behavior Controls
+   styles/editor/inspector.css
+   ============================================================ */
+
+/* ══════════════════════════════════════════
+   RIGHT INSPECTOR PANEL
+   ══════════════════════════════════════════ */
+.right-panel {
+    width: 304px !important;
+    min-width: 304px !important;
+    max-width: 304px !important;
+    background: #ffffff !important;
+    border-left: 1px solid #e3e6eb !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    height: 100% !important;
+    max-height: none !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    align-self: stretch !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 10 !important;
+}
+.right-panel-top-bar {
+    display: none !important;
+}
+
+/* Field props wrapper fills panel — display is controlled by JS */
+.field-props-wrapper {
+    flex-direction: column !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+#fieldProps[style*="display: none"],
+#multiSelectProps[style*="display: none"],
+#rightPanelEmpty[style*="display: none"] {
+    display: none !important;
+}
+#fieldProps:not([style*="display: none"]),
+#multiSelectProps:not([style*="display: none"]) {
+    display: flex;
+}
+
+/* Scrollable body */
+.prop-panel-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 0 0 24px 0 !important;
+    background: #ffffff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+}
+.prop-panel-body > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* ── Inspector header block (icon + name + subtitle + •••) ── */
+#propFieldHeaderBlock {
+    padding: 14px 16px !important;
+    border-bottom: none !important;
+    background: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-height: 60px !important;
+    flex-shrink: 0 !important;
+}
+#propFieldHeaderIcon {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    background: #e8eefc !important;
+    color: #2f5bea !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+#propFieldHeaderIcon svg {
+    width: 18px !important;
+    height: 18px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.7 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+#propFieldHeaderTitle {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1c1f26 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    line-height: 1.25 !important;
+}
+#propFieldHeaderSubtitle {
+    font-size: 12px !important;
+    color: #5b6270 !important;
+    font-weight: 400 !important;
+    line-height: 1.25 !important;
+}
+#propHeaderMoreBtn {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    border: none !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    color: #3a404c !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    transition: background 0.12s ease !important;
+}
+#propHeaderMoreBtn:hover {
+    background: #f4f5f7 !important;
+}
+#propFieldTypeBadge,
+#propFieldConfidenceBadge {
+    display: none !important;
+}
+
+/* ── Accordion section (prop-group) ── */
+.prop-group {
+    border-top: 1px solid #e6e8ec !important;
+    background: #ffffff !important;
+    padding: 0 0 4px 0 !important;
+    margin: 0 !important;
+}
+
+/* Section heading row: 44px, label left, chevron right */
+.prop-section-heading {
+    height: 44px !important;
+    padding: 0 16px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #1c1f26 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background: #ffffff !important;
+    border-bottom: none !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    transition: color 0.12s ease !important;
+}
+.prop-section-heading span:first-child {
+    flex: 1 !important;
+}
+.prop-section-heading .prop-meta-badge {
+    flex: none !important;
+    margin-right: 8px !important;
+}
+.prop-section-heading .prop-view-toggle-btn {
+    flex: none !important;
+    margin-right: 8px !important;
+}
+.prop-chevron {
+    width: 16px !important;
+    height: 16px !important;
+    color: #8a909c !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.2s ease !important;
+}
+
+/* Collapsed state: hide content, rotate chevron, maintain bold heading font */
+.prop-group.collapsed {
+    padding-bottom: 0 !important;
+}
+.prop-group.collapsed .prop-section-heading {
+    color: #1c1f26 !important;
+    font-weight: 600 !important;
+}
+.prop-group.collapsed > :not(.prop-section-heading),
+#accTypography.collapsed > :not(.prop-section-heading),
+#fieldProps .prop-group.collapsed > :not(.prop-section-heading) {
+    display: none !important;
+}
+.prop-group.collapsed .prop-chevron {
+    transform: rotate(-90deg) !important;
+}
+
+/* ── Field rows inside sections ── */
+.prop-field {
+    padding: 0 16px 12px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 0 !important;
+    margin: 0 !important;
+}
+.prop-field[style*="display: none"],
+.prop-field.is-hidden {
+    display: none !important;
+}
+.prop-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding: 0 16px 12px !important;
+    margin: 0 !important;
+}
+.prop-grid-2 .prop-field {
+    padding: 0 !important;
+    gap: 0 !important;
+    margin: 0 !important;
+}
+
+/* ── Labels ── */
+.prop-label {
+    display: block !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #4a505c !important;
+    margin-bottom: 6px !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    line-height: 1.25 !important;
+}
+
+/* ── Inputs & Selects ── */
+.prop-input,
+.prop-select {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    height: 34px !important;
+    border: 1px solid #d5d9e0 !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    padding: 0 10px !important;
+    color: #1c1f26 !important;
+    background: #ffffff !important;
+    outline: none !important;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease !important;
+    font-family: inherit !important;
+}
+.prop-input::placeholder {
+    color: #8a909c !important;
+    font-weight: 400 !important;
+}
+.prop-input:focus,
+.prop-select:focus {
+    border-color: #2f5bea !important;
+    box-shadow: 0 0 0 2px rgba(47,91,234,0.15) !important;
+}
+
+/* ── Behavior section: 2-col checkbox grid ── */
+.prop-chips-grid,
+.checkbox-chips-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    column-gap: 8px !important;
+    row-gap: 0 !important;
+    padding: 0 16px 16px !important;
+    margin: 0 !important;
+}
+.prop-chip-toggle {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    color: #1c1f26 !important;
+    cursor: pointer !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.prop-chip-toggle input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 !important;
+    accent-color: #2f5bea !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+}
+.prop-inline-select {
+    display: none !important;
+}
+
+/* ── Typography section tweaks ── */
+.typography-row {
+    display: flex !important;
+    gap: 8px !important;
+    padding: 0 16px 12px !important;
+    align-items: flex-end !important;
+}
+.font-format-btn-group {
+    display: flex !important;
+    gap: 6px !important;
+    height: 34px !important;
+}
+.btn-font-format {
+    background: #ffffff !important;
+    border: 1px solid #d5d9e0 !important;
+    border-radius: 8px !important;
+    color: #1c1f26 !important;
+    cursor: pointer !important;
+    transition: all 0.12s ease !important;
+    user-select: none !important;
+    font-size: 13px !important;
+    height: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: inherit !important;
+    line-height: 1 !important;
+}
+.btn-font-format:hover {
+    background: #f4f5f7 !important;
+    border-color: #b0b8c4 !important;
+}
+.btn-font-format.active {
+    background: #e8eefc !important;
+    border-color: #c0d0f8 !important;
+    color: #2f5bea !important;
+    font-weight: 700 !important;
+}
+
+/* ── Empty inspector state ── */
+.right-panel-empty {
+    /* NOTE: display is controlled by JS — do NOT set display here with !important */
+    flex-direction: column !important;
+    height: 100% !important;
+}
+.right-panel-empty-body {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 32px 24px !important;
+    text-align: center !important;
+    color: #5b6270 !important;
+}
+/* Hide only the redundant sub-header inside the empty state, NOT #propFieldHeaderBlock */
+#rightPanelEmpty .prop-panel-header.section-sub-header {
+    display: none !important;
+}
+/* The field props header (#propFieldHeaderBlock) must remain visible */
+#propFieldHeaderBlock {
+    display: flex !important;
+}
+
+/* ── Misc: hide leftover elements ── */
+.left-panel-footer {
+    display: none !important;
+}
+#collapseLeftPanelBtn,
+#collapseRightPanelBtn,
+#collapseRightEmptyBtn {
+    display: none !important;
+}
+.panel-resizer {
+    cursor: col-resize !important;
+    width: 4px !important;
+    height: 100% !important;
+    max-height: none !important;
+    margin: 0 !important;
+    background: transparent !important;
+    flex-shrink: 0 !important;
+    align-self: stretch !important;
+    transition: background 0.15s ease !important;
+}
+.panel-resizer:hover {
+    background: #e3e6eb !important;
+}
+
+/* ── Advanced / Calculation drawers (styled identical to accordion sections) ── */
+.prop-drawer {
+    border: none !important;
+    border-top: 1px solid #e6e8ec !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+}
+.prop-drawer[open] {
+    border-color: #e6e8ec !important;
+}
+.prop-drawer-summary {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    height: 44px !important;
+    padding: 0 16px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    font-family: inherit !important;
+    color: #1c1f26 !important;
+    cursor: pointer !important;
+    list-style: none !important;
+    user-select: none !important;
+    background: #ffffff !important;
+    border: none !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    transition: background 0.12s ease, color 0.12s ease !important;
+}
+.prop-drawer[open] .prop-drawer-summary {
+    color: #1c1f26 !important;
+    font-weight: 600 !important;
+}
+.prop-drawer-summary:hover {
+    color: #1c1f26 !important;
+    background: #fafbfc !important;
+}
+.prop-drawer-summary::-webkit-details-marker {
+    display: none !important;
+}
+.prop-drawer-summary span {
+    flex: 1 !important;
+}
+.prop-drawer-chevron {
+    width: 16px !important;
+    height: 16px !important;
+    color: #8a909c !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.2s ease !important;
+    transform: rotate(-90deg) !important;
+}
+.prop-drawer[open] .prop-drawer-chevron {
+    transform: rotate(0deg) !important;
+}
+.prop-drawer-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    padding: 0 0 12px 0 !important;
+    margin: 0 !important;
+    border-top: none !important;
+}
+
+
+
+/* Batch editing multi-select panel header */
+#multiSelectProps .prop-panel-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    height: 56px !important;
+    padding: 0 16px !important;
+    border-bottom: none !important;
+    background: #ffffff !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+#multiSelectProps .prop-panel-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1c1f26 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    margin: 0 !important;
+}
+#multiSelectProps .prop-type-pill {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    background: #e8eefc !important;
+    color: #2f5bea !important;
+    border: 1px solid #c0d0f8 !important;
+    border-radius: 20px !important;
+    padding: 2px 10px !important;
+}
+/* Batch panel: prop-group sections inherit same accordion style */
+#multiSelectProps .prop-section-heading {
+    color: #1c1f26 !important;
+    font-weight: 600 !important;
+}
+#multiSelectProps .prop-group.collapsed .prop-section-heading {
+    color: #1c1f26 !important;
+    font-weight: 600 !important;
+}
+
+/* Batch editing controls & alignment styling */
+#multiSelectProps .prop-align-container {
+    background: #ffffff !important;
+    border: 1px solid #d5d9e0 !important;
+    border-radius: 8px !important;
+    padding: 6px !important;
+    margin: 0 16px 12px !important;
+}
+#multiSelectProps .prop-tool-btn {
+    border: 1px solid #d5d9e0 !important;
+    border-radius: 6px !important;
+    background: #ffffff !important;
+    color: #4a505c !important;
+}
+#multiSelectProps .prop-tool-btn:hover {
+    background: #f4f5f7 !important;
+    color: #1c1f26 !important;
+}
+#multiSelectProps .prop-quick-types-grid {
+    padding: 0 16px 12px !important;
+}
+#multiSelectProps .prop-quick-type-btn {
+    border: 1px solid #d5d9e0 !important;
+    border-radius: 6px !important;
+    background: #ffffff !important;
+    color: #1c1f26 !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+}
+#multiSelectProps .prop-quick-type-btn:hover {
+    background: #e8eefc !important;
+    border-color: #c0d0f8 !important;
+    color: #2f5bea !important;
+}
+#multiSelectProps .prop-match-row {
+    padding: 0 16px 8px !important;
+}

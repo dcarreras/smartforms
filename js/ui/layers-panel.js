@@ -23,28 +23,40 @@ const escapeHtml = (str) => String(str || "")
 
 const FIELD_TYPE_STYLES = {
     textField: {
-        symbol: "T",
+        symbol: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2f5bea" stroke-width="1.8"><rect x="3" y="6" width="18" height="12" rx="3"></rect></svg>`,
         label: "Text Field"
     },
     signature: {
-        symbol: "S",
+        symbol: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2f5bea" stroke-width="1.8"><path d="m3 21 3.5-1 12-12-2.5-2.5-12 12L3 21z"></path><path d="m14 8 2.5 2.5"></path></svg>`,
         label: "Signature"
     },
     dropdown: {
-        symbol: "▾",
+        symbol: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2f5bea" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="m8 10 4 4 4-4"></path></svg>`,
         label: "Dropdown"
     },
     checkBox: {
-        symbol: "✓",
+        symbol: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2f5bea" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="m9 12 2 2 4-4"></path></svg>`,
         label: "Checkbox"
     },
     radioGroup: {
-        symbol: "○",
+        symbol: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2f5bea" stroke-width="1.8"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3" fill="#2f5bea"></circle></svg>`,
         label: "Radio Group"
     },
+    radio: {
+        symbol: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2f5bea" stroke-width="1.8"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3" fill="#2f5bea"></circle></svg>`,
+        label: "Radio"
+    },
     dateField: {
-        symbol: "D",
+        symbol: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2f5bea" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="3"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>`,
         label: "Date Field"
+    },
+    numberField: {
+        symbol: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2f5bea" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M8 9h8M8 15h8"></path></svg>`,
+        label: "Number Field"
+    },
+    staticText: {
+        symbol: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#5b6270" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"></path></svg>`,
+        label: "Static Text"
     }
 };
 
@@ -92,7 +104,7 @@ export function renderLayers(onSelect, onRerender) {
                     <i data-lucide="pencil" style="width: 11px; height: 11px;"></i>
                 </button>
             </div>
-            <span style="font-size: 10px; color: #64748b; background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-weight: 600; flex-shrink: 0;">${groupFields.length}</span>
+            <span style="font-size: 10px; color: #5b6270; background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-weight: 600; flex-shrink: 0;">${groupFields.length}</span>
             <button type="button" class="group-action-btn" title="Ungroup (Release fields)" style="margin-left: 2px; flex-shrink: 0;">
                 <i data-lucide="folder-minus" style="width: 12px; height: 12px;"></i>
             </button>
@@ -306,6 +318,23 @@ export function renderLayers(onSelect, onRerender) {
     }
 
     if (typeof lucide !== "undefined") lucide.createIcons();
+    applyLayerSearchFilter();
+}
+
+export function applyLayerSearchFilter() {
+    if (typeof document === "undefined") return;
+    const input = document.getElementById("layerSearchInput");
+    const query = input ? (input.value || "").trim().toLowerCase() : "";
+    const items = document.querySelectorAll("#layersList .layer-item");
+    items.forEach(item => {
+        const nameEl = item.querySelector(".layer-name");
+        const text = (nameEl ? nameEl.textContent : "").toLowerCase();
+        if (!query || text.includes(query)) {
+            item.style.display = "flex";
+        } else {
+            item.style.display = "none";
+        }
+    });
 }
 
 function createFieldLayerItem(f, onSelect, onRerender) {
@@ -318,22 +347,30 @@ function createFieldLayerItem(f, onSelect, onRerender) {
     const style = FIELD_TYPE_STYLES[f.type] || FIELD_TYPE_STYLES.textField;
     const globalIdx = state.fields.findIndex(item => item.id === f.id) + 1;
 
+    const eyeIconSvg = f.hidden
+        ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" x2="22" y1="2" y2="22"></line></svg>`
+        : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+
+    const lockIconSvg = f.locked
+        ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><circle cx="12" cy="16" r="1"></circle><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>`
+        : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><circle cx="12" cy="16" r="1"></circle><path d="M8 11V7a4 4 0 0 1 8 0"></path></svg>`;
+
     item.innerHTML = `
-        <span class="layer-grip-handle" title="Drag to reorder"><i data-lucide="grip-vertical" style="width: 12px; height: 12px;"></i></span>
-        <span class="layer-index" style="font-size: 11px; color: ${isSelected ? '#2563eb' : '#94a3b8'}; width: 14px; font-weight: ${isSelected ? '600' : '400'}; flex-shrink: 0; text-align: right;">${globalIdx}</span>
-        <span class="layer-type-tag" title="${escapeHtml(style.label)}">${escapeHtml(style.symbol)}</span>
-        <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; overflow: hidden;">
-            <span class="layer-name" title="${escapeHtml(f.name || style.label)} (Double-click to rename)" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: ${isSelected ? '600' : '500'}; cursor: grab;">${escapeHtml(formatFieldDisplayName(f))}</span>
-            <button type="button" class="layer-rename-btn" title="Rename Field" style="flex-shrink: 0;">
+        <span class="layer-grip-handle" title="Drag to reorder" style="display: none;"><i data-lucide="grip-vertical" style="width: 12px; height: 12px;"></i></span>
+        <span class="layer-index" style="display: none;">${globalIdx}</span>
+        <span class="layer-type-tag" title="${escapeHtml(style.label)}">${style.symbol}</span>
+        <div style="flex: 1; min-width: 0; display: flex; align-items: center; overflow: hidden;">
+            <span class="layer-name" title="${escapeHtml(f.name || style.label)} (Double-click to rename)" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: ${isSelected ? '600' : '400'}; color: #1c1f26; cursor: pointer;">${escapeHtml(formatFieldDisplayName(f))}</span>
+            <button type="button" class="layer-rename-btn" title="Rename Field" style="display: none;">
                 <i data-lucide="pencil" style="width: 11px; height: 11px;"></i>
             </button>
         </div>
-        <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0;">
-            <button type="button" class="layer-action-btn layer-vis-btn" title="${f.hidden ? 'Show on canvas' : 'Hide from canvas'}">
-                <i data-lucide="${f.hidden ? 'eye-off' : 'eye'}" style="width: 12px; height: 12px; color: ${f.hidden ? '#ef4444' : '#64748b'};"></i>
+        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+            <button type="button" class="layer-action-btn layer-vis-btn" title="${f.hidden ? 'Show on canvas' : 'Hide from canvas'}" style="color: ${isSelected ? '#2f5bea' : (f.hidden ? '#ef4444' : '#9ca3af')};">
+                ${eyeIconSvg}
             </button>
-            <button type="button" class="layer-action-btn layer-lock-btn" title="${f.locked ? 'Unlock field' : 'Lock field'}">
-                <i data-lucide="${f.locked ? 'lock' : 'unlock'}" style="width: 12px; height: 12px; color: ${f.locked ? '#d97706' : '#94a3b8'};"></i>
+            <button type="button" class="layer-action-btn layer-lock-btn" title="${f.locked ? 'Unlock field' : 'Lock field'}" style="color: ${isSelected ? '#2f5bea' : (f.locked ? '#d97706' : '#9ca3af')}; display: ${isSelected || f.locked ? 'inline-flex' : 'none'};">
+                ${lockIconSvg}
             </button>
         </div>
     `;
@@ -598,4 +635,172 @@ export function updateLayerSelectionDOM() {
             if (icon) icon.style.color = "#2563eb";
         }
     });
+}
+
+// ── Pages View Rendering & Tab Management ────────────────────────
+export function renderPagesList(onPageSelect) {
+    if (typeof document === "undefined") return;
+    const list = document.getElementById("pagesList");
+    if (!list) return;
+    list.innerHTML = "";
+
+    const totalPages = Math.max(1, state.totalPages || 1);
+    for (let p = 1; p <= totalPages; p++) {
+        const pageNum = p;
+        const pageFields = (state.fields || []).filter(f => f.page === pageNum);
+        const isCurrent = pageNum === state.currentPageNum;
+
+        const item = document.createElement("div");
+        item.className = "page-tree-item" + (isCurrent ? " selected" : "");
+        item.dataset.page = pageNum;
+        item.setAttribute("role", "button");
+        item.setAttribute("tabindex", "0");
+        item.setAttribute("aria-label", `Page ${pageNum}, ${pageFields.length} field${pageFields.length === 1 ? '' : 's'}`);
+
+        item.innerHTML = `
+            <i data-lucide="file-text" class="page-tree-icon" style="width: 14px; height: 14px; flex-shrink: 0; color: ${isCurrent ? '#2563eb' : '#5b6270'};"></i>
+            <span class="page-tree-name" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: ${isCurrent ? '600' : '500'}; color: #1c1f26;">Page ${pageNum}</span>
+            <span class="page-tree-badge" title="${pageFields.length} fields on page ${pageNum}" style="font-size: 10px; color: ${isCurrent ? '#1c1f26' : '#5b6270'}; background: ${isCurrent ? '#ffffff' : '#f1f5f9'}; padding: 1px 6px; border-radius: 9999px; font-weight: 600; flex-shrink: 0;">${pageFields.length}</span>
+        `;
+
+        item.addEventListener("click", () => {
+            if (state.currentPageNum !== pageNum) {
+                if (onPageSelect) {
+                    onPageSelect(pageNum);
+                } else {
+                    goToPage(pageNum);
+                }
+            }
+        });
+
+        item.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                item.click();
+            }
+        });
+
+        list.appendChild(item);
+    }
+
+    if (typeof lucide !== "undefined") {
+        lucide.createIcons();
+    }
+}
+
+export function updatePagesListSelectionDOM() {
+    if (typeof document === "undefined") return;
+    const list = document.getElementById("pagesList");
+    if (!list) return;
+    list.querySelectorAll(".page-tree-item").forEach(item => {
+        const pageNum = parseInt(item.dataset.page, 10);
+        const isCurrent = pageNum === state.currentPageNum;
+        item.classList.toggle("selected", isCurrent);
+        const icon = item.querySelector(".page-tree-icon");
+        if (icon) icon.style.color = isCurrent ? "#2563eb" : "#5b6270";
+        const name = item.querySelector(".page-tree-name");
+        if (name) name.style.fontWeight = isCurrent ? "600" : "500";
+        const badge = item.querySelector(".page-tree-badge");
+        if (badge) {
+            badge.style.background = isCurrent ? "#ffffff" : "#f1f5f9";
+            badge.style.color = isCurrent ? "#1c1f26" : "#5b6270";
+        }
+    });
+}
+
+export function initLeftPanelTabs(onPageSelect, onRerender) {
+    if (typeof document === "undefined") return;
+    const tabPages = document.getElementById("leftTabPages");
+    const tabLayers = document.getElementById("leftTabLayers");
+    const pagesSection = document.getElementById("pagesPanelSection");
+    const layersSection = document.getElementById("layersPanelSection");
+    const addPageBtn = document.getElementById("addPageLeftBtn");
+
+    const switchTab = (tab) => {
+        if (tab === "pages") {
+            tabPages?.classList.add("active");
+            tabPages?.setAttribute("aria-selected", "true");
+            tabLayers?.classList.remove("active");
+            tabLayers?.setAttribute("aria-selected", "false");
+            if (pagesSection) pagesSection.style.display = "flex";
+            if (layersSection) layersSection.style.display = "none";
+            renderPagesList(onPageSelect);
+        } else {
+            tabLayers?.classList.add("active");
+            tabLayers?.setAttribute("aria-selected", "true");
+            tabPages?.classList.remove("active");
+            tabPages?.setAttribute("aria-selected", "false");
+            if (layersSection) layersSection.style.display = "flex";
+            if (pagesSection) pagesSection.style.display = "none";
+            if (onRerender) onRerender();
+        }
+    };
+
+    tabPages?.addEventListener("click", () => switchTab("pages"));
+    tabLayers?.addEventListener("click", () => switchTab("layers"));
+
+    addPageBtn?.addEventListener("click", async () => {
+        await handleAddBlankPage(onPageSelect, onRerender);
+    });
+
+    const searchInput = document.getElementById("layerSearchInput");
+    if (searchInput && !searchInput.dataset.bound) {
+        searchInput.dataset.bound = "true";
+        searchInput.addEventListener("input", () => {
+            applyLayerSearchFilter();
+        });
+    }
+}
+
+async function handleAddBlankPage(onPageSelect, onRerender) {
+    try {
+        const pdfLib = typeof window !== "undefined" ? (window.PDFLib || globalThis.PDFLib) : null;
+        const pdfjs = typeof window !== "undefined" ? (window.pdfjsLib || globalThis.pdfjsLib) : null;
+
+        if (!pdfLib || !pdfjs) {
+            const { showToast } = await import("../utils/toast.js");
+            showToast("PDF engine is initializing, please try again in a moment.", "info");
+            return;
+        }
+
+        let doc;
+        if (state.originalPdfBytes) {
+            doc = await pdfLib.PDFDocument.load(state.originalPdfBytes);
+        } else {
+            doc = await pdfLib.PDFDocument.create();
+        }
+
+        let width = 595.28;
+        let height = 841.89;
+        const existingPages = doc.getPages();
+        if (existingPages.length > 0) {
+            const lastPage = existingPages[existingPages.length - 1];
+            const size = lastPage.getSize();
+            width = size.width;
+            height = size.height;
+        }
+
+        doc.addPage([width, height]);
+        const newBytes = await doc.save();
+        state.originalPdfBytes = newBytes;
+
+        const loadingTask = pdfjs.getDocument({ data: newBytes.slice() });
+        state.pdfDoc = await loadingTask.promise;
+        state.totalPages = state.pdfDoc.numPages;
+
+        saveHistory(true, "Add Blank Page");
+
+        const newPageNum = state.totalPages;
+        await goToPage(newPageNum, () => {
+            renderPagesList(onPageSelect);
+            if (onRerender) onRerender();
+        });
+
+        const { showToast } = await import("../utils/toast.js");
+        showToast(`Page ${newPageNum} added`, "success");
+    } catch (err) {
+        console.error("Failed to add blank page:", err);
+        const { showToast } = await import("../utils/toast.js");
+        showToast("Could not add blank page to this document", "error");
+    }
 }

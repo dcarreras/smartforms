@@ -1,4 +1,4 @@
-// ── Formblatt Complete Automated Test Suite (v2.0.0-alpha) ──────────
+// ── Formblatt Complete Automated Test Suite (v3.0.0) ──────────
 import assert from 'node:assert/strict';
 import fs from 'fs';
 import path from 'path';
@@ -7,6 +7,21 @@ import * as PDFLib from 'pdf-lib';
 globalThis.PDFLib = PDFLib;
 
 const WEB_DIR = path.resolve(import.meta.dirname, '..');
+
+function readEditorCss() {
+    let css = fs.readFileSync(path.join(WEB_DIR, 'styles', 'editor.css'), 'utf8');
+    const importRegex = /@import\s+(?:url\(['"]?([^'"]+)['"]?\)|['"]([^'"]+)['"]);/g;
+    let match;
+    let imported = '';
+    while ((match = importRegex.exec(css)) !== null) {
+        const importPath = match[1] || match[2];
+        const fullPath = path.resolve(path.join(WEB_DIR, 'styles'), importPath);
+        if (fs.existsSync(fullPath)) {
+            imported += '\n' + fs.readFileSync(fullPath, 'utf8');
+        }
+    }
+    return imported ? css + '\n' + imported : css;
+}
 
 // Mock localStorage and window for node environment
 global.localStorage = {
@@ -78,7 +93,11 @@ async function runAllTests() {
         });
     }
 
-    const cssFiles = ['fonts.css', 'base.css', 'landing.css', 'editor.css', 'canvas.css', 'modals.css'];
+    const cssFiles = [
+        'fonts.css', 'base.css', 'landing.css', 'editor.css', 'canvas.css', 'modals.css',
+        'editor/toolbar.css', 'editor/workspace.css', 'editor/left-panel.css', 'editor/inspector.css',
+        'editor/specialized-props.css', 'editor/formula-bar.css', 'editor/fill-mode.css', 'editor/typography.css'
+    ];
     for (const css of cssFiles) {
         it(`Should have valid CSS brace balance in styles/${css}`, () => {
             const content = fs.readFileSync(path.join(WEB_DIR, 'styles', css), 'utf8');
@@ -1053,7 +1072,7 @@ async function runAllTests() {
         assert.ok(indexHtml.includes('id="quickRedoBtn"'), 'index.html must include #quickRedoBtn');
         assert.ok(indexHtml.includes('id="quickDeleteBtn"'), 'index.html must include #quickDeleteBtn');
 
-        const editorCss = fs.readFileSync(path.join(WEB_DIR, 'styles', 'editor.css'), 'utf8');
+        const editorCss = readEditorCss();
         assert.ok(editorCss.includes('.toolbar-quick-actions'), 'editor.css must style .toolbar-quick-actions');
         // Ensure .toolbar-quick-actions is NOT hidden in the mobile media query
         const mobileQueryMatch = editorCss.match(/@media\s*\(max-width:\s*767px\)\s*\{([\s\S]*?)\}\.fill-mode-banner/);
@@ -2710,7 +2729,7 @@ async function runAllTests() {
 
     it("UI markup and CSS styles include table fill down and recipe clipboard elements", () => {
         const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
-        const editorCss = fs.readFileSync(path.join(WEB_DIR, 'styles', 'editor.css'), 'utf8');
+        const editorCss = readEditorCss();
 
         assert.ok(indexHtml.includes('id="calcActionsGroup"'), "index.html must include #calcActionsGroup");
         assert.ok(indexHtml.includes('id="calcFillDownBtn"'), "index.html must include #calcFillDownBtn");
@@ -2794,7 +2813,7 @@ async function runAllTests() {
     });
 
     it("styles/editor.css strictly suppresses calc-picker-hud when editor is not active", () => {
-        const editorCss = fs.readFileSync(path.join(WEB_DIR, 'styles', 'editor.css'), 'utf8');
+        const editorCss = readEditorCss();
         assert.ok(editorCss.includes('body:not(.editor-active) .calc-picker-hud'), "editor.css must hide .calc-picker-hud on landing page");
         assert.ok(editorCss.includes('body:not(.editor-active) #calcPickerHud'), "editor.css must hide #calcPickerHud on landing page");
     });
@@ -3495,14 +3514,13 @@ async function runAllTests() {
         assert.ok(overlayJs.includes('ArrowUp'), "Must support ArrowUp navigation in table cells");
     });
 
-    it("contextual-quick-bar adopts the white floating card design matching the word processor toolbar", () => {
+    it("contextual-quick-bar adopts the dark slate card design matching the inspiration style", () => {
         const canvasCss = fs.readFileSync(path.join(WEB_DIR, 'styles', 'canvas.css'), 'utf8');
         const quickBarIdx = canvasCss.indexOf('.contextual-quick-bar{');
         assert.ok(quickBarIdx !== -1, ".contextual-quick-bar rule must exist");
         const quickBarSnippet = canvasCss.slice(quickBarIdx, quickBarIdx + 300);
-        assert.ok(quickBarSnippet.includes('background:#ffffff'), "Must have white background #ffffff");
-        assert.ok(quickBarSnippet.includes('border:1px solid #e2e8f0'), "Must have light border #e2e8f0");
-        assert.ok(quickBarSnippet.includes('border-radius:8px'), "Must have 8px border radius");
+        assert.ok(quickBarSnippet.includes('background:#1c1f26'), "Must have dark slate background #1c1f26");
+        assert.ok(quickBarSnippet.includes('border-radius:10px'), "Must have 10px border radius");
     });
 
     // ── SUITE 42: Confidence Scoring, Accessible Tooltips & Client-Side OCR Pipeline ──
@@ -3629,6 +3647,262 @@ async function runAllTests() {
         assert.equal(fields.length, 1);
         assert.equal(fields[0].name, "full_name");
         assert.equal(fields[0].label, "Full Name");
+    });
+
+    // ── Suite 44: Left Sidebar Segmented Tabs & Visual Clean-Up (Penpot Style) ──
+    console.log("\n📑 Suite 44: Left Sidebar Segmented Tabs & Tree Pill Aesthetics");
+
+    it("index.html defines Penpot-style segmented tabs and independent Pages and Layers sections", () => {
+        const html = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        assert.ok(html.includes('id="leftTabPages"'), "Defines #leftTabPages tab button");
+        assert.ok(html.includes('id="leftTabLayers"'), "Defines #leftTabLayers tab button");
+        assert.ok(html.includes('class="left-panel-segmented-tabs"'), "Defines .left-panel-segmented-tabs container");
+        assert.ok(html.includes('id="pagesPanelSection"'), "Defines #pagesPanelSection view");
+        assert.ok(html.includes('id="layersPanelSection"'), "Defines #layersPanelSection view");
+        assert.ok(html.includes('id="pagesList"'), "Defines #pagesList container");
+        assert.ok(html.includes('id="layersList"'), "Defines #layersList container");
+        assert.ok(html.includes('id="addPageLeftBtn"'), "Defines #addPageLeftBtn button");
+    });
+
+    it("styles/editor.css defines segmented tab bar, rounded item pills, soft light-gray hover & selection", () => {
+        const css = readEditorCss();
+        assert.ok(css.includes('.left-panel-segmented-tabs'), "Defines .left-panel-segmented-tabs");
+        assert.ok(css.includes('.left-tab-btn'), "Defines .left-tab-btn");
+        assert.ok(css.includes('.page-tree-item'), "Defines .page-tree-item");
+        assert.ok(css.includes('.layer-item:hover') || css.includes('.page-tree-item:hover'), "Defines soft hover states");
+        assert.ok(css.includes('.layer-item.selected') || css.includes('.page-tree-item.selected'), "Defines subtle rounded selection states");
+    });
+
+    it("layers-panel.js exports renderPagesList, updatePagesListSelectionDOM, and initLeftPanelTabs", async () => {
+        const layersMod = await import(path.join(WEB_DIR, 'js', 'ui', 'layers-panel.js'));
+        assert.equal(typeof layersMod.renderLayers, 'function', "Exports renderLayers");
+        assert.equal(typeof layersMod.updateLayerSelectionDOM, 'function', "Exports updateLayerSelectionDOM");
+        assert.equal(typeof layersMod.renderPagesList, 'function', "Exports renderPagesList");
+        assert.equal(typeof layersMod.updatePagesListSelectionDOM, 'function', "Exports updatePagesListSelectionDOM");
+        assert.equal(typeof layersMod.initLeftPanelTabs, 'function', "Exports initLeftPanelTabs");
+    });
+
+    // ── Suite 45: Right Inspector Segmented Tabs & Fill Requirements ──
+    console.log("\n📑 Suite 45: Right Inspector Segmented Tabs & Fill Requirements");
+
+    it("index.html defines Right Inspector segmented tabs and Fill Requirements section", () => {
+        const html = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        assert.ok(html.includes('id="rightTabInspector"'), "Defines #rightTabInspector");
+        assert.ok(html.includes('id="rightTabFill"'), "Defines #rightTabFill");
+        assert.ok(html.includes('class="right-panel-segmented-tabs"'), "Defines .right-panel-segmented-tabs");
+        assert.ok(html.includes('id="inspectorPanelSection"'), "Defines #inspectorPanelSection");
+        assert.ok(html.includes('id="fillPanelSection"'), "Defines #fillPanelSection");
+        assert.ok(html.includes('id="fillResetDataBtn"'), "Defines #fillResetDataBtn");
+        assert.ok(html.includes('id="fillSampleDataBtn"'), "Defines #fillSampleDataBtn");
+        assert.ok(html.includes('id="fillExportPdfBtn"'), "Defines #fillExportPdfBtn");
+        assert.ok(html.includes('id="fillProgressPercent"'), "Defines #fillProgressPercent");
+        assert.ok(html.includes('id="fillRequirementsList"'), "Defines #fillRequirementsList");
+    });
+
+    it("styles/editor.css suppresses hovering fill banner and styles right inspector tabs", () => {
+        const css = readEditorCss();
+        assert.ok(css.includes('.right-panel-segmented-tabs'), "Defines .right-panel-segmented-tabs");
+        assert.ok(css.includes('.right-tab-btn'), "Defines .right-tab-btn");
+        assert.ok(css.includes('#fillModeBanner'), "Styles #fillModeBanner");
+        assert.ok(css.includes('.fill-action-pill-btn'), "Defines .fill-action-pill-btn");
+    });
+
+    it("properties-panel.js exports initRightPanelTabs and renderFillPanel", async () => {
+        const propsMod = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+        assert.equal(typeof propsMod.initRightPanelTabs, 'function', "Exports initRightPanelTabs");
+        assert.equal(typeof propsMod.renderFillPanel, 'function', "Exports renderFillPanel");
+    });
+
+    it("fillSampleTestValues populates test data and clearAllTestValues resets it", async () => {
+        const { state, fillSampleTestValues, clearAllTestValues } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+        state.fields = [
+            { id: "test_text", type: "textField", name: "full_name", label: "Full Name", value: "" },
+            { id: "test_email", type: "textField", name: "email", label: "Email Address", value: "" },
+            { id: "test_check", type: "checkBox", name: "agree", label: "Agree", defaultChecked: false }
+        ];
+
+        fillSampleTestValues();
+        assert.ok(state.fields[0].value.length > 0, "Populates text field");
+        assert.ok(state.fields[1].value.includes("@"), "Populates email address");
+        assert.equal(state.fields[2].defaultChecked, true, "Checks checkbox");
+
+        clearAllTestValues();
+        assert.equal(state.fields[0].value, "", "Clears text field");
+        assert.equal(state.fields[1].value, "", "Clears email field");
+        assert.equal(state.fields[2].defaultChecked, false, "Unchecks checkbox");
+    });
+
+    it("menu bar provides Fill & Test Form option and top toolbar has mode toggle", () => {
+        const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        assert.ok(indexHtml.includes('id="menuFillFormBtn"'), "index.html defines menuFillFormBtn in menu bar");
+        assert.ok(indexHtml.includes('data-proxy-click="menuFillFormBtn"'), "compact menu bar links to menuFillFormBtn");
+        assert.ok(indexHtml.includes('id="modeSegmentedToggle"'), "modeSegmentedToggle is present in top toolbar");
+        assert.ok(indexHtml.includes('id="modeDesignBtn"'), "modeDesignBtn proxy preserved for compatibility");
+        assert.ok(indexHtml.includes('id="modeFillBtn"'), "modeFillBtn proxy preserved for compatibility");
+    });
+
+    // ── Suite 46: Specialized Inspector Property Accordion Segregation ──
+    console.log("\n🗂️ Suite 46: Specialized Inspector Property Accordion Segregation");
+
+    it("defines dedicated accordion sections for Table Grid, Radio Group, Dropdown Choices, and Signature", () => {
+        const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        assert.ok(indexHtml.includes('id="accTableGrid"'), "accTableGrid accordion must exist");
+        assert.ok(indexHtml.includes('id="accRadioGroup"'), "accRadioGroup accordion must exist");
+        assert.ok(indexHtml.includes('id="accDropdownChoices"'), "accDropdownChoices accordion must exist");
+        assert.ok(indexHtml.includes('id="accSignature"'), "accSignature accordion must exist");
+    });
+
+    it("contains all specialized controls within their respective dedicated accordions", () => {
+        const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        const tableGridBlock = indexHtml.slice(indexHtml.indexOf('id="accTableGrid"'), indexHtml.indexOf('id="accRadioGroup"'));
+        assert.ok(tableGridBlock.includes('id="tableAddRowBtn"'), "tableAddRowBtn is in accTableGrid");
+        assert.ok(tableGridBlock.includes('id="tableDeleteRowBtn"'), "tableDeleteRowBtn is in accTableGrid");
+        assert.ok(tableGridBlock.includes('id="tableAddColBtn"'), "tableAddColBtn is in accTableGrid");
+        assert.ok(tableGridBlock.includes('id="tableDeleteColBtn"'), "tableDeleteColBtn is in accTableGrid");
+        assert.ok(tableGridBlock.includes('id="tableSelectAllBtn"'), "tableSelectAllBtn is in accTableGrid");
+        assert.ok(tableGridBlock.includes('id="tableDeleteTableBtn"'), "tableDeleteTableBtn is in accTableGrid");
+
+        const radioBlock = indexHtml.slice(indexHtml.indexOf('id="accRadioGroup"'), indexHtml.indexOf('id="accDropdownChoices"'));
+        assert.ok(radioBlock.includes('id="fieldRadioGroup"'), "fieldRadioGroup is in accRadioGroup");
+        assert.ok(radioBlock.includes('id="radioGroupSelectMode"'), "radioGroupSelectMode is in accRadioGroup");
+        assert.ok(radioBlock.includes('id="fieldRadioExportValue"'), "fieldRadioExportValue is in accRadioGroup");
+        assert.ok(radioBlock.includes('id="radioSiblingChoicesList"'), "radioSiblingChoicesList is in accRadioGroup");
+
+        const dropdownBlock = indexHtml.slice(indexHtml.indexOf('id="accDropdownChoices"'), indexHtml.indexOf('id="accSignature"'));
+        assert.ok(dropdownBlock.includes('id="newDropdownItemInput"'), "newDropdownItemInput is in accDropdownChoices");
+        assert.ok(dropdownBlock.includes('id="dropdownChoicesList"'), "dropdownChoicesList is in accDropdownChoices");
+        assert.ok(dropdownBlock.includes('id="dropdownOptions"'), "dropdownOptions is in accDropdownChoices");
+
+        const signatureBlock = indexHtml.slice(indexHtml.indexOf('id="accSignature"'), indexHtml.indexOf('id="accBehavior"'));
+        assert.ok(signatureBlock.includes('id="propOpenSignatureBtn"'), "propOpenSignatureBtn is in accSignature");
+        assert.ok(signatureBlock.includes('id="propClearSignatureBtn"'), "propClearSignatureBtn is in accSignature");
+
+        const typographyBlock = indexHtml.slice(indexHtml.indexOf('id="accTypography"'), indexHtml.indexOf('id="accAppearance"'));
+        assert.ok(typographyBlock.includes('id="richTextToolsGroup"'), "richTextToolsGroup is organized under Typography");
+        assert.ok(typographyBlock.includes('id="textFmtTitle"'), "textFmtTitle is under Typography");
+    });
+
+    it("styles/editor.css suppresses prop-field display flex override and styles table grid buttons", () => {
+        const editorCss = readEditorCss();
+        assert.ok(!editorCss.includes('.prop-field { display: flex !important;'), ".prop-field display is not forced with !important");
+        assert.ok(editorCss.includes('.table-control-grid'), "editor.css defines .table-control-grid");
+        assert.ok(editorCss.includes('.table-ctrl-btn'), "editor.css defines .table-ctrl-btn");
+    });
+
+    console.log("\n📐 Suite 47: Top Navigation Bar Breathing Room & Document Title Truncation");
+    it("provides top toolbar breathing room with 60px height and 20px padding", () => {
+        const editorCss = readEditorCss();
+        assert.ok(editorCss.includes('height: 60px !important;'), "editor.css sets toolbar height to 60px for vertical breathing room");
+        assert.ok(editorCss.includes('padding: 0 20px !important;'), "editor.css sets toolbar horizontal padding to 20px");
+        assert.ok(editorCss.includes('height: calc(100vh - 60px) !important;'), "editor.css updates workspace height calculation for 60px toolbar");
+    });
+
+    it("truncates long document names with max-width and ellipsis in toolbar doc title", () => {
+        const editorCss = readEditorCss();
+        assert.ok(editorCss.includes('max-width: 180px !important;'), "editor.css constrains toolbar-doc-title and toolbar-doc-info to max-width: 180px");
+        assert.ok(editorCss.includes('text-overflow: ellipsis !important;'), "editor.css specifies text-overflow: ellipsis for doc title");
+        assert.ok(editorCss.includes('white-space: nowrap !important;'), "editor.css specifies white-space: nowrap for doc title");
+    });
+
+    it("provides 36px top breathing room for center-canvas matching Main.dc.html", () => {
+        const canvasCss = fs.readFileSync(path.join(WEB_DIR, 'styles', 'canvas.css'), 'utf8');
+        assert.ok(canvasCss.includes('padding:36px'), "canvas.css sets center-canvas top padding to 36px");
+    });
+
+    console.log("\n🧪 Suite 48: Fill Mode Filling Tools in Properties");
+    it("index.html defines accFillTools accordion and interactive fill tool inputs in inspector", () => {
+        const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        assert.ok(indexHtml.includes('id="accFillTools"'), "Defines #accFillTools accordion");
+        assert.ok(indexHtml.includes('id="propFillStatusBadge"'), "Defines #propFillStatusBadge");
+        assert.ok(indexHtml.includes('id="propFillValueInput"'), "Defines #propFillValueInput text input");
+        assert.ok(indexHtml.includes('id="propFillValueTextarea"'), "Defines #propFillValueTextarea");
+        assert.ok(indexHtml.includes('id="propFillValueDate"'), "Defines #propFillValueDate");
+        assert.ok(indexHtml.includes('id="propFillCheckboxToggle"'), "Defines #propFillCheckboxToggle");
+        assert.ok(indexHtml.includes('id="propFillRadioOptionsList"'), "Defines #propFillRadioOptionsList");
+        assert.ok(indexHtml.includes('id="propFillDropdownSelect"'), "Defines #propFillDropdownSelect");
+        assert.ok(indexHtml.includes('id="propFillSigPreview"'), "Defines #propFillSigPreview");
+        assert.ok(indexHtml.includes('id="propFillCalcCard"'), "Defines #propFillCalcCard");
+        assert.ok(indexHtml.includes('id="propFillValidationCard"'), "Defines #propFillValidationCard");
+        assert.ok(indexHtml.includes('id="propFillSampleBtn"'), "Defines #propFillSampleBtn");
+        assert.ok(indexHtml.includes('id="propFillClearBtn"'), "Defines #propFillClearBtn");
+        assert.ok(indexHtml.includes('id="propFillPrevBtn"'), "Defines #propFillPrevBtn");
+        assert.ok(indexHtml.includes('id="propFillNextBtn"'), "Defines #propFillNextBtn");
+        assert.ok(indexHtml.includes('id="propFillNavCounter"'), "Defines #propFillNavCounter");
+    });
+
+    it("styles/editor.css defines styles for accFillTools and fill mode right panel tabs", () => {
+        const editorCss = readEditorCss();
+        assert.ok(editorCss.includes('#accFillTools'), "Styles #accFillTools");
+        assert.ok(editorCss.includes('#accFillTools {\n    display: none !important;'), "Hides #accFillTools by default in design mode");
+        assert.ok(editorCss.includes('body.mode-fill #accFillTools {\n    display: block !important;'), "Displays #accFillTools exclusively in fill mode");
+        assert.ok(editorCss.includes('.prop-fill-radio-pill'), "Styles .prop-fill-radio-pill");
+        assert.ok(editorCss.includes('body.mode-fill .right-panel-top-bar'), "Allows right-panel-top-bar in fill mode");
+    });
+
+    it("properties-panel.js exports populateFillTools and initFillToolsEvents", async () => {
+        const propsMod = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+        assert.equal(typeof propsMod.populateFillTools, 'function', "Exports populateFillTools");
+        assert.equal(typeof propsMod.initFillToolsEvents, 'function', "Exports initFillToolsEvents");
+    });
+
+    it("state.js exports getSampleValueForField generating realistic test data", async () => {
+        const { getSampleValueForField } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+        assert.equal(typeof getSampleValueForField, 'function', "Exports getSampleValueForField");
+        assert.equal(getSampleValueForField({ type: "checkBox" }), true, "Checkbox returns true");
+        assert.ok(getSampleValueForField({ type: "textField", name: "user_email" }).includes("@"), "Email field returns email");
+        assert.equal(getSampleValueForField({ type: "dateField" }), "2026-10-15", "Date field returns date");
+        assert.equal(getSampleValueForField({ type: "textField", dataFormat: "currency" }), "150.00", "Currency field returns amount");
+    });
+
+    // ── Suite 49: Design Reference Warm Charcoal Ink Palette Verification ──
+    console.log("\n🖋️ Suite 49: Design Reference Warm Charcoal Ink Palette Verification");
+    it("index.html critical styles and base.css define warm charcoal ink palette tokens", () => {
+        const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        const baseCss = fs.readFileSync(path.join(WEB_DIR, 'styles', 'base.css'), 'utf8');
+        assert.ok(indexHtml.includes('--text-color:#1c1f26'), "index.html defines primary charcoal text color #1c1f26");
+        assert.ok(indexHtml.includes('--text-label:#4a505c'), "index.html defines medium charcoal label color #4a505c");
+        assert.ok(indexHtml.includes('--text-muted:#5b6270'), "index.html defines muted charcoal color #5b6270");
+        assert.ok(indexHtml.includes('--text-subtle:#8a909c'), "index.html defines subtle tag color #8a909c");
+        assert.ok(baseCss.includes('--text-color:#1c1f26'), "base.css defines primary charcoal text color #1c1f26");
+        assert.ok(baseCss.includes('--text-label:#4a505c'), "base.css defines medium charcoal label color #4a505c");
+    });
+
+    it("styles/editor.css harmonizes property labels and controls to #1c1f26 and #4a505c", () => {
+        const editorCss = readEditorCss();
+        assert.ok(editorCss.includes('color: #1c1f26 !important;'), "Editor defines primary charcoal #1c1f26 headings/inputs");
+        assert.ok(editorCss.includes('color: #4a505c !important;'), "Editor defines label charcoal #4a505c");
+    });
+
+    it("styles/editor.css enforces the 4-tier typography and ink hierarchy", () => {
+        const editorCss = readEditorCss();
+        // Tier 1: Active / Headings -> 600 SemiBold, #1c1f26
+        assert.ok(editorCss.includes('font-weight: 600 !important;\n    color: #1c1f26 !important;'), "Tier 1: Active/Headings have 600 SemiBold and #1c1f26 deep charcoal");
+        // Tier 2: Field Labels -> 600 SemiBold, #4a505c
+        assert.ok(editorCss.includes('font-weight: 600 !important;\n    color: #4a505c !important;'), "Tier 2: Field Labels have 600 SemiBold and #4a505c medium slate");
+        // Tier 3: Meta / Subtitles -> 400 Regular, #5b6270
+        assert.ok(editorCss.includes('font-weight: 400 !important;\n    color: #5b6270 !important;'), "Tier 3: Meta/Subtitles have 400 Regular and #5b6270 muted gray");
+        // Tier 4: Inactive Icons / Tags -> 500 Medium, #8a909c
+        assert.ok(editorCss.includes('color: #8a909c !important;'), "Tier 4: Inactive icons/tags have #8a909c soft silver");
+        assert.ok(editorCss.includes('font-weight: 500 !important;'), "Tier 4: Inactive tags have 500 Medium weight");
+    });
+
+    it("styles/editor.css ensures primary action buttons like Export PDF have white text", () => {
+        const editorCss = readEditorCss();
+        assert.ok(editorCss.includes('.btn-export-pill,\n.toolbar-export-btn,\n.btn-primary,\n#generatePdfBtn'), "Defines primary action buttons");
+        assert.ok(editorCss.includes('color: #ffffff !important;\n    background: #2f5bea !important;'), "Primary action buttons have white text on blue background");
+    });
+
+    it("styles/landing.css and editor.css cleanly isolate navbar CTA and action buttons with white text", () => {
+        const landingCss = fs.readFileSync(path.join(WEB_DIR, 'styles', 'landing.css'), 'utf8');
+        const editorCss = readEditorCss();
+        
+        // Ensure landing page nav-cta and hero action buttons are protected with white text
+        assert.ok(landingCss.includes('.nav-cta'), "landing.css defines .nav-cta");
+        assert.ok(landingCss.includes('color:#ffffff !important;'), "landing.css enforces white text on primary CTAs");
+        
+        // Ensure editor.css does not declare bare unscoped label with !important
+        assert.ok(!editorCss.includes('\nlabel,'), "editor.css does not use bare unscoped label");
+        assert.ok(!editorCss.includes('\nh1, h2,'), "editor.css does not use bare unscoped headings");
     });
 
     // ── Summary ──

@@ -76,11 +76,11 @@ function showStep(stepIndex) {
             </button>
         </div>
         <div>
-            <h4 style="margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #0f172a;">${step.title}</h4>
-            <p style="margin: 0; font-size: 12.5px; color: #475569; line-height: 1.45;">${step.description}</p>
+            <h4 style="margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #1c1f26;">${step.title}</h4>
+            <p style="margin: 0; font-size: 12.5px; color: #4a505c; line-height: 1.45;">${step.description}</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding-top: 10px; border-top: 1px solid #f1f5f9;">
-            <button type="button" class="tour-skip-btn" style="background: none; border: none; font-size: 12px; color: #64748b; cursor: pointer; font-weight: 500;">Skip Tour</button>
+            <button type="button" class="tour-skip-btn" style="background: none; border: none; font-size: 12px; color: #5b6270; cursor: pointer; font-weight: 500;">Skip Tour</button>
             <div style="display: flex; gap: 6px;">
                 ${stepIndex > 0 ? '<button type="button" class="tour-prev-btn btn-secondary" style="padding: 4px 10px; font-size: 11.5px;">Back</button>' : ''}
                 <button type="button" class="tour-next-btn btn-primary" style="padding: 4px 14px; font-size: 11.5px; font-weight: 600;">${stepIndex === TOUR_STEPS.length - 1 ? 'Got it!' : 'Next'}</button>

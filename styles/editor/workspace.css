@@ -1,0 +1,463 @@
+/* ============================================================
+   FormBlatt Studio — Workspace, Tool Dock, Tool Rail & Canvas Layout
+   styles/editor/workspace.css
+   ============================================================ */
+
+/* ── Subtle "Peek" Edge Tabs (Reveals on Hovering Far Screen Edge) ── */
+.edge-peek-trigger{position:absolute;top:12px;height:140px;width:36px;z-index:500;pointer-events:auto;display:none}
+.edge-peek-trigger-left{left:0}
+.edge-peek-trigger-right{right:0}
+.edge-peek-trigger::before{content:"";position:absolute;top:4px;height:36px;width:3.5px;border-radius:3px;background:#3b82f6;opacity:0.55;transition:opacity 0.2s ease,transform 0.2s ease}
+.edge-peek-trigger-left::before{left:0;border-top-left-radius:0;border-bottom-left-radius:0}
+.edge-peek-trigger-right::before{right:0;border-top-right-radius:0;border-bottom-right-radius:0}
+.edge-peek-trigger:hover::before,.edge-peek-trigger.is-peek-active::before{opacity:0}
+
+.edge-peek-tab{position:absolute;top:4px;z-index:510;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;width:28px;min-width:28px;padding:10px 0;background:#ffffff;border:1px solid #cbd5e1;box-shadow:0 4px 14px rgba(15,23,42,0.12),0 1px 3px rgba(15,23,42,0.06);cursor:pointer;user-select:none;color:#1c1f26;font-family:inherit;font-size:10.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;box-sizing:border-box;white-space:nowrap;opacity:0;pointer-events:none;transition:transform 0.22s cubic-bezier(0.16,1,0.3,1),opacity 0.18s ease,background-color 0.15s ease,border-color 0.15s ease,color 0.15s ease,box-shadow 0.18s ease}
+.edge-peek-left{left:0;border-left:none;border-top-left-radius:0;border-bottom-left-radius:0;border-top-right-radius:7px;border-bottom-right-radius:7px;transform:translateX(-100%)}
+.edge-peek-right{right:0;border-right:none;border-top-right-radius:0;border-bottom-right-radius:0;border-top-left-radius:7px;border-bottom-left-radius:7px;transform:translateX(100%)}
+
+.edge-peek-tab .edge-peek-icon,.edge-peek-tab svg{width:13px !important;height:13px !important;color:#2563eb !important;stroke:#2563eb !important;flex-shrink:0;display:inline-block;transition:transform 0.15s ease}
+.edge-peek-tab .edge-peek-label{writing-mode:vertical-rl;transform:rotate(180deg);line-height:1;color:#4a505c;font-size:10px;font-weight:700;letter-spacing:0.06em;display:inline-block;transition:color 0.15s ease}
+
+.edge-peek-trigger:hover .edge-peek-tab,.edge-peek-trigger.is-peek-active .edge-peek-tab,.edge-peek-tab:hover{opacity:1;transform:translateX(0);pointer-events:auto}
+.edge-peek-tab:hover{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8;box-shadow:0 6px 20px rgba(37,99,235,0.2),0 2px 6px rgba(15,23,42,0.08)}
+.edge-peek-tab:hover .edge-peek-icon,.edge-peek-tab:hover svg{color:#1d4ed8 !important;stroke:#1d4ed8 !important}
+.edge-peek-tab:hover .edge-peek-label{color:#1d4ed8}
+.edge-peek-tab:active{transform:scale(0.96)}
+
+.left-panel.collapsed ~ #leftEdgeTrigger{display:block}
+.right-panel.collapsed ~ #rightEdgeTrigger{display:block}
+
+body.mode-fill .edge-peek-trigger,body.mode-fill .edge-peek-tab{display:none !important}
+@media (max-width:767px){.edge-peek-trigger,.edge-peek-tab{display:none !important}}
+
+/* ── Phase 1: The Floating Bottom Tool Island ────────────────────────── */
+.floating-tool-island,
+.segmented-toolbar {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    height: 44px;
+    box-sizing: border-box;
+    user-select: none;
+    transition: bottom 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.floating-tool-island::-webkit-scrollbar,
+.segmented-toolbar::-webkit-scrollbar {
+    display: none;
+}
+
+.floating-tool-island .segmented-indicator,
+.segmented-toolbar .segmented-indicator {
+    display: none !important;
+}
+
+.floating-tool-island .tool-btn,
+.segmented-toolbar .tool-btn {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #4a505c;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 9px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    transition: background 0.14s ease, color 0.14s ease, transform 0.12s ease, box-shadow 0.14s ease;
+    will-change: transform;
+}
+
+.floating-tool-island .tool-btn:hover,
+.segmented-toolbar .tool-btn:hover {
+    background: #f1f5f9;
+    color: #1c1f26;
+}
+
+.floating-tool-island .tool-btn:active,
+.segmented-toolbar .tool-btn:active {
+    transform: scale(0.93);
+}
+
+/* Solid Blue Squircle Active State matching screenshot */
+.floating-tool-island .tool-btn.active,
+.segmented-toolbar .tool-btn.active {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    border-radius: 9px !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35) !important;
+}
+
+.floating-tool-island .tool-btn.active svg,
+.segmented-toolbar .tool-btn.active svg,
+.floating-tool-island .tool-btn.active [data-lucide],
+.segmented-toolbar .tool-btn.active [data-lucide] {
+    stroke: #ffffff !important;
+    color: #ffffff !important;
+}
+
+.floating-tool-island .tool-btn.active svg path[fill="currentColor"],
+.segmented-toolbar .tool-btn.active svg path[fill="currentColor"],
+.floating-tool-island .tool-btn.active svg circle[fill="currentColor"],
+.segmented-toolbar .tool-btn.active svg circle[fill="currentColor"] {
+    fill: #ffffff !important;
+}
+
+.floating-tool-island .tool-divider,
+.segmented-toolbar .tool-divider {
+    width: 1px;
+    height: 20px;
+    background: #e2e8f0;
+    margin: 0 3px;
+    flex-shrink: 0;
+}
+
+.floating-tool-island .tool-btn-dropdown-wrapper,
+.segmented-toolbar .tool-btn-dropdown-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Upward Table Preset Popover above floating island */
+.table-preset-popover,
+.floating-tool-island .table-preset-popover,
+.segmented-toolbar .table-preset-popover {
+    position: absolute;
+    bottom: calc(100% + 12px) !important;
+    top: auto !important;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    min-width: 240px;
+    max-width: calc(100vw - 20px);
+    box-sizing: border-box;
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.16), 0 3px 10px rgba(15, 23, 42, 0.08);
+    border-radius: 12px;
+    padding: 6px;
+    border: 1px solid #e2e8f0;
+    z-index: 3000;
+}
+
+/* Hide floating creation tools in fill mode */
+body.mode-fill .floating-tool-island,
+body.mode-fill .segmented-toolbar {
+    display: none !important;
+}
+
+/* ── Modern Floating Bottom Control Dock ── */
+.canvas-docked-footer {
+    position: absolute;
+    bottom: 24px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 40;
+    user-select: none;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    transition: bottom 0.2s ease, opacity 0.2s ease;
+}
+
+.canvas-docked-footer > * {
+    pointer-events: auto;
+}
+
+.docked-page-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+    height: 40px;
+    padding: 0 6px;
+    flex-shrink: 0;
+}
+
+.docked-zoom-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+    height: 40px;
+    padding: 0 6px;
+    flex-shrink: 0;
+}
+
+.docked-zoom-pill {
+    height: 28px;
+    min-width: 52px;
+    padding: 0 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #1c1f26;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.docked-zoom-pill:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.docked-zoom-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #4a505c;
+    cursor: pointer;
+    box-sizing: border-box;
+    padding: 0;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.docked-zoom-btn:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #1c1f26;
+}
+
+.docked-footer-hints,
+.docked-footer-hints-divider,
+.canvas-docked-footer > div[style*="width: 1px"] {
+    display: none !important;
+}
+
+
+/* ── Modern Design Inspiration Redesign (Main.dc.html) ────────────────── */
+.toolbar {
+    height: 60px !important;
+    min-height: 60px !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #e3e6eb !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    align-items: center !important;
+    padding: 0 20px !important;
+    box-sizing: border-box !important;
+    z-index: 100;
+}
+
+.toolbar-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-shrink: 0;
+}
+
+.editor-brand-logo {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0 !important;
+}
+
+.editor-brand-icon {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 8px !important;
+    background: #2f5bea !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 17px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: none !important;
+}
+
+.editor-brand-name {
+    display: none !important;
+}
+
+.toolbar-doc-info {
+    line-height: 1.25;
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* ── Workspace Background ── */
+.workspace {
+    background-color: #f1f2f5 !important;
+    height: calc(100vh - 60px) !important;
+    height: calc(100dvh - 60px) !important;
+    max-height: calc(100vh - 60px) !important;
+    max-height: calc(100dvh - 60px) !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+}
+.canvas-workspace-area {
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+
+/* ══════════════════════════════════════════
+   BOTTOM STATUS DOCK (page nav + zoom)
+   ══════════════════════════════════════════ */
+.canvas-docked-footer {
+    position: absolute !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    left: auto !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    z-index: 50 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    pointer-events: auto !important;
+}
+.docked-status-bar {
+    height: 36px !important;
+    background: #ffffff !important;
+    border: 1px solid #e3e6eb !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    padding: 0 6px !important;
+    box-shadow: 0 2px 8px rgba(20,24,32,0.06) !important;
+    box-sizing: border-box !important;
+}
+.docked-page-nav-inline,
+.docked-zoom-controls-inline {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+}
+.ib-status {
+    width: 28px !important;
+    height: 28px !important;
+    border: 0 !important;
+    background: transparent !important;
+    border-radius: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #3a404c !important;
+    cursor: pointer !important;
+    transition: background 0.12s ease !important;
+    padding: 0 !important;
+}
+.ib-status:hover {
+    background: #eceef2 !important;
+}
+.ib-status svg {
+    width: 16px !important;
+    height: 16px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.7 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+.page-status-text {
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    color: #1c1f26 !important;
+    padding: 0 4px !important;
+    user-select: none !important;
+}
+.docked-status-divider {
+    width: 1px !important;
+    height: 18px !important;
+    background: #e3e6eb !important;
+    margin: 0 6px !important;
+    flex-shrink: 0 !important;
+}
+.zoom-status-pill {
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    color: #1c1f26 !important;
+    min-width: 44px !important;
+    text-align: center !important;
+    border: 0 !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    padding: 0 4px !important;
+    border-radius: 6px !important;
+    height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background 0.12s ease !important;
+}
+.zoom-status-pill:hover {
+    background: #eceef2 !important;
+}
+
+/* Hide redundant footer */
+.prop-footer {
+    display: none !important;
+}

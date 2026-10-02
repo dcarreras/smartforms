@@ -742,8 +742,8 @@ export function renderCommandPaletteList(query = "") {
         listEl.innerHTML = `
             <div class="command-palette-empty">
                 <i data-lucide="search-x" style="width: 28px; height: 28px; color: #94a3b8; margin-bottom: 8px;"></i>
-                <div style="font-weight: 600; color: #334155; font-size: 13.5px;">No commands found</div>
-                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">No matching action for "${escapeHtml(query)}"</div>
+                <div style="font-weight: 600; color: #1c1f26; font-size: 13.5px;">No commands found</div>
+                <div style="font-size: 12px; color: #5b6270; margin-top: 2px;">No matching action for "${escapeHtml(query)}"</div>
             </div>
         `;
         if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();

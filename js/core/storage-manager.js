@@ -75,6 +75,12 @@ export function saveHistory(arg1 = false, arg2 = null) {
         actionName = typeof arg2 === "string" ? arg2 : null;
     }
 
+    state.isDirty = true;
+    if (typeof document !== "undefined") {
+        const statusEl = document.getElementById("toolbarDocStatus");
+        if (statusEl) statusEl.textContent = "Unsaved changes";
+    }
+
     if (immediate) {
         if (historyDebounceTimer) {
             clearTimeout(historyDebounceTimer);
@@ -98,6 +104,11 @@ function commitHistorySnapshot(actionName = null) {
     const currentRaw = typeof currentEntry === "object" && currentEntry !== null ? currentEntry.snapshot : currentEntry;
 
     if (currentRaw === rawSnapshot) {
+        state.isDirty = false;
+        if (typeof document !== "undefined") {
+            const statusEl = document.getElementById("toolbarDocStatus");
+            if (statusEl) statusEl.textContent = "Saved just now";
+        }
         return;
     }
 
@@ -105,6 +116,12 @@ function commitHistorySnapshot(actionName = null) {
     state.historyIndex++;
     state.history = state.history.slice(0, state.historyIndex);
     state.history.push({ snapshot: rawSnapshot, name: defaultName });
+
+    state.isDirty = false;
+    if (typeof document !== "undefined") {
+        const statusEl = document.getElementById("toolbarDocStatus");
+        if (statusEl) statusEl.textContent = "Saved just now";
+    }
 
     saveRecentProjectMetadata();
 }
@@ -329,6 +346,10 @@ export function undo(onRestore) {
             state.groups = parsed.groups || [];
         }
         if (onRestore) onRestore();
+        if (typeof document !== "undefined") {
+            const statusEl = document.getElementById("toolbarDocStatus");
+            if (statusEl) statusEl.textContent = "Saved just now";
+        }
         return actionUndone;
     }
     return null;
@@ -352,6 +373,10 @@ export function redo(onRestore) {
             state.groups = parsed.groups || [];
         }
         if (onRestore) onRestore();
+        if (typeof document !== "undefined") {
+            const statusEl = document.getElementById("toolbarDocStatus");
+            if (statusEl) statusEl.textContent = "Saved just now";
+        }
         return actionRedone;
     }
     return null;

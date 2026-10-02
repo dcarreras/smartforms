@@ -475,7 +475,7 @@ async function createFieldAt(type, x, y, handlers, customWidth, customHeight, cu
             checked: radioDefaultChecked
         } : {}),
         ...(smartMeta?.autofill ? { autofill: smartMeta.autofill } : {}),
-        ...(type === "staticText" ? { defaultValue: smartMeta?.label || "", label: smartMeta?.label || "", fontFamily: "helvetica", color: "#0f172a" } : {}),
+        ...(type === "staticText" ? { defaultValue: smartMeta?.label || "", label: smartMeta?.label || "", fontFamily: "helvetica", color: "#1c1f26" } : {}),
         ...(type === "dateField" ? { dateFormat: "MM/DD/YYYY", defaultValue: "MM/DD/YYYY" } : {}),
         ...(type === "dropdown" ? { options: ["Select...", "Option 1", "Option 2", "Option 3"], defaultValue: "Select..." } : {})
     };

@@ -135,7 +135,7 @@ export function renderOverlays(handlers) {
                 const span = document.createElement("span");
                 const { fam, weight, style: fontStyle } = getFieldCssFont(f);
                 const fontSize = Number(f.fontSize) || 14;
-                span.style.cssText = `font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; font-size: ${fontSize}px; color: ${f.color || "#0f172a"}; width: 100%; text-align: ${f.textAlignment || 'left'}; line-height: 1.35; white-space: pre-wrap; word-break: break-word;`;
+                span.style.cssText = `font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; font-size: ${fontSize}px; color: ${f.color || "#1c1f26"}; width: 100%; text-align: ${f.textAlignment || 'left'}; line-height: 1.35; white-space: pre-wrap; word-break: break-word;`;
                 span.textContent = f.defaultValue || f.label || f.value || "Sample Text";
                 div.appendChild(span);
                 container.appendChild(div);
@@ -194,7 +194,7 @@ export function renderOverlays(handlers) {
                 sel.className = "fill-input-select";
                 const dropdownFontSize = getFillInputFontSize(f, Math.min(12, Math.max(8, f.height - 4)));
                 const { fam, weight, style: fontStyle } = getFieldCssFont(f);
-                sel.style.cssText = `width: 100%; height: 100%; border: none; background: transparent; font-size: ${dropdownFontSize}px; font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; padding: 0 4px; outline: none; cursor: pointer; color: #0f172a; appearance: none; -webkit-appearance: none; text-align: ${f.textAlignment || 'left'};`;
+                sel.style.cssText = `width: 100%; height: 100%; border: none; background: transparent; font-size: ${dropdownFontSize}px; font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; padding: 0 4px; outline: none; cursor: pointer; color: #1c1f26; appearance: none; -webkit-appearance: none; text-align: ${f.textAlignment || 'left'};`;
                 const opts = (f.options && f.options.length) ? f.options : ["Select..."];
                 opts.forEach(opt => {
                     const optEl = document.createElement("option");
@@ -245,7 +245,7 @@ export function renderOverlays(handlers) {
                 dateInput.value = f.value || f.defaultValue || "";
                 const dateFontSize = getFillInputFontSize(f, Math.min(12, Math.max(8, f.height - 4)));
                 const { fam, weight, style: fontStyle } = getFieldCssFont(f);
-                dateInput.style.cssText = `width: 100%; height: 100%; border: none; background: transparent; font-size: ${dateFontSize}px; font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; padding: 0 4px; outline: none; box-sizing: border-box; color: #0f172a; text-align: ${f.textAlignment || 'left'};`;
+                dateInput.style.cssText = `width: 100%; height: 100%; border: none; background: transparent; font-size: ${dateFontSize}px; font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; padding: 0 4px; outline: none; box-sizing: border-box; color: #1c1f26; text-align: ${f.textAlignment || 'left'};`;
                 dateInput.addEventListener("input", () => {
                     f.value = dateInput.value;
                     f.defaultValue = dateInput.value;
@@ -260,7 +260,7 @@ export function renderOverlays(handlers) {
                 ta.placeholder = f.placeholder || "";
                 const textareaFontSize = getFillInputFontSize(f, Math.min(12, Math.max(10, f.height / 3)));
                 const { fam, weight, style: fontStyle } = getFieldCssFont(f);
-                ta.style.cssText = `width: 100%; height: 100%; border: none; background: transparent; font-size: ${textareaFontSize}px; font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; padding: 4px; outline: none; resize: none; box-sizing: border-box; line-height: 1.3; color: #0f172a; text-align: ${f.textAlignment || 'left'};`;
+                ta.style.cssText = `width: 100%; height: 100%; border: none; background: transparent; font-size: ${textareaFontSize}px; font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; padding: 4px; outline: none; resize: none; box-sizing: border-box; line-height: 1.3; color: #1c1f26; text-align: ${f.textAlignment || 'left'};`;
                 ta.addEventListener("input", () => {
                     f.value = ta.value;
                     f.defaultValue = ta.value;
@@ -278,7 +278,7 @@ export function renderOverlays(handlers) {
                 const { fam, weight, style: fontStyle } = getFieldCssFont(f);
                 const defaultAlign = (f.dataFormat === "currency" || f.dataFormat === "number" || (f.calculationType && f.calculationType !== "none")) ? "right" : "left";
                 const resolvedAlign = f.textAlignment || defaultAlign;
-                inp.style.cssText = `width: 100%; height: 100%; border: none; background: transparent; font-size: ${inputFontSize}px; font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; padding: 0 5px; outline: none; box-sizing: border-box; text-align: ${resolvedAlign}; color: #0f172a; appearance: none; -webkit-appearance: none;`;
+                inp.style.cssText = `width: 100%; height: 100%; border: none; background: transparent; font-size: ${inputFontSize}px; font-family: ${fam}; font-weight: ${weight}; font-style: ${fontStyle}; padding: 0 5px; outline: none; box-sizing: border-box; text-align: ${resolvedAlign}; color: #1c1f26; appearance: none; -webkit-appearance: none;`;
 
                 const isReadOnly = !!f.readOnly || (f.calculationType && f.calculationType !== "none");
                 if (isReadOnly) {
@@ -468,7 +468,7 @@ export function renderOverlays(handlers) {
             if (f.type === "staticText") {
                 const textContent = f.defaultValue || f.label || f.value || "";
                 label.textContent = textContent || "Click to type...";
-                label.style.color = textContent ? (f.color || "#0f172a") : "#94a3b8";
+                label.style.color = textContent ? (f.color || "#1c1f26") : "#94a3b8";
                 label.style.fontStyle = textContent ? ((style === "italic") ? "italic" : "normal") : "italic";
                 label.style.fontWeight = weight || "600";
                 label.style.opacity = textContent ? "1.0" : "0.75";
@@ -498,10 +498,10 @@ export function renderOverlays(handlers) {
             } else if (f.type === "dropdown") {
                 const displayText = f.value || f.defaultValue || (f.options && f.options.length ? f.options[0] : "Select...");
                 label.textContent = displayText;
-                label.style.color = (f.value || f.defaultValue) ? "#0f172a" : "rgba(100, 116, 139, 0.7)";
+                label.style.color = (f.value || f.defaultValue) ? "#1c1f26" : "rgba(100, 116, 139, 0.7)";
                 
                 const arrow = document.createElement("span");
-                arrow.style.cssText = "font-size:8.5px; color:#64748b; margin-left:auto; padding-right:4px; flex-shrink:0; pointer-events:none; user-select:none;";
+                arrow.style.cssText = "font-size:8.5px; color:#5b6270; margin-left:auto; padding-right:4px; flex-shrink:0; pointer-events:none; user-select:none;";
                 arrow.textContent = "▼";
                 div.style.display = "flex";
                 div.style.alignItems = "center";
@@ -514,13 +514,13 @@ export function renderOverlays(handlers) {
                 
                 if (isRealVal) {
                     label.textContent = f.value;
-                    label.style.color = "#0f172a";
+                    label.style.color = "#1c1f26";
                     label.style.fontStyle = (style === "italic") ? "italic" : "normal";
                     label.style.fontWeight = weight || "500";
                     label.style.opacity = "1.0";
                 } else if (f.defaultValue && !isFormatPlaceholder) {
                     label.textContent = f.defaultValue;
-                    label.style.color = "#64748b";
+                    label.style.color = "#5b6270";
                     label.style.fontStyle = "italic";
                     label.style.fontWeight = "400";
                     label.style.opacity = "0.85";
@@ -1274,8 +1274,12 @@ function positionContextualQuickBar(bar, minX, maxX, minY, maxY) {
     const pageWidth = (state.pdfViewport && state.pdfViewport.width) ? state.pdfViewport.width : 595.28;
     const centerX = Math.round((minX + maxX) / 2);
     let topY = minY - 38;
-    if (topY < 6) {
+    const isBelow = topY < 6;
+    if (isBelow) {
         topY = maxY + 10;
+    }
+    if (bar.dataset) {
+        bar.dataset.placement = isBelow ? "below" : "above";
     }
 
     const barWidth = bar.offsetWidth || 0;
@@ -1618,7 +1622,7 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
         colorBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M6 16l6-12 6 12"/><path d="M8 12h8"/></svg>`;
         const colorInput = document.createElement("input");
         colorInput.type = "color";
-        colorInput.value = field.color || "#0f172a";
+        colorInput.value = field.color || "#1c1f26";
         colorInput.style.cssText = "position:absolute;opacity:0;width:0;height:0;pointer-events:none;";
         colorBtn.appendChild(colorInput);
         colorBtn.addEventListener("click", (e) => {
@@ -1646,7 +1650,7 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
         editable.style.fontStyle = fontStyle === "italic" ? "italic" : "normal";
         editable.style.fontSize = `${fontSize}px`;
         editable.style.textAlign = field.textAlignment || "left";
-        editable.style.color = field.color || "#0f172a";
+        editable.style.color = field.color || "#1c1f26";
         editable.style.lineHeight = "1.45";
         editable.spellcheck = true;
 
@@ -2009,7 +2013,7 @@ export function startInlineTextEdit(fieldId, handlers = {}) {
         input.style.fontSize = `${fontSize}px`;
         input.style.fontWeight = weight || "500";
         input.style.fontStyle = (fontStyle === "italic") ? "italic" : "normal";
-        input.style.color = "#0f172a";
+        input.style.color = "#1c1f26";
 
         let committed = false;
         const commitEdit = (shouldSave = true) => {

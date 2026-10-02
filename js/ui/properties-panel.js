@@ -1,4 +1,4 @@
-import { state, getSelectedField, setSelectedField, setSelectedFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, getRadioGroupName, getRadioGroupFields, selectRadioOption, setRadioGroupMode, toggleCheckboxField, getCheckboxGroupKey, getCheckboxGroupFields, generateFieldId, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
+import { state, getSelectedField, setSelectedField, setSelectedFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, getRadioGroupName, getRadioGroupFields, selectRadioOption, setRadioGroupMode, toggleCheckboxField, getCheckboxGroupKey, getCheckboxGroupFields, generateFieldId, getVerticallyAlignedColumnSiblings, fillFormulaDownColumn, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations, getSampleValueForField } from "../core/state.js";
 import { saveHistory } from "../core/storage-manager.js";
 import { openSignatureModal } from "./signature-pad.js";
 import { toggleListFormat, addRowToTable, removeRowFromTable, addColumnToTable, removeColumnFromTable, deleteTable } from "../engines/text-engine.js";
@@ -725,6 +725,7 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
 
     const fieldNameInput = document.getElementById("fieldName");
     const fieldDefaultVal = document.getElementById("fieldDefaultValue");
+    const fieldPlaceholderInput = document.getElementById("fieldPlaceholder");
     const fieldRequired = document.getElementById("fieldRequired");
     const fieldReadOnly = document.getElementById("fieldReadOnly");
     const fieldMultiline = document.getElementById("fieldMultiline");
@@ -909,6 +910,8 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
             f.label = e.target.value;
         }
     }, true, "Set Default Value"));
+    fieldPlaceholderInput?.addEventListener("input", e => syncChange(f => f.placeholder = e.target.value, false));
+    fieldPlaceholderInput?.addEventListener("change", e => syncChange(f => f.placeholder = e.target.value, true, "Set Placeholder"));
     fieldFontFamily?.addEventListener("change", async e => {
         const val = e.target.value;
         if (typeof window !== "undefined" && typeof val === "string" && val.startsWith("local:")) {
@@ -1867,15 +1870,24 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
     });
 
     // Initialize Collapsible Accordions in Properties Panel
-    safeQuerySelectorAll(".prop-accordion-header").forEach(header => {
+    safeQuerySelectorAll(".prop-accordion-header, .prop-section-heading").forEach(header => {
         header.addEventListener("click", () => {
-            const acc = header.closest(".prop-accordion");
-            if (acc) acc.classList.toggle("collapsed");
+            const acc = header.closest(".prop-accordion, .prop-group");
+            if (acc) {
+                acc.classList.toggle("collapsed");
+                const chevron = header.querySelector(".prop-chevron");
+                if (chevron) {
+                    chevron.style.transform = acc.classList.contains("collapsed") ? "rotate(-90deg)" : "rotate(0deg)";
+                }
+            }
         });
     });
 
     // Multi-select Batch Styling and Alignment Tools
     initMultiSelectTools(onFieldUpdated);
+
+    // Fill Mode Filling Tools in Properties
+    initFillToolsEvents(onFieldUpdated);
 }
 
 // Lightweight width/height-only sync, used during live drag/resize on the
@@ -1893,12 +1905,81 @@ export function syncDimensionInputsLive(field) {
     if (heightInput && document.activeElement !== heightInput) heightInput.value = field.height || "";
 }
 
+function getFieldTypeSubtitle(type) {
+    const map = {
+        textField: "Text field",
+        text: "Text field",
+        dateField: "Date picker",
+        date: "Date picker",
+        dropdown: "Dropdown select",
+        checkBox: "Checkbox",
+        checkbox: "Checkbox",
+        radio: "Radio button",
+        radioGroup: "Radio group",
+        signature: "Signature line",
+        numberField: "Number field",
+        number: "Number field",
+        staticText: "Static text",
+        label: "Static text"
+    };
+    return map[type] || (type ? type.charAt(0).toUpperCase() + type.slice(1) : "Field");
+}
+
+function getFieldTypeIconSvg(type) {
+    if (type === "checkBox" || type === "checkbox") {
+        return '<svg class="ico-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="m9 12 2 2 4-4"></path></svg>';
+    }
+    if (type === "radio" || type === "radioGroup") {
+        return '<svg class="ico-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3" fill="currentColor"></circle></svg>';
+    }
+    if (type === "dropdown") {
+        return '<svg class="ico-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="m8 10 4 4 4-4"></path></svg>';
+    }
+    if (type === "dateField" || type === "date") {
+        return '<svg class="ico-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>';
+    }
+    if (type === "signature") {
+        return '<svg class="ico-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m3 21 3.5-1 12-12-2.5-2.5-12 12L3 21z"></path><path d="m14 8 2.5 2.5"></path></svg>';
+    }
+    if (type === "numberField" || type === "number") {
+        return '<svg class="ico-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M8 9h8M8 15h8"></path></svg>';
+    }
+    if (type === "staticText" || type === "label") {
+        return '<svg class="ico-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7V4h16v3M9 20h6M12 4v16"></path></svg>';
+    }
+    return '<svg class="ico-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="18" height="10" rx="2"></rect><path d="M7 12h4"></path></svg>';
+}
+
 export function populateProperties(field) {
+    const fallbackField = field || (state.selectedFieldIds.size === 0 ? getSelectedField() : null);
+
+    if (state.editorMode === "fill") {
+        renderFillPanel();
+        if (!fallbackField && state.selectedFieldIds.size === 0) {
+            const inspectorSection = document.getElementById("inspectorPanelSection");
+            const fillSection = document.getElementById("fillPanelSection");
+            if (inspectorSection) inspectorSection.style.display = "none";
+            if (fillSection) fillSection.style.display = "flex";
+            return;
+        }
+        const inspectorSection = document.getElementById("inspectorPanelSection");
+        const fillSection = document.getElementById("fillPanelSection");
+        const tabInspector = document.getElementById("rightTabInspector");
+        const tabFill = document.getElementById("rightTabFill");
+        if (inspectorSection && fillSection) {
+            inspectorSection.style.display = "flex";
+            fillSection.style.display = "none";
+            tabInspector?.classList.add("active");
+            tabInspector?.setAttribute("aria-selected", "true");
+            tabFill?.classList.remove("active");
+            tabFill?.setAttribute("aria-selected", "false");
+        }
+    }
+
     const emptyPanel = document.getElementById("rightPanelEmpty");
     const singleProps = document.getElementById("fieldProps");
     const multiProps = document.getElementById("multiSelectProps");
     const countBadge = document.getElementById("multiSelectedCountBadge");
-    const fallbackField = field || (state.selectedFieldIds.size === 0 ? getSelectedField() : null);
 
     if (state.selectedFieldIds.size > 1) {
         if (emptyPanel) emptyPanel.style.display = "none";
@@ -2093,7 +2174,7 @@ export function populateProperties(field) {
         };
 
         [
-            "fieldType", "fieldName", "fieldDefaultValue", "fieldFontFamily", "fontSize",
+            "fieldType", "fieldName", "fieldDefaultValue", "fieldPlaceholder", "fieldFontFamily", "fontSize",
             "textAlignment", "fontStyleSelect", "multiFontStyleSelect", "fieldTooltip", "autofillType", "fieldAutofill",
             "fieldBorderStyle", "borderStyleSelect", "fieldFillStyle", "fillStyleSelect",
             "posX", "posY", "width", "height", "dropdownOptions",
@@ -2104,6 +2185,17 @@ export function populateProperties(field) {
         if (curGrp) curGrp.style.display = "none";
         const customCurRow = document.getElementById("customCurrencySymbolRow");
         if (customCurRow) customCurRow.style.display = "none";
+
+        const accTable = document.getElementById("accTableGrid");
+        if (accTable) accTable.style.display = "none";
+        const accRadio = document.getElementById("accRadioGroup");
+        if (accRadio) accRadio.style.display = "none";
+        const accDrop = document.getElementById("accDropdownChoices");
+        if (accDrop) accDrop.style.display = "none";
+        const accSig = document.getElementById("accSignature");
+        if (accSig) accSig.style.display = "none";
+        const richGrp = document.getElementById("richTextToolsGroup");
+        if (richGrp) richGrp.style.display = "none";
 
         [
             "fieldRequired", "fieldReadOnly", "fieldMultiline", "fieldDefaultChecked"
@@ -2122,12 +2214,28 @@ export function populateProperties(field) {
     if (singleProps) singleProps.style.display = "flex";
 
     const badge = document.getElementById("propFieldTypeBadge");
+    const fieldDisplayName = (fallbackField.name && fallbackField.name.trim())
+        ? fallbackField.name.trim()
+        : (fallbackField.autofill || fallbackField.id || "Field");
     if (badge) {
-        const fieldDisplayName = (fallbackField.name && fallbackField.name.trim())
-            ? fallbackField.name.trim()
-            : (fallbackField.autofill || fallbackField.id || "Field");
         badge.textContent = fieldDisplayName;
         badge.title = fallbackField.name || fieldDisplayName;
+    }
+
+    const headerTitle = document.getElementById("propFieldHeaderTitle");
+    if (headerTitle) {
+        headerTitle.textContent = fieldDisplayName;
+        headerTitle.title = fieldDisplayName;
+    }
+
+    const headerSubtitle = document.getElementById("propFieldHeaderSubtitle");
+    if (headerSubtitle) {
+        headerSubtitle.textContent = getFieldTypeSubtitle(fallbackField.type);
+    }
+
+    const headerIcon = document.getElementById("propFieldHeaderIcon");
+    if (headerIcon) {
+        headerIcon.innerHTML = getFieldTypeIconSvg(fallbackField.type);
     }
 
     const confEl = document.getElementById("propFieldConfidenceBadge");
@@ -2144,6 +2252,7 @@ export function populateProperties(field) {
     setVal("fieldType", fallbackField.type);
     setVal("fieldName", (fallbackField.type === "radioGroup" || fallbackField.type === "radio") ? getRadioGroupName(fallbackField) : (fallbackField.name || ""));
     setVal("fieldDefaultValue", fallbackField.defaultValue || (fallbackField.type === "staticText" || fallbackField.type === "label" ? fallbackField.label : "") || "");
+    setVal("fieldPlaceholder", fallbackField.placeholder || "");
     const targetFont = fallbackField.fontFamily || "helvetica";
     const fontSelectEl = document.getElementById("fieldFontFamily");
     if (fontSelectEl && fontSelectEl.options) {
@@ -2281,9 +2390,13 @@ export function populateProperties(field) {
     updateCalcActionsGroup(fallbackField);
 
     // Signature controls visibility
+    const accSignature = document.getElementById("accSignature");
     const sigGroup = document.getElementById("signatureActionsGroup");
     const propClearSig = document.getElementById("propClearSignatureBtn");
     const propOpenSigSpan = document.querySelector("#propOpenSignatureBtn span");
+    if (accSignature) {
+        accSignature.style.display = fallbackField.type === "signature" ? "block" : "none";
+    }
     if (sigGroup) {
         sigGroup.style.display = fallbackField.type === "signature" ? "block" : "none";
         if (fallbackField.type === "signature") {
@@ -2292,26 +2405,70 @@ export function populateProperties(field) {
         }
     }
 
-    // Typography accordion visibility
-    const accTypography = document.getElementById("accTypography");
-    if (accTypography) {
-        accTypography.style.display = (fallbackField.type === "textField" || fallbackField.type === "dropdown" || fallbackField.type === "dateField" || fallbackField.type === "staticText" || fallbackField.type === "label") ? "block" : "none";
+    // ── Field-Type Specific Visibility in General & Inspector ──
+    const isTextLike = (fallbackField.type === "textField" || fallbackField.type === "number" || fallbackField.type === "dateField");
+    const isStatic = (fallbackField.type === "staticText" || fallbackField.type === "label");
+    const isCheck = (fallbackField.type === "checkBox");
+    const isRadio = (fallbackField.type === "radioGroup" || fallbackField.type === "radio");
+    const isSig = (fallbackField.type === "signature");
+    const isDrop = (fallbackField.type === "dropdown");
+
+    // 1. Field Name Group (hidden for static text which is an un-named layout element)
+    const fieldNameGroup = document.getElementById("fieldNameGroup");
+    if (fieldNameGroup) {
+        fieldNameGroup.style.display = isStatic ? "none" : "block";
     }
 
+    // 2. Placeholder & Default Value in General
+    const defValGroup = document.getElementById("defaultValueGroup");
+    const placeholderContainer = document.getElementById("fieldPlaceholderContainer");
+    const defaultValueGrid = document.getElementById("defaultValueGrid");
     const defValLabel = document.querySelector('label[for="fieldDefaultValue"]');
-    if (defValLabel) {
-        defValLabel.textContent = (fallbackField.type === "staticText" || fallbackField.type === "label") ? "Text Content" : "Default Value";
+    const defValInput = document.getElementById("fieldDefaultValue");
+
+    if (defValGroup) {
+        if (isCheck || isRadio || isSig) {
+            // Checkboxes, radios, and signatures have no textual placeholder or default string
+            defValGroup.style.display = "none";
+        } else if (isStatic) {
+            // Static text: full-width text content editor, hide placeholder
+            defValGroup.style.display = "block";
+            if (placeholderContainer) placeholderContainer.style.display = "none";
+            if (defaultValueGrid) defaultValueGrid.style.gridTemplateColumns = "1fr";
+            if (defValLabel) defValLabel.textContent = "Text Content";
+            if (defValInput) defValInput.placeholder = "Enter heading or label text...";
+        } else if (isDrop) {
+            // Dropdown: show default selected choice, full width, hide placeholder
+            defValGroup.style.display = "block";
+            if (placeholderContainer) placeholderContainer.style.display = "none";
+            if (defaultValueGrid) defaultValueGrid.style.gridTemplateColumns = "1fr";
+            if (defValLabel) defValLabel.textContent = "Default Selected Choice";
+            if (defValInput) defValInput.placeholder = "Pre-selected choice";
+        } else {
+            // Text, Number, Date: show both Placeholder and Default value
+            defValGroup.style.display = "block";
+            if (placeholderContainer) placeholderContainer.style.display = "block";
+            if (defaultValueGrid) defaultValueGrid.style.gridTemplateColumns = "1fr 1fr";
+            if (defValLabel) defValLabel.textContent = "Default value";
+            if (defValInput) defValInput.placeholder = "Pre-filled";
+        }
     }
 
+    // 3. Rich Text & Table Controls
     const richTextGroup = document.getElementById("richTextToolsGroup");
     if (richTextGroup) {
-        richTextGroup.style.display = (fallbackField.type === "staticText" || fallbackField.type === "label") ? "block" : "none";
+        richTextGroup.style.display = isStatic ? "block" : "none";
     }
 
+    const accTableGrid = document.getElementById("accTableGrid");
     const tableGroup = document.getElementById("tableGridControlsGroup");
+    const isTable = Boolean(fallbackField.tableId);
+    if (accTableGrid) {
+        accTableGrid.style.display = isTable ? "block" : "none";
+    }
     if (tableGroup) {
-        tableGroup.style.display = fallbackField.tableId ? "block" : "none";
-        if (fallbackField.tableId) {
+        tableGroup.style.display = isTable ? "grid" : "none";
+        if (isTable) {
             const locBadge = document.getElementById("tableCellLocationBadge");
             if (locBadge) {
                 if (fallbackField.tableRole === "header") {
@@ -2321,6 +2478,71 @@ export function populateProperties(field) {
                 }
             }
         }
+    }
+
+    // 4. Radio & Dropdown
+    const accRadioGroup = document.getElementById("accRadioGroup");
+    const radioSettingsGroup = document.getElementById("radioGroupSettingsGroup");
+    if (accRadioGroup) {
+        accRadioGroup.style.display = isRadio ? "block" : "none";
+    }
+    if (radioSettingsGroup) {
+        radioSettingsGroup.style.display = isRadio ? "block" : "none";
+        if (isRadio) {
+            const grpName = getRadioGroupName(fallbackField);
+            setVal("fieldRadioGroup", grpName);
+            setVal("fieldRadioExportValue", fallbackField.exportValue || fallbackField.radioValue || fallbackField.value || "");
+            const choiceCount = document.getElementById("radioGroupChoiceCount");
+            const siblings = getRadioGroupFields(fallbackField, state.fields);
+            if (choiceCount) choiceCount.textContent = `${siblings.length} choice${siblings.length !== 1 ? "s" : ""}`;
+            const isMulti = siblings.some(s => s.radioGroupMulti === true);
+            setVal("radioGroupSelectMode", isMulti ? "multi" : "single");
+
+            // Populate interactive sibling choices list
+            const radioPillsList = document.getElementById("radioSiblingChoicesList");
+            if (radioPillsList) {
+                radioPillsList.innerHTML = siblings.map(s => {
+                    const isCurrent = s.id === fallbackField.id;
+                    const val = s.exportValue || s.radioValue || s.value || s.name || "Choice";
+                    return `<button type="button" class="radio-choice-pill ${isCurrent ? 'active' : ''}" data-field-id="${s.id}" title="${isCurrent ? 'Current selection' : 'Select ' + escapeHtml(val)}">
+                        <span style="width: 6px; height: 6px; border-radius: 50%; background: ${isCurrent ? '#2f5bea' : '#8a909c'};"></span>
+                        <span>${escapeHtml(val)}</span>
+                    </button>`;
+                }).join("");
+
+                radioPillsList.querySelectorAll(".radio-choice-pill").forEach(pill => {
+                    pill.addEventListener("click", () => {
+                        const fId = pill.dataset.fieldId;
+                        if (fId && fId !== fallbackField.id) {
+                            setSelectedField(fId);
+                            const target = state.fields.find(f => f.id === fId);
+                            if (target) {
+                                populateProperties(target);
+                                if (panelOnFieldUpdated) panelOnFieldUpdated(target);
+                            }
+                        }
+                    });
+                });
+            }
+        }
+    }
+
+    const accDropdownChoices = document.getElementById("accDropdownChoices");
+    const ddGroup = document.getElementById("dropdownOptionsGroup");
+    if (accDropdownChoices) {
+        accDropdownChoices.style.display = isDrop ? "block" : "none";
+    }
+    if (ddGroup) {
+        ddGroup.style.display = isDrop ? "block" : "none";
+        if (isDrop) {
+            renderDropdownChoiceList(fallbackField);
+        }
+    }
+
+    // 5. Behavior Section & Chips
+    const accBehavior = document.getElementById("accBehavior");
+    if (accBehavior) {
+        accBehavior.style.display = isStatic ? "none" : "block";
     }
 
     const multilineGroup = document.getElementById("multilineGroup");
@@ -2333,39 +2555,39 @@ export function populateProperties(field) {
         combGroup.style.display = (fallbackField.type === "textField" || fallbackField.type === "dateField" || fallbackField.type === "number") ? "flex" : "none";
     }
 
-    const ddGroup = document.getElementById("dropdownOptionsGroup");
-    if (ddGroup) {
-        ddGroup.style.display = fallbackField.type === "dropdown" ? "block" : "none";
-        if (fallbackField.type === "dropdown") {
-            renderDropdownChoiceList(fallbackField);
-        }
-    }
-
     const checkGroup = document.getElementById("defaultCheckedGroup");
     if (checkGroup) {
-        checkGroup.style.display = (fallbackField.type === "checkBox" || fallbackField.type === "radioGroup") ? "flex" : "none";
-    }
-    const checkboxMarkGroup = document.getElementById("checkboxMarkGroup");
-    if (checkboxMarkGroup) {
-        checkboxMarkGroup.style.display = fallbackField.type === "checkBox" ? "flex" : "none";
+        checkGroup.style.display = (isCheck || isRadio) ? "flex" : "none";
     }
 
-    // Radio group settings visibility and population
-    const radioSettingsGroup = document.getElementById("radioGroupSettingsGroup");
-    if (radioSettingsGroup) {
-        const isRadio = (fallbackField.type === "radioGroup" || fallbackField.type === "radio");
-        radioSettingsGroup.style.display = isRadio ? "block" : "none";
-        if (isRadio) {
-            const grpName = getRadioGroupName(fallbackField);
-            setVal("fieldRadioGroup", grpName);
-            setVal("fieldRadioExportValue", fallbackField.exportValue || fallbackField.radioValue || fallbackField.value || "");
-            const choiceCount = document.getElementById("radioGroupChoiceCount");
-            const siblings = getRadioGroupFields(fallbackField, state.fields);
-            if (choiceCount) choiceCount.textContent = `${siblings.length} choice${siblings.length !== 1 ? "s" : ""}`;
-            const isMulti = siblings.some(s => s.radioGroupMulti === true);
-            setVal("radioGroupSelectMode", isMulti ? "multi" : "single");
-        }
+    const checkboxMarkGroup = document.getElementById("checkboxMarkGroup");
+    if (checkboxMarkGroup) {
+        checkboxMarkGroup.style.display = isCheck ? "flex" : "none";
     }
+
+    // 6. Typography Accordion
+    const accTypography = document.getElementById("accTypography");
+    if (accTypography) {
+        accTypography.style.display = (fallbackField.type === "textField" || fallbackField.type === "dropdown" || fallbackField.type === "dateField" || fallbackField.type === "staticText" || fallbackField.type === "label") ? "block" : "none";
+    }
+
+    // 7. Advanced Options (Autofill, Tooltip, Max Length)
+    const autofillRoleGroup = document.getElementById("autofillRoleGroup");
+    if (autofillRoleGroup) {
+        autofillRoleGroup.style.display = isTextLike ? "block" : "none";
+    }
+
+    const maxLengthGroup = document.getElementById("maxLengthGroup");
+    if (maxLengthGroup) {
+        maxLengthGroup.style.display = isTextLike ? "block" : "none";
+    }
+
+    const accValidation = document.getElementById("accValidation");
+    if (accValidation) {
+        accValidation.style.display = isStatic ? "none" : "block";
+    }
+
+    populateFillTools(fallbackField);
 
     if (typeof lucide !== "undefined") lucide.createIcons();
 }
@@ -2825,3 +3047,546 @@ export function distributeSelectedFields(axis, onUpdated) {
     saveHistory();
     if (onUpdated) onUpdated();
 }
+
+// ── Fill Mode Filling Tools in Properties Panel ────────────────────
+export function populateFillTools(field) {
+    if (!field || typeof document === "undefined") return;
+    const accFill = document.getElementById("accFillTools");
+    if (!accFill) return;
+
+    const isFillMode = (state.editorMode === "fill") || (typeof document !== "undefined" && document.body?.classList.contains("mode-fill"));
+    if (!isFillMode || field.type === "staticText" || field.type === "label") {
+        accFill.style.display = "none";
+        return;
+    }
+    accFill.style.display = "block";
+
+    // In fill mode, ensure accFillTools is expanded
+    accFill.classList.remove("collapsed");
+    const chevron = accFill.querySelector(".prop-chevron");
+    if (chevron) chevron.style.transform = "rotate(0deg)";
+
+    const textRow = document.getElementById("propFillTextInputRow");
+    const textareaRow = document.getElementById("propFillTextareaRow");
+    const dateRow = document.getElementById("propFillDateRow");
+    const checkboxRow = document.getElementById("propFillCheckboxRow");
+    const radioRow = document.getElementById("propFillRadioRow");
+    const dropdownRow = document.getElementById("propFillDropdownRow");
+    const sigRow = document.getElementById("propFillSignatureRow");
+
+    const textInput = document.getElementById("propFillValueInput");
+    const textareaInput = document.getElementById("propFillValueTextarea");
+    const dateInput = document.getElementById("propFillValueDate");
+    const checkboxToggle = document.getElementById("propFillCheckboxToggle");
+    const checkboxStatus = document.getElementById("propFillCheckboxStatus");
+    const radioOptionsList = document.getElementById("propFillRadioOptionsList");
+    const dropdownSelect = document.getElementById("propFillDropdownSelect");
+
+    if (textRow) textRow.style.display = "none";
+    if (textareaRow) textareaRow.style.display = "none";
+    if (dateRow) dateRow.style.display = "none";
+    if (checkboxRow) checkboxRow.style.display = "none";
+    if (radioRow) radioRow.style.display = "none";
+    if (dropdownRow) dropdownRow.style.display = "none";
+    if (sigRow) sigRow.style.display = "none";
+
+    const currentVal = field.value !== undefined && field.value !== null ? field.value : (field.defaultValue || "");
+
+    if (field.type === "checkBox") {
+        if (checkboxRow) checkboxRow.style.display = "flex";
+        const isChecked = !!field.value || !!field.defaultChecked;
+        if (checkboxToggle) checkboxToggle.checked = isChecked;
+        if (checkboxStatus) {
+            checkboxStatus.textContent = isChecked ? "Checked (✓)" : "Unchecked";
+            checkboxStatus.style.color = isChecked ? "#16a34a" : "#5b6270";
+        }
+    } else if (field.type === "radioGroup" || field.type === "radio") {
+        if (radioRow) radioRow.style.display = "flex";
+        if (radioOptionsList) {
+            radioOptionsList.innerHTML = "";
+            const options = Array.isArray(field.options) && field.options.length > 0 
+                ? field.options 
+                : [{ label: "Choice 1", value: "choice_1" }, { label: "Choice 2", value: "choice_2" }];
+            options.forEach(opt => {
+                const optVal = typeof opt === "object" ? (opt.value || opt.label) : opt;
+                const optLabel = typeof opt === "object" ? (opt.label || opt.value) : opt;
+                const isSelected = String(currentVal) === String(optVal);
+
+                const pill = document.createElement("div");
+                pill.className = "prop-fill-radio-pill" + (isSelected ? " selected" : "");
+                pill.innerHTML = `
+                    <input type="radio" name="prop_fill_radio_group" value="${escapeHtml(optVal)}" ${isSelected ? 'checked' : ''} style="margin: 0; accent-color: #2f5bea; pointer-events: none;">
+                    <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(optLabel)}</span>
+                `;
+                pill.addEventListener("click", () => {
+                    field.value = optVal;
+                    if (typeof selectRadioOption === "function") {
+                        try { selectRadioOption(field, optVal); } catch(e) {}
+                    }
+                    saveHistory(true);
+                    if (panelOnFieldUpdated) panelOnFieldUpdated(field);
+                    populateFillTools(field);
+                    renderFillPanel();
+                });
+                radioOptionsList.appendChild(pill);
+            });
+        }
+    } else if (field.type === "dropdown") {
+        if (dropdownRow) dropdownRow.style.display = "block";
+        if (dropdownSelect) {
+            dropdownSelect.innerHTML = "";
+            const opts = Array.isArray(field.options) && field.options.length > 0 ? field.options : ["Option 1", "Option 2"];
+            const placeholderOpt = document.createElement("option");
+            placeholderOpt.value = "";
+            placeholderOpt.textContent = "— Select an option —";
+            dropdownSelect.appendChild(placeholderOpt);
+
+            opts.forEach(opt => {
+                const optEl = document.createElement("option");
+                optEl.value = opt;
+                optEl.textContent = opt;
+                if (String(opt) === String(currentVal)) {
+                    optEl.selected = true;
+                }
+                dropdownSelect.appendChild(optEl);
+            });
+        }
+    } else if (field.type === "signature") {
+        if (sigRow) sigRow.style.display = "flex";
+        const sigImg = document.getElementById("propFillSigImg");
+        const emptyPrompt = document.getElementById("propFillSigEmptyPrompt");
+        if (field.signatureImage) {
+            if (sigImg) {
+                sigImg.src = field.signatureImage;
+                sigImg.style.display = "block";
+            }
+            if (emptyPrompt) emptyPrompt.style.display = "none";
+        } else {
+            if (sigImg) {
+                sigImg.src = "";
+                sigImg.style.display = "none";
+            }
+            if (emptyPrompt) emptyPrompt.style.display = "block";
+        }
+    } else if (field.type === "dateField" || field.dataFormat === "date") {
+        if (dateRow) dateRow.style.display = "flex";
+        if (dateInput && document.activeElement !== dateInput) {
+            dateInput.value = currentVal;
+        }
+    } else if (field.multiline) {
+        if (textareaRow) textareaRow.style.display = "block";
+        if (textareaInput && document.activeElement !== textareaInput) {
+            textareaInput.value = currentVal;
+        }
+    } else {
+        if (textRow) textRow.style.display = "flex";
+        if (textInput && document.activeElement !== textInput) {
+            textInput.value = currentVal;
+        }
+    }
+
+    // Calculation Result Card
+    const calcCard = document.getElementById("propFillCalcCard");
+    const calcFormulaText = document.getElementById("propFillCalcFormulaText");
+    const calcResultVal = document.getElementById("propFillCalcResultVal");
+    if (calcCard) {
+        if (field.calcRecipe && field.calcRecipe.type && field.calcRecipe.type !== "none") {
+            calcCard.style.display = "block";
+            if (calcFormulaText) {
+                calcFormulaText.textContent = `fx ${field.calcRecipe.type}: [${(field.calcRecipe.fields || []).join(", ")}]`;
+            }
+            if (calcResultVal) {
+                calcResultVal.textContent = String(field.value || field.defaultValue || "$0.00");
+            }
+        } else {
+            calcCard.style.display = "none";
+        }
+    }
+
+    // Validation & Requirement Status
+    let isFilled = false;
+    if (field.type === "checkBox") {
+        isFilled = !!field.value || !!field.defaultChecked;
+    } else if (field.type === "signature") {
+        isFilled = !!field.signatureImage || !!field.value;
+    } else {
+        isFilled = String(currentVal).trim().length > 0;
+    }
+
+    const isReq = !!field.required;
+    const badge = document.getElementById("propFillStatusBadge");
+    const valDot = document.getElementById("propFillValidationDot");
+    const valText = document.getElementById("propFillValidationText");
+    const reqBadge = document.getElementById("propFillReqBadge");
+
+    if (badge) {
+        badge.className = "prop-meta-badge " + (isFilled ? "fill-status-filled" : (isReq ? "fill-status-required-missing" : "fill-status-empty"));
+        badge.textContent = isFilled ? "Filled ✓" : (isReq ? "Required ⚠️" : "Empty");
+    }
+
+    if (valDot) {
+        valDot.style.background = isFilled ? "#16a34a" : (isReq ? "#dc2626" : "#94a3b8");
+    }
+
+    if (valText) {
+        if (isFilled) {
+            valText.textContent = isReq ? "Required — validly filled ✓" : "Filled with value ✓";
+            valText.style.color = "#15803d";
+        } else if (isReq) {
+            valText.textContent = "Required field — not yet filled";
+            valText.style.color = "#dc2626";
+        } else {
+            valText.textContent = "Optional field (empty)";
+            valText.style.color = "#5b6270";
+        }
+    }
+
+    if (reqBadge) {
+        reqBadge.style.display = isReq ? "inline-block" : "none";
+        reqBadge.style.background = isFilled ? "#dcfce7" : "#fee2e2";
+        reqBadge.style.color = isFilled ? "#15803d" : "#dc2626";
+    }
+
+    // Step Navigation (Prev / Next Field Counter)
+    const interactiveFields = (state.fields || []).filter(f => f.type !== "staticText" && f.type !== "label" && !f.hidden);
+    const currentIndex = interactiveFields.findIndex(f => f.id === field.id);
+    const counterEl = document.getElementById("propFillNavCounter");
+    const prevBtn = document.getElementById("propFillPrevBtn");
+    const nextBtn = document.getElementById("propFillNextBtn");
+
+    if (counterEl) {
+        counterEl.textContent = currentIndex >= 0 ? `Field ${currentIndex + 1} of ${interactiveFields.length}` : `${interactiveFields.length} Fields`;
+    }
+    if (prevBtn) {
+        prevBtn.disabled = currentIndex <= 0;
+        prevBtn.style.opacity = currentIndex <= 0 ? "0.4" : "1";
+    }
+    if (nextBtn) {
+        nextBtn.disabled = currentIndex < 0 || currentIndex >= interactiveFields.length - 1;
+        nextBtn.style.opacity = (currentIndex < 0 || currentIndex >= interactiveFields.length - 1) ? "0.4" : "1";
+    }
+}
+
+export function initFillToolsEvents(onFieldUpdated) {
+    if (typeof document === "undefined") return;
+
+    const commitVal = (val) => {
+        const field = getSelectedField();
+        if (!field) return;
+        field.value = val;
+        try { evaluateCalculations(); } catch(e) {}
+        saveHistory(true);
+        if (onFieldUpdated) onFieldUpdated(field);
+        populateFillTools(field);
+        renderFillPanel();
+    };
+
+    const textInput = document.getElementById("propFillValueInput");
+    textInput?.addEventListener("input", (e) => commitVal(e.target.value));
+
+    const textareaInput = document.getElementById("propFillValueTextarea");
+    textareaInput?.addEventListener("input", (e) => commitVal(e.target.value));
+
+    const dateInput = document.getElementById("propFillValueDate");
+    dateInput?.addEventListener("input", (e) => commitVal(e.target.value));
+
+    document.getElementById("propFillTodayBtn")?.addEventListener("click", () => {
+        const todayStr = new Date().toISOString().split("T")[0];
+        if (dateInput) dateInput.value = todayStr;
+        commitVal(todayStr);
+    });
+
+    const checkboxToggle = document.getElementById("propFillCheckboxToggle");
+    checkboxToggle?.addEventListener("change", (e) => {
+        const field = getSelectedField();
+        if (!field) return;
+        field.value = e.target.checked;
+        field.defaultChecked = e.target.checked;
+        try { evaluateCalculations(); } catch(e) {}
+        saveHistory(true);
+        if (onFieldUpdated) onFieldUpdated(field);
+        populateFillTools(field);
+        renderFillPanel();
+    });
+
+    const dropdownSelect = document.getElementById("propFillDropdownSelect");
+    dropdownSelect?.addEventListener("change", (e) => commitVal(e.target.value));
+
+    document.getElementById("propFillSignBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (!field) return;
+        openSignatureModal(field, () => {
+            field.value = "Signed";
+            saveHistory(true);
+            if (onFieldUpdated) onFieldUpdated(field);
+            populateFillTools(field);
+            renderFillPanel();
+        });
+    });
+
+    document.getElementById("propFillClearSigBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (!field) return;
+        field.signatureImage = null;
+        field.value = "";
+        saveHistory(true);
+        if (onFieldUpdated) onFieldUpdated(field);
+        populateFillTools(field);
+        renderFillPanel();
+    });
+
+    document.getElementById("propFillSampleBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (!field) return;
+        const sampleVal = getSampleValueForField(field);
+        if (field.type === "checkBox") {
+            field.value = true;
+            field.defaultChecked = true;
+        } else if (field.type === "signature") {
+            field.value = "Signed";
+        } else {
+            field.value = sampleVal;
+        }
+        try { evaluateCalculations(); } catch(e) {}
+        saveHistory(true);
+        if (onFieldUpdated) onFieldUpdated(field);
+        populateFillTools(field);
+        renderFillPanel();
+    });
+
+    document.getElementById("propFillClearBtn")?.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (!field) return;
+        field.value = "";
+        if (field.type === "checkBox") field.defaultChecked = false;
+        if (field.type === "signature") field.signatureImage = null;
+        try { evaluateCalculations(); } catch(e) {}
+        saveHistory(true);
+        if (onFieldUpdated) onFieldUpdated(field);
+        populateFillTools(field);
+        renderFillPanel();
+    });
+
+    const navigateField = async (direction) => {
+        const field = getSelectedField();
+        const interactiveFields = (state.fields || []).filter(f => f.type !== "staticText" && f.type !== "label" && !f.hidden);
+        if (interactiveFields.length === 0) return;
+        const curIdx = interactiveFields.findIndex(f => f.id === field?.id);
+        const nextIdx = direction === "next" 
+            ? Math.min(interactiveFields.length - 1, (curIdx >= 0 ? curIdx + 1 : 0))
+            : Math.max(0, (curIdx >= 0 ? curIdx - 1 : 0));
+        
+        const targetField = interactiveFields[nextIdx];
+        if (!targetField) return;
+
+        state.selectedFieldIds = new Set([targetField.id]);
+        if (targetField.page && targetField.page !== state.currentPageNum) {
+            const { goToPage } = await import("../engines/pdf-engine.js");
+            await goToPage(targetField.page, () => {
+                focusFieldOnCanvas(targetField.id);
+            });
+        } else {
+            focusFieldOnCanvas(targetField.id);
+        }
+    };
+
+    document.getElementById("propFillPrevBtn")?.addEventListener("click", () => navigateField("prev"));
+    document.getElementById("propFillNextBtn")?.addEventListener("click", () => navigateField("next"));
+}
+
+// ── Right Inspector Segmented Tabs & Fill Panel Management ────────
+export function initRightPanelTabs(onModeChange, onRerender) {
+    if (typeof document === "undefined") return;
+    const tabInspector = document.getElementById("rightTabInspector");
+    const tabFill = document.getElementById("rightTabFill");
+    const inspectorSection = document.getElementById("inspectorPanelSection");
+    const fillSection = document.getElementById("fillPanelSection");
+
+    const switchTab = (tab) => {
+        if (tab === "fill") {
+            tabFill?.classList.add("active");
+            tabFill?.setAttribute("aria-selected", "true");
+            tabInspector?.classList.remove("active");
+            tabInspector?.setAttribute("aria-selected", "false");
+            if (inspectorSection) inspectorSection.style.display = "none";
+            if (fillSection) fillSection.style.display = "flex";
+            if (onModeChange) onModeChange("fill");
+            renderFillPanel();
+        } else {
+            tabInspector?.classList.add("active");
+            tabInspector?.setAttribute("aria-selected", "true");
+            tabFill?.classList.remove("active");
+            tabFill?.setAttribute("aria-selected", "false");
+            if (inspectorSection) inspectorSection.style.display = "flex";
+            if (fillSection) fillSection.style.display = "none";
+            if (onModeChange) onModeChange("design");
+            populateProperties(getSelectedField());
+        }
+        if (onRerender) onRerender();
+    };
+
+    tabInspector?.addEventListener("click", () => switchTab("inspector"));
+    tabFill?.addEventListener("click", () => switchTab("fill"));
+}
+
+export function renderFillPanel() {
+    if (typeof document === "undefined") return;
+    const fillSection = document.getElementById("fillPanelSection");
+    if (!fillSection) return;
+
+    const fields = state.fields || [];
+    const interactiveFields = fields.filter(f => f.type !== "staticText" && f.type !== "label");
+    const totalCount = interactiveFields.length;
+
+    let filledCount = 0;
+    let requiredCount = 0;
+    let requiredFilledCount = 0;
+
+    interactiveFields.forEach(f => {
+        const isRequired = !!f.required;
+        if (isRequired) requiredCount++;
+
+        let isFilled = false;
+        if (f.type === "checkBox") {
+            isFilled = !!f.defaultChecked || !!f.value;
+        } else if (f.type === "signature") {
+            isFilled = !!f.signatureImage || !!f.value;
+        } else {
+            const val = f.value !== undefined && f.value !== null ? String(f.value).trim() : (f.defaultValue !== undefined && f.defaultValue !== null ? String(f.defaultValue).trim() : "");
+            isFilled = val.length > 0;
+        }
+
+        if (isFilled) {
+            filledCount++;
+            if (isRequired) requiredFilledCount++;
+        }
+    });
+
+    const percent = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
+    const reqRemaining = requiredCount - requiredFilledCount;
+
+    const percentEl = document.getElementById("fillProgressPercent");
+    const barEl = document.getElementById("fillProgressBar");
+    const countEl = document.getElementById("fillFieldsCountText");
+    const reqEl = document.getElementById("fillRequiredStatusText");
+    const reqBadge = document.getElementById("fillRequirementsBadge");
+
+    if (percentEl) percentEl.textContent = `${percent}%`;
+    if (barEl) {
+        barEl.style.width = `${percent}%`;
+        barEl.style.background = reqRemaining === 0 && totalCount > 0 ? "#16a34a" : "#2563eb";
+    }
+    if (countEl) countEl.textContent = `${filledCount} of ${totalCount} fields filled`;
+    if (reqEl) {
+        if (requiredCount === 0) {
+            reqEl.textContent = "No required fields";
+            reqEl.style.color = "#5b6270";
+        } else if (reqRemaining === 0) {
+            reqEl.textContent = "All required fields filled ✓";
+            reqEl.style.color = "#16a34a";
+        } else {
+            reqEl.textContent = `${reqRemaining} required field${reqRemaining === 1 ? '' : 's'} remaining`;
+            reqEl.style.color = "#dc2626";
+        }
+    }
+    if (reqBadge) reqBadge.textContent = `${totalCount} Fields`;
+
+    // Render Field Checklist
+    const listEl = document.getElementById("fillRequirementsList");
+    if (!listEl) return;
+    listEl.innerHTML = "";
+
+    if (totalCount === 0) {
+        listEl.innerHTML = '<p class="empty-msg" style="padding: 12px; color: #94a3b8; font-size: 12px; text-align: center;">No interactive fields added to this document yet.</p>';
+        return;
+    }
+
+    interactiveFields.forEach((f, idx) => {
+        let isFilled = false;
+        let displayVal = "";
+        if (f.type === "checkBox") {
+            isFilled = !!f.defaultChecked || !!f.value;
+            displayVal = isFilled ? "Checked (✓)" : "Unchecked";
+        } else if (f.type === "signature") {
+            isFilled = !!f.signatureImage || !!f.value;
+            displayVal = isFilled ? "Signed" : "Unsigned";
+        } else {
+            const val = f.value !== undefined && f.value !== null ? String(f.value).trim() : (f.defaultValue !== undefined && f.defaultValue !== null ? String(f.defaultValue).trim() : "");
+            isFilled = val.length > 0;
+            displayVal = isFilled ? val : "Empty";
+        }
+
+        const isReq = !!f.required;
+        const item = document.createElement("div");
+        item.className = "fill-req-item" + (isFilled ? " filled" : "") + (isReq && !isFilled ? " missing-required" : "");
+
+        const statusIcon = isFilled 
+            ? '<i data-lucide="check-circle-2" style="width: 14px; height: 14px; color: #16a34a; flex-shrink: 0;"></i>'
+            : (isReq 
+                ? '<i data-lucide="alert-circle" style="width: 14px; height: 14px; color: #dc2626; flex-shrink: 0;"></i>'
+                : '<i data-lucide="circle" style="width: 14px; height: 14px; color: #94a3b8; flex-shrink: 0;"></i>');
+
+        const reqBadgeHtml = isReq ? '<span style="font-size: 9.5px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 0 4px; border-radius: 4px; font-weight: 700; flex-shrink: 0;">REQ</span>' : '';
+
+        item.innerHTML = `
+            ${statusIcon}
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="font-weight: 600; color: #1c1f26; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(f.name || `Field ${idx + 1}`)}</span>
+                    ${reqBadgeHtml}
+                </div>
+                <span style="font-size: 10.5px; color: ${isFilled ? '#4a505c' : '#94a3b8'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(displayVal)}</span>
+            </div>
+            <span style="font-size: 10px; color: #5b6270; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; flex-shrink: 0;">P${f.page || 1}</span>
+        `;
+
+        item.addEventListener("click", async () => {
+            if (f.page && f.page !== state.currentPageNum) {
+                const { goToPage } = await import("../engines/pdf-engine.js");
+                await goToPage(f.page, () => {
+                    focusFieldOnCanvas(f.id);
+                });
+            } else {
+                focusFieldOnCanvas(f.id);
+            }
+        });
+
+        listEl.appendChild(item);
+    });
+
+    if (typeof lucide !== "undefined") {
+        lucide.createIcons();
+    }
+}
+
+function focusFieldOnCanvas(fieldId) {
+    if (typeof document === "undefined") return;
+    const f = (state.fields || []).find(item => item.id === fieldId);
+    if (f) {
+        state.selectedFieldIds = new Set([fieldId]);
+    }
+    const overlay = document.querySelector(`.field-overlay[data-field-id="${fieldId}"]`);
+    if (overlay) {
+        overlay.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+        const input = overlay.querySelector("input, textarea, select");
+        if (input) {
+            input.focus();
+        }
+    }
+    if (f) {
+        populateProperties(f);
+        const inspectorSection = document.getElementById("inspectorPanelSection");
+        const fillSection = document.getElementById("fillPanelSection");
+        const tabInspector = document.getElementById("rightTabInspector");
+        const tabFill = document.getElementById("rightTabFill");
+        if (inspectorSection && fillSection) {
+            inspectorSection.style.display = "flex";
+            fillSection.style.display = "none";
+            tabInspector?.classList.add("active");
+            tabInspector?.setAttribute("aria-selected", "true");
+            tabFill?.classList.remove("active");
+            tabFill?.setAttribute("aria-selected", "false");
+        }
+    }
+}
+

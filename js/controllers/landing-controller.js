@@ -504,7 +504,7 @@ function renderExampleReviewsSection() {
                     <div class="review-card example-review-card">
                         <div class="review-card-header">
                             <div class="review-stars">${stars}</div>
-                            <span class="review-badge" style="background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;">Example</span>
+                            <span class="review-badge" style="background:#f1f5f9; color:#5b6270; border:1px solid #e2e8f0;">Example</span>
                         </div>
                         <p class="review-text">"${escapeHtml(r.message)}"</p>
                         <div class="review-footer">

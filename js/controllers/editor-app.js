@@ -1,9 +1,9 @@
 // ── Formblatt Editor Subsystems & Controller (js/controllers/editor-app.js) ─
-import { state, getSelectedField, setSelectedField, setSelectedFields, getFieldsForCurrentPage, copySelectedFields, pasteClipboardFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, setEditorMode, clearAllTestValues, toggleGuides, setGuidesEnabled, sortFieldsByReadingOrder, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
+import { state, getSelectedField, setSelectedField, setSelectedFields, getFieldsForCurrentPage, copySelectedFields, pasteClipboardFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, setEditorMode, clearAllTestValues, fillSampleTestValues, toggleGuides, setGuidesEnabled, sortFieldsByReadingOrder, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
 import { renderPage, goToPage, setTransformScale, fitToWidth, fitToPage, updateTopBarDocInfo, loadPdfLibraries } from "../engines/pdf-engine.js";
 import { buildPdf, downloadAcroForm } from "../engines/acroform-builder.js";
-import { renderLayers, updateLayerSelectionDOM } from "../ui/layers-panel.js";
-import { initPropertiesPanel, populateProperties, syncDimensionInputsLive, alignSelectedFields, distributeSelectedFields } from "../ui/properties-panel.js";
+import { renderLayers, updateLayerSelectionDOM, renderPagesList, initLeftPanelTabs } from "../ui/layers-panel.js";
+import { initPropertiesPanel, populateProperties, syncDimensionInputsLive, alignSelectedFields, distributeSelectedFields, initRightPanelTabs, renderFillPanel } from "../ui/properties-panel.js";
 import { renderOverlays, updateOverlayPositionsDirectly } from "../ui/overlay-manager.js";
 import { initCanvasController, handleFieldMouseDown, handleResizeStart, showVernierHud } from "../ui/canvas-controller.js";
 import { loadTemplate } from "./landing-controller.js";
@@ -53,6 +53,7 @@ export function refreshUI() {
         },
         () => refreshUI()
     );
+    renderPagesList(p => goToPage(p, refreshUI));
     populateProperties(getSelectedField());
     updateToolIndicator();
     updateModeIndicator();
@@ -212,15 +213,44 @@ export function switchEditorMode(mode = "design") {
 
     const modeDesignBtn = document.getElementById("modeDesignBtn");
     const modeFillBtn = document.getElementById("modeFillBtn");
-    const fillModeBanner = document.getElementById("fillModeBanner");
 
     if (modeDesignBtn) modeDesignBtn.classList.toggle("active", !isFill);
     if (modeFillBtn) {
         modeFillBtn.classList.toggle("active", isFill);
         modeFillBtn.classList.toggle("mode-fill-active", isFill);
     }
+
+    // Synchronize Right Panel Segmented Tabs (Inspector / Fill)
+    const rightTabInspector = document.getElementById("rightTabInspector");
+    const rightTabFill = document.getElementById("rightTabFill");
+    const inspectorSection = document.getElementById("inspectorPanelSection");
+    const fillSection = document.getElementById("fillPanelSection");
+
+    if (rightTabInspector && rightTabFill) {
+        rightTabInspector.classList.toggle("active", !isFill);
+        rightTabInspector.setAttribute("aria-selected", !isFill ? "true" : "false");
+        rightTabFill.classList.toggle("active", isFill);
+        rightTabFill.setAttribute("aria-selected", isFill ? "true" : "false");
+    }
+
+    if (inspectorSection) inspectorSection.style.display = isFill ? "none" : "flex";
+    if (fillSection) fillSection.style.display = isFill ? "flex" : "none";
+
+    // When entering Fill mode, ensure the right panel is expanded so requirements are visible
+    if (isFill) {
+        const rightPanel = document.getElementById("rightPanel");
+        if (rightPanel?.classList.contains("collapsed")) {
+            rightPanel.classList.remove("collapsed");
+        }
+        renderFillPanel();
+    } else {
+        populateProperties(getSelectedField());
+    }
+
+    // Suppress floating hover banner
+    const fillModeBanner = document.getElementById("fillModeBanner");
     if (fillModeBanner) {
-        fillModeBanner.style.display = isFill ? "flex" : "none";
+        fillModeBanner.style.display = "none";
     }
 
     updateModeIndicator();
@@ -562,6 +592,10 @@ export function initEditorSubsystems() {
             reader.readAsText(file);
         }
         e.target.value = "";
+    });
+
+    document.getElementById("menuFillFormBtn")?.addEventListener("click", () => {
+        switchEditorMode("fill");
     });
 
     document.getElementById("menuExportPdfBtn")?.addEventListener("click", () => {
@@ -1145,6 +1179,43 @@ export function initEditorSubsystems() {
 
     docTitleInlineInput?.addEventListener("blur", commitInlineRename);
 
+    // ── Top Bar Document Title Inline Rename Controller ─────────────
+    const toolbarDocTitle = document.getElementById("toolbarDocTitle");
+    const toolbarDocTitleInput = document.getElementById("toolbarDocTitleInput");
+
+    function commitToolbarTitleRename() {
+        if (!toolbarDocTitleInput || !toolbarDocTitle) return;
+        let val = toolbarDocTitleInput.value.replace(/[/\\?%*:|"<>]/g, "-").trim();
+        if (!val) val = "Untitled form";
+        const fileName = val.endsWith(".pdf") ? val : `${val}.pdf`;
+        state.fileName = fileName;
+        toolbarDocTitleInput.style.display = "none";
+        toolbarDocTitle.style.display = "block";
+        updateTopBarDocInfo("Saved just now");
+        saveHistory(true, "Rename Document");
+    }
+
+    toolbarDocTitle?.addEventListener("click", () => {
+        if (!toolbarDocTitleInput) return;
+        const current = (state.fileName || "Untitled form").replace(/\.pdf$/i, "");
+        toolbarDocTitleInput.value = current;
+        toolbarDocTitle.style.display = "none";
+        toolbarDocTitleInput.style.display = "inline-block";
+        toolbarDocTitleInput.focus();
+        toolbarDocTitleInput.select();
+    });
+
+    toolbarDocTitleInput?.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+            commitToolbarTitleRename();
+        } else if (e.key === "Escape") {
+            toolbarDocTitleInput.style.display = "none";
+            toolbarDocTitle.style.display = "block";
+        }
+    });
+
+    toolbarDocTitleInput?.addEventListener("blur", commitToolbarTitleRename);
+
     // ── Mode Switcher & Fill & Test Mode Actions ────────────────────
     document.getElementById("modeDesignBtn")?.addEventListener("click", () => {
         triggerHaptic();
@@ -1159,7 +1230,15 @@ export function initEditorSubsystems() {
         if (confirm("Reset and clear all entered test data?")) {
             clearAllTestValues();
             refreshUI();
+            renderFillPanel();
+            showToast("Test data cleared", "info");
         }
+    });
+    document.getElementById("fillSampleDataBtn")?.addEventListener("click", () => {
+        fillSampleTestValues();
+        refreshUI();
+        renderFillPanel();
+        showToast("Sample data applied to form fields", "success");
     });
     document.getElementById("fillExportPdfBtn")?.addEventListener("click", async () => {
         await downloadAcroForm();
@@ -1226,6 +1305,25 @@ export function initEditorSubsystems() {
             }
         } else {
             showToast("Please select one or more fields to create a group.", "warning");
+        }
+    });
+
+    // ── Left Sidebar Segmented Tabs (Pages / Fields & Layers) ───────
+    initLeftPanelTabs(p => goToPage(p, refreshUI), () => refreshUI());
+
+    // ── Right Inspector Segmented Tabs (Inspector / Fill) ───────────
+    initRightPanelTabs(mode => switchEditorMode(mode), () => refreshUI());
+
+    // Live update Fill Panel requirements whenever inputs change in fill mode
+    const overlayContainer = document.getElementById("overlayContainer");
+    overlayContainer?.addEventListener("input", () => {
+        if (state.editorMode === "fill") {
+            renderFillPanel();
+        }
+    });
+    overlayContainer?.addEventListener("change", () => {
+        if (state.editorMode === "fill") {
+            renderFillPanel();
         }
     });
 
@@ -1838,7 +1936,7 @@ export function toggleLeftSidebar() {
         toggleBtn.title = isCollapsed ? "Expand Layers (⌘\\)" : "Collapse Layers (⌘\\)";
         toggleBtn.innerHTML = isCollapsed
             ? `<i data-lucide="panel-left-open" style="width: 14px; height: 14px; color: #2563eb;"></i>`
-            : `<i data-lucide="panel-left-close" style="width: 14px; height: 14px; color: #475569;"></i>`;
+            : `<i data-lucide="panel-left-close" style="width: 14px; height: 14px; color: #4a505c;"></i>`;
     }
     if (typeof lucide !== "undefined") {
         setTimeout(() => lucide.createIcons(), 10);
@@ -1865,7 +1963,7 @@ export function toggleRightSidebar() {
         toggleBtn.title = isCollapsed ? "Expand Properties (⌘/)" : "Collapse Properties (⌘/)";
         toggleBtn.innerHTML = isCollapsed
             ? `<i data-lucide="panel-right-open" style="width: 14px; height: 14px; color: #2563eb;"></i>`
-            : `<i data-lucide="panel-right-close" style="width: 14px; height: 14px; color: #475569;"></i>`;
+            : `<i data-lucide="panel-right-close" style="width: 14px; height: 14px; color: #4a505c;"></i>`;
     }
     if (typeof lucide !== "undefined") {
         setTimeout(() => lucide.createIcons(), 10);
@@ -1920,7 +2018,7 @@ function showUndoToast(msg) {
         toast = document.createElement("div");
         toast.id = "transientUndoToast";
         toast.className = "transient-undo-toast";
-        toast.style.cssText = "position: fixed; bottom: 24px; right: 24px; z-index: 1100; background: #0f172a; color: #ffffff; padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.15); transition: opacity 0.25s ease;";
+        toast.style.cssText = "position: fixed; bottom: 24px; right: 24px; z-index: 1100; background: #1c1f26; color: #ffffff; padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.15); transition: opacity 0.25s ease;";
         if (document.body) document.body.appendChild(toast);
     }
     toast.innerHTML = `

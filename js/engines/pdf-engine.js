@@ -451,14 +451,33 @@ export async function analyzePdfDocument() {
     updateTopBarDocInfo();
 }
 
-export function updateTopBarDocInfo() {
+export function updateTopBarDocInfo(saveStatus = null) {
+    const toolbarDocTitle = document.getElementById("toolbarDocTitle");
+    const toolbarDocStatus = document.getElementById("toolbarDocStatus");
     const titleInline = document.getElementById("docTitleInline");
     const titleInput = document.getElementById("docTitleInlineInput");
     const categoryBadge = document.getElementById("docCategoryBadge");
     const metaDetails = document.getElementById("docMetaDetails");
     const autosaveBadge = document.getElementById("docAutosaveBadge");
 
-    const currentName = state.fileName || "interactive_form.pdf";
+    const currentName = state.fileName || "Untitled form";
+    const displayName = currentName.replace(/\.pdf$/i, "").trim() || "Untitled form";
+
+    if (toolbarDocTitle) {
+        toolbarDocTitle.textContent = displayName;
+        toolbarDocTitle.title = currentName;
+    }
+
+    if (toolbarDocStatus) {
+        if (saveStatus !== null && saveStatus !== undefined) {
+            toolbarDocStatus.textContent = saveStatus;
+        } else if (state.isDirty) {
+            toolbarDocStatus.textContent = "Unsaved changes";
+        } else {
+            toolbarDocStatus.textContent = "Saved just now";
+        }
+    }
+
     if (titleInline) titleInline.textContent = currentName;
     if (titleInput) titleInput.value = currentName;
     updateDocumentTitle(currentName);

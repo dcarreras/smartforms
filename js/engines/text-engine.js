@@ -13,7 +13,7 @@ export const TEXT_STYLES = {
         fontWeight: "bold",
         fontStyle: "normal",
         lineHeight: 1.2,
-        color: "#0f172a",
+        color: "#1c1f26",
         label: "Document Title",
         defaultWidth: 380,
         defaultHeight: 38
@@ -23,7 +23,7 @@ export const TEXT_STYLES = {
         fontWeight: "bold",
         fontStyle: "normal",
         lineHeight: 1.25,
-        color: "#0f172a",
+        color: "#1c1f26",
         label: "Heading 1",
         defaultWidth: 320,
         defaultHeight: 32
@@ -43,7 +43,7 @@ export const TEXT_STYLES = {
         fontWeight: "600",
         fontStyle: "normal",
         lineHeight: 1.35,
-        color: "#334155",
+        color: "#1c1f26",
         label: "Heading 3",
         defaultWidth: 220,
         defaultHeight: 24
@@ -53,7 +53,7 @@ export const TEXT_STYLES = {
         fontWeight: "normal",
         fontStyle: "normal",
         lineHeight: 1.45,
-        color: "#0f172a",
+        color: "#1c1f26",
         label: "Paragraph Text",
         defaultWidth: 340,
         defaultHeight: 52
@@ -63,7 +63,7 @@ export const TEXT_STYLES = {
         fontWeight: "normal",
         fontStyle: "normal",
         lineHeight: 1.45,
-        color: "#0f172a",
+        color: "#1c1f26",
         prefix: "• ",
         label: "• List Item 1\n• List Item 2\n• List Item 3",
         defaultWidth: 300,
@@ -74,7 +74,7 @@ export const TEXT_STYLES = {
         fontWeight: "normal",
         fontStyle: "normal",
         lineHeight: 1.45,
-        color: "#0f172a",
+        color: "#1c1f26",
         prefix: "1. ",
         label: "1. Step One\n2. Step Two\n3. Step Three",
         defaultWidth: 300,
@@ -376,7 +376,7 @@ export function createTableGrid(presetOrConfig, startX = 40, startY = 100, optio
             page: pageNum,
             fontSize: 10,
             fontWeight: "bold",
-            color: "#0f172a",
+            color: "#1c1f26",
             textAlignment: col.type === "checkBox" || col.type === "radio" ? "center" : (col.dataFormat === "currency" || col.dataFormat === "number" ? "right" : "left"),
             borderStyle: "solid",
             borderColor: "#cbd5e1",
@@ -429,7 +429,7 @@ export function createTableGrid(presetOrConfig, startX = 40, startY = 100, optio
                 fieldObj.defaultValue = (c === 0 && rowLabel) ? rowLabel : (col.defaultValue || "");
                 fieldObj.label = fieldObj.defaultValue;
                 fieldObj.fontWeight = "500";
-                fieldObj.color = "#334155";
+                fieldObj.color = "#1c1f26";
             } else if (fieldType === "checkBox") {
                 fieldObj.value = "Yes";
                 // Center the checkbox in the cell
@@ -564,7 +564,7 @@ export function addColumnToTable(tableId, allFields, targetCol = null) {
         page: pageNum,
         fontSize: refCol.fontSize || 10,
         fontWeight: "bold",
-        color: "#0f172a",
+        color: "#1c1f26",
         textAlignment: "left",
         borderStyle: "solid",
         borderColor: "#cbd5e1",

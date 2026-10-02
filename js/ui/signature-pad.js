@@ -18,7 +18,7 @@ export function initSignaturePad() {
     sigCtx.lineWidth = 2.5;
     sigCtx.lineCap = "round";
     sigCtx.lineJoin = "round";
-    sigCtx.strokeStyle = "#0f172a";
+    sigCtx.strokeStyle = "#1c1f26";
 
     let lastX = 0, lastY = 0;
 
@@ -91,7 +91,7 @@ export function initSignaturePad() {
         sigDrawTab.style.color = "#2563eb";
         sigDrawTab.style.fontWeight = "600";
         sigTypeTab.style.background = "transparent";
-        sigTypeTab.style.color = "#64748b";
+        sigTypeTab.style.color = "#5b6270";
         sigTypeTab.style.fontWeight = "500";
         if (sigDrawArea) sigDrawArea.style.display = "block";
         if (sigTypeArea) sigTypeArea.style.display = "none";
@@ -103,7 +103,7 @@ export function initSignaturePad() {
         sigTypeTab.style.color = "#2563eb";
         sigTypeTab.style.fontWeight = "600";
         sigDrawTab.style.background = "transparent";
-        sigDrawTab.style.color = "#64748b";
+        sigDrawTab.style.color = "#5b6270";
         sigDrawTab.style.fontWeight = "500";
         if (sigDrawArea) sigDrawArea.style.display = "none";
         if (sigTypeArea) sigTypeArea.style.display = "block";
@@ -168,7 +168,7 @@ export function openSignatureModal(field, onAdopt) {
                 const tCtx = tempCanvas.getContext("2d");
                 const fontSize = Math.round(tempCanvas.height * 0.5);
                 tCtx.font = `italic ${fontSize}px "Caveat", "Cedarville Cursive", cursive, serif`;
-                tCtx.fillStyle = "#0f172a";
+                tCtx.fillStyle = "#1c1f26";
                 tCtx.textAlign = "center";
                 tCtx.textBaseline = "middle";
                 tCtx.fillText(text, tempCanvas.width / 2, tempCanvas.height / 2);

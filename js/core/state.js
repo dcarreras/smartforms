@@ -367,6 +367,74 @@ export function clearAllTestValues() {
     });
 }
 
+export function getSampleValueForField(f) {
+    if (!f) return "";
+    const nameLower = (f.name || "").toLowerCase();
+    const labelLower = (f.label || "").toLowerCase();
+    const combined = `${nameLower} ${labelLower}`;
+
+    if (f.type === "checkBox") {
+        return true;
+    } else if (f.type === "radioGroup" || f.type === "radio") {
+        if (Array.isArray(f.options) && f.options.length > 0) {
+            return f.options[0].value || f.options[0].label || "Option 1";
+        }
+        return "Option 1";
+    } else if (f.type === "dropdown") {
+        if (Array.isArray(f.options) && f.options.length > 0) {
+            return f.options[0];
+        }
+        return "Option 1";
+    } else if (f.type === "dateField" || combined.includes("date") || combined.includes("dob")) {
+        return "2026-10-15";
+    } else if (f.dataFormat === "currency" || combined.includes("price") || combined.includes("amount") || combined.includes("total") || combined.includes("rate") || combined.includes("fee") || combined.includes("cost")) {
+        return "150.00";
+    } else if (f.dataFormat === "number" || combined.includes("qty") || combined.includes("quantity") || combined.includes("hours") || combined.includes("count")) {
+        return "3";
+    } else if (combined.includes("email")) {
+        return "alex.smith@example.com";
+    } else if (combined.includes("phone") || combined.includes("tel")) {
+        return "(555) 234-5678";
+    } else if (combined.includes("first") && combined.includes("name")) {
+        return "Alex";
+    } else if (combined.includes("last") && combined.includes("name")) {
+        return "Smith";
+    } else if (combined.includes("name")) {
+        return "Alex Smith";
+    } else if (combined.includes("street") || combined.includes("address")) {
+        return "742 Evergreen Terrace";
+    } else if (combined.includes("city")) {
+        return "Springfield";
+    } else if (combined.includes("state")) {
+        return "OR";
+    } else if (combined.includes("zip") || combined.includes("postal")) {
+        return "97477";
+    } else if (combined.includes("country")) {
+        return "United States";
+    } else if (combined.includes("company") || combined.includes("org")) {
+        return "Springfield Enterprises";
+    } else if (f.type === "signature") {
+        return "Signed";
+    } else {
+        return f.label || "Sample Text";
+    }
+}
+
+export function fillSampleTestValues() {
+    state.fields.forEach(f => {
+        if (f.calcRecipe && f.calcRecipe.type && f.calcRecipe.type !== "none") return;
+        const val = getSampleValueForField(f);
+        if (f.type === "checkBox") {
+            f.defaultChecked = true;
+            f.value = true;
+        } else if (f.type === "signature") {
+            f.value = "Signed";
+        } else {
+            f.value = val;
+        }
+    });
+}
+
 export function setGuidesEnabled(enabled) {
     state.guidesEnabled = !!enabled;
     localStorage.setItem("justforms_guides_enabled", state.guidesEnabled ? "true" : "false");
@@ -488,7 +556,7 @@ export function evaluateCalculations(fields = state.fields) {
                     const overlayLabel = document.querySelector(`#overlay_${f.id} .overlay-label`);
                     if (overlayLabel) {
                         overlayLabel.textContent = strRes;
-                        overlayLabel.style.color = "#0f172a";
+                        overlayLabel.style.color = "#1c1f26";
                         overlayLabel.style.opacity = "1.0";
                     }
                 }
