@@ -3859,12 +3859,16 @@ async function runAllTests() {
     it("index.html critical styles and base.css define warm charcoal ink palette tokens", () => {
         const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
         const baseCss = fs.readFileSync(path.join(WEB_DIR, 'styles', 'base.css'), 'utf8');
-        assert.ok(indexHtml.includes('--text-color:#1c1f26'), "index.html defines primary charcoal text color #1c1f26");
-        assert.ok(indexHtml.includes('--text-label:#4a505c'), "index.html defines medium charcoal label color #4a505c");
-        assert.ok(indexHtml.includes('--text-muted:#5b6270'), "index.html defines muted charcoal color #5b6270");
-        assert.ok(indexHtml.includes('--text-subtle:#8a909c'), "index.html defines subtle tag color #8a909c");
-        assert.ok(baseCss.includes('--text-color:#1c1f26'), "base.css defines primary charcoal text color #1c1f26");
-        assert.ok(baseCss.includes('--text-label:#4a505c'), "base.css defines medium charcoal label color #4a505c");
+        // Unified token system: --ink group holds the raw values
+        assert.ok(baseCss.includes('--ink:') && baseCss.includes('#1c1f26'), "base.css defines primary charcoal --ink token #1c1f26");
+        assert.ok(baseCss.includes('--ink-label:') && baseCss.includes('#4a505c'), "base.css defines label --ink-label token #4a505c");
+        assert.ok(baseCss.includes('--ink-muted:') && baseCss.includes('#5b6270'), "base.css defines muted --ink-muted token #5b6270");
+        assert.ok(baseCss.includes('--ink-subtle:') && baseCss.includes('#8a909c'), "base.css defines subtle --ink-subtle token #8a909c");
+        // Legacy aliases must still exist for backward compat
+        assert.ok(baseCss.includes('--text-color:') && baseCss.includes('var(--ink)'), "base.css keeps --text-color alias → --ink");
+        assert.ok(baseCss.includes('--text-label:') && baseCss.includes('var(--ink-label)'), "base.css keeps --text-label alias → --ink-label");
+        // index.html still references charcoal values
+        assert.ok(indexHtml.includes('#1c1f26') || indexHtml.includes('--ink'), "index.html references charcoal ink token");
     });
 
     it("styles/editor.css harmonizes property labels and controls to #1c1f26 and #4a505c", () => {

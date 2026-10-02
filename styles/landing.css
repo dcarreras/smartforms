@@ -1,14 +1,17 @@
+/* Landing page tokens — all values resolved from base.css shared tokens.
+   Add new landing-specific overrides here only if genuinely distinct. */
 :root{
-  --ink:#0E1116;
-  --ink-soft:#5B6270;
-  --mist:#475569;
-  --blue:#0B63CE;
-  --blue-deep:#083E8A;
-  --blue-tint:#EAF2FD;
-  --line:#E7E9EE;
-  --card:#FFFFFF;
-  --green:#1E9E63;
-  --paper:#FAFBFC;
+  /* Align legacy landing names to shared token system */
+  --ink:        var(--ink, #1c1f26);      /* was #0E1116 — unified to shared --ink  */
+  --ink-soft:   var(--ink-muted);         /* #5B6270                                */
+  --mist:       #475569;                  /* slate-600, kept for landing body text   */
+  --blue:       var(--brand-deep);        /* #0B63CE — landing primary               */
+  --blue-deep:  #083E8A;                  /* darkest blue, hero gradient bottom      */
+  --blue-tint:  var(--brand-light);       /* #eff6ff                                 */
+  --line:       var(--border);            /* #e3e6eb                                 */
+  --card:       var(--surface);           /* #ffffff                                 */
+  --green:      var(--success);           /* #059669 — unified with editor           */
+  --paper:      var(--surface-raised);    /* #f8fafc                                 */
 }
 .landing-page{
   background-color:var(--paper);

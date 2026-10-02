@@ -1,36 +1,66 @@
 :root{
-  --primary-color:#2563eb;
-  --primary-hover:#1d4ed8;
-  --primary-active:#1e40af;
-  --primary-light:#eff6ff;
-  --primary-border:#bfdbfe;
-  --selection-color:#1d4ed8;
-  --selection-hover:#1e40af;
-  --selection-light:#eff6ff;
-  --selection-border:#93c5fd;
-  --selection-glow:rgba(29,78,216,0.22);
-  --danger-color:#ef4444;
-  --danger-hover:#dc2626;
-  --danger-light:#fef2f2;
-  --danger-border:#fecaca;
-  --success-color:#059669;
-  --success-hover:#047857;
-  --success-light:#ecfdf5;
-  --warning-color:#d97706;
-  --warning-light:#fffbeb;
-  --bg-color:#f1f2f5;
-  --panel-bg:#ffffff;
-  --panel-subtle-bg:#f8fafc;
-  --border-color:#e3e6eb;
-  --border-subtle:#cbd5e1;
-  --border-strong:#94a3b8;
-  --text-color:#1c1f26;
-  --text-label:#4a505c;
-  --text-muted:#5b6270;
-  --text-subtle:#8a909c;
-  --text-placeholder:#8a909c;
-  --toolbar-bg:#ffffff;
-  --canvas-bg:#f1f2f5;
+  /* ── Brand (Blue) ─────────────────────────────────────────── */
+  --brand:          #2563eb;   /* primary brand blue                */
+  --brand-hover:    #1d4ed8;   /* hover                             */
+  --brand-active:   #1e40af;   /* pressed / active                  */
+  --brand-deep:     #0B63CE;   /* deep blue — spinner, progress bar */
+  --brand-light:    #eff6ff;   /* tint background                   */
+  --brand-border:   #bfdbfe;   /* outline / border accent           */
+  --brand-glow:     rgba(37,99,235,0.18); /* focus ring glow        */
+
+  /* ── Surfaces ─────────────────────────────────────────────── */
+  --bg:             #f1f2f5;   /* app canvas / page background      */
+  --surface:        #ffffff;   /* cards, panels, modals             */
+  --surface-raised: #f8fafc;   /* subtle inset / secondary areas    */
+
+  /* ── Borders ──────────────────────────────────────────────── */
+  --border:         #e3e6eb;   /* default                           */
+  --border-subtle:  #cbd5e1;   /* light dividers                    */
+  --border-strong:  #94a3b8;   /* emphasis                          */
+
+  /* ── Ink / Typography ─────────────────────────────────────── */
+  --ink:            #1c1f26;   /* headings / active elements        */
+  --ink-label:      #4a505c;   /* field labels (.lb)                */
+  --ink-muted:      #5b6270;   /* meta / subtitles                  */
+  --ink-subtle:     #8a909c;   /* inactive icons / tags             */
+  --ink-placeholder:#8a909c;   /* input placeholders                */
+
+  /* ── Semantic ─────────────────────────────────────────────── */
+  --danger:         #ef4444;
+  --danger-hover:   #dc2626;
+  --danger-light:   #fef2f2;
+  --danger-border:  #fecaca;
+  --success:        #059669;
+  --success-hover:  #047857;
+  --success-light:  #ecfdf5;
+  --warning:        #d97706;
+  --warning-light:  #fffbeb;
+
+  /* ── Legacy aliases (backward compat — do not remove) ─────── */
+  --primary-color:    var(--brand);
+  --primary-hover:    var(--brand-hover);
+  --primary-active:   var(--brand-active);
+  --primary-light:    var(--brand-light);
+  --primary-border:   var(--brand-border);
+  --selection-color:  var(--brand-hover);
+  --selection-hover:  var(--brand-active);
+  --selection-light:  var(--brand-light);
+  --selection-border: var(--brand-border);
+  --selection-glow:   var(--brand-glow);
+  --panel-bg:         var(--surface);
+  --panel-subtle-bg:  var(--surface-raised);
+  --bg-color:         var(--bg);
+  --canvas-bg:        var(--bg);
+  --toolbar-bg:       var(--surface);
+  --border-color:     var(--border);
+  --text-color:       var(--ink);
+  --text-label:       var(--ink-label);
+  --text-muted:       var(--ink-muted);
+  --text-subtle:      var(--ink-subtle);
+  --text-placeholder: var(--ink-placeholder);
+  --danger-color:     var(--danger);
+  --success-color:    var(--success);
+  --warning-color:    var(--warning);
   --sat:env(safe-area-inset-top,0px);
   --sar:env(safe-area-inset-right,0px);
   --sab:env(safe-area-inset-bottom,0px);
@@ -103,7 +133,7 @@ button:active{transform:scale(0.965)}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:var(--radius-full);transition:background var(--anim-fast)}
 ::-webkit-scrollbar-thumb:hover{background:#94a3b8}
 hr{border:none;border-top:1px solid var(--border-color);margin:var(--space-4) 0}
-input:focus-visible,select:not(.video-caption-select):focus-visible,textarea:focus-visible,button:focus-visible,[tabindex]:focus-visible,.field-overlay:focus-visible{outline:2px solid #1D4ED8 !important;outline-offset:2px !important}
+input:focus-visible,select:not(.video-caption-select):focus-visible,textarea:focus-visible,button:focus-visible,[tabindex]:focus-visible,.field-overlay:focus-visible{outline:2px solid var(--brand-hover) !important;outline-offset:2px !important}
 ::placeholder{color:var(--text-placeholder,#8a909c) !important;opacity:1 !important}
 i[data-lucide]{display:inline-flex;align-items:center;justify-content:center;width:1em;height:1em;min-width:14px;min-height:14px;vertical-align:middle;box-sizing:border-box}
 svg[data-lucide],.lucide{display:inline-block;vertical-align:middle;flex-shrink:0}
@@ -144,7 +174,7 @@ svg[data-lucide],.lucide{display:inline-block;vertical-align:middle;flex-shrink:
   left: 0;
   height: 2.5px;
   width: 0%;
-  background: linear-gradient(90deg, #0B63CE 0%, #2563eb 50%, #38bdf8 100%);
+  background: linear-gradient(90deg, var(--brand-deep) 0%, var(--brand) 50%, #38bdf8 100%);
   box-shadow: 0 0 12px rgba(11, 99, 206, 0.55), 0 0 2px rgba(37, 99, 235, 0.8);
   transition: width 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
   z-index: 2;
@@ -173,7 +203,7 @@ svg[data-lucide],.lucide{display:inline-block;vertical-align:middle;flex-shrink:
   width: 14px;
   height: 14px;
   border: 2px solid rgba(11, 99, 206, 0.2);
-  border-top-color: #0B63CE;
+  border-top-color: var(--brand-deep);
   border-radius: 50%;
   animation: studioSpin 0.65s linear infinite;
   flex-shrink: 0;
