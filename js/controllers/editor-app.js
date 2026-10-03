@@ -54,7 +54,11 @@ export function refreshUI() {
         () => refreshUI()
     );
     renderPagesList(p => goToPage(p, refreshUI));
-    populateProperties(getSelectedField());
+    if (state.editorMode === "fill") {
+        renderFillPanel();
+    } else {
+        populateProperties(getSelectedField());
+    }
     updateToolIndicator();
     updateModeIndicator();
     updateHistoryAndActionButtons();
@@ -247,8 +251,27 @@ export function switchEditorMode(mode = "design") {
     if (autoDetectBtn) autoDetectBtn.style.display = isFill ? "none" : "";
     if (previewBtn) previewBtn.style.display = isFill ? "none" : "";
 
-    // When entering Fill mode, ensure the right panel is expanded so requirements are visible
+    // When entering Fill mode, ensure both left panel (with Pages list) and right panel (with Form data) are expanded
     if (isFill) {
+        const leftPanel = document.getElementById("leftPanel") || safeQuerySelector(".left-panel");
+        if (leftPanel?.classList.contains("collapsed")) {
+            leftPanel.classList.remove("collapsed");
+        }
+        const tabPages = document.getElementById("leftTabPages");
+        const tabLayers = document.getElementById("leftTabLayers");
+        const pagesSection = document.getElementById("pagesPanelSection");
+        const layersSection = document.getElementById("layersPanelSection");
+
+        if (tabPages && tabLayers) {
+            tabPages.classList.add("active");
+            tabPages.setAttribute("aria-selected", "true");
+            tabLayers.classList.remove("active");
+            tabLayers.setAttribute("aria-selected", "false");
+        }
+        if (pagesSection) pagesSection.style.display = "flex";
+        if (layersSection) layersSection.style.display = "none";
+        renderPagesList(p => goToPage(p, refreshUI));
+
         const rightPanel = document.getElementById("rightPanel");
         if (rightPanel?.classList.contains("collapsed")) {
             rightPanel.classList.remove("collapsed");

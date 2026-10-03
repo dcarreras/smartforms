@@ -77,9 +77,28 @@
     display: none !important;
 }
 
-/* Right panel stays open in fill mode to present the switched Fill & Test view */
+/* Right and Left panels stay open and visible in fill mode */
+body.mode-fill .left-panel,
 body.mode-fill .right-panel {
     display: flex !important;
+}
+
+/* In fill mode, hide the design inspector section */
+body.mode-fill #inspectorPanelSection {
+    display: none !important;
+}
+
+/* In fill mode, ensure the Form data panel is visible */
+body.mode-fill #fillPanelSection {
+    display: flex !important;
+}
+
+/* In fill mode, ensure Left panel shows Pages section instead of Layers */
+body.mode-fill #pagesPanelSection {
+    display: flex !important;
+}
+body.mode-fill #layersPanelSection {
+    display: none !important;
 }
 
 /* Fill Panel Section Styling */
@@ -356,7 +375,7 @@ body.mode-fill #accFillTools {
     transform: scale(0.98) !important;
 }
 
-/* In fill mode, display right panel segmented tabs so user can switch between properties and checklist */
+/* In fill mode, hide legacy right panel segmented tabs so user only sees Form data panel */
 body.mode-fill .right-panel-top-bar {
-    display: flex !important;
+    display: none !important;
 }

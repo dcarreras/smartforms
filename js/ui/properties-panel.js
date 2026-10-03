@@ -2015,30 +2015,16 @@ function getFieldTypeIconSvg(type) {
 }
 
 export function populateProperties(field) {
-    const fallbackField = field || (state.selectedFieldIds.size === 0 ? getSelectedField() : null);
-
     if (state.editorMode === "fill") {
         renderFillPanel();
-        if (!fallbackField && state.selectedFieldIds.size === 0) {
-            const inspectorSection = document.getElementById("inspectorPanelSection");
-            const fillSection = document.getElementById("fillPanelSection");
-            if (inspectorSection) inspectorSection.style.display = "none";
-            if (fillSection) fillSection.style.display = "flex";
-            return;
-        }
         const inspectorSection = document.getElementById("inspectorPanelSection");
         const fillSection = document.getElementById("fillPanelSection");
-        const tabInspector = document.getElementById("rightTabInspector");
-        const tabFill = document.getElementById("rightTabFill");
-        if (inspectorSection && fillSection) {
-            inspectorSection.style.display = "flex";
-            fillSection.style.display = "none";
-            tabInspector?.classList.add("active");
-            tabInspector?.setAttribute("aria-selected", "true");
-            tabFill?.classList.remove("active");
-            tabFill?.setAttribute("aria-selected", "false");
-        }
+        if (inspectorSection) inspectorSection.style.display = "none";
+        if (fillSection) fillSection.style.display = "flex";
+        return;
     }
+
+    const fallbackField = field || (state.selectedFieldIds.size === 0 ? getSelectedField() : null);
 
     const emptyPanel = document.getElementById("rightPanelEmpty");
     const singleProps = document.getElementById("fieldProps");
