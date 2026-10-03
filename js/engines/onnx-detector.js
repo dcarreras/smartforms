@@ -74,7 +74,15 @@ async function cacheModelBuffer(modelUrl, buffer) {
  */
 export async function loadOnnxRuntime() {
     if (typeof window === "undefined") return null;
-    if (window.ort) return window.ort;
+    if (window.ort) {
+        try {
+            window.ort.env.wasm.wasmPaths = "/vendor/";
+            const isIsolated = typeof crossOriginIsolated !== "undefined" && crossOriginIsolated;
+            window.ort.env.wasm.numThreads = isIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
+            window.ort.env.wasm.simd = true;
+        } catch {}
+        return window.ort;
+    }
 
     // Fast-path offline check: never attempt external CDN requests in Airplane Mode
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
@@ -84,7 +92,17 @@ export async function loadOnnxRuntime() {
     return new Promise((resolve, reject) => {
         const existing = document.querySelector(`script[src*="onnxruntime"]`);
         if (existing) {
-            existing.addEventListener("load", () => resolve(window.ort));
+            existing.addEventListener("load", () => {
+                if (window.ort) {
+                    try {
+                        window.ort.env.wasm.wasmPaths = "/vendor/";
+                        const isIsolated = typeof crossOriginIsolated !== "undefined" && crossOriginIsolated;
+                        window.ort.env.wasm.numThreads = isIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
+                        window.ort.env.wasm.simd = true;
+                    } catch {}
+                }
+                resolve(window.ort);
+            });
             existing.addEventListener("error", reject);
             return;
         }
@@ -97,7 +115,8 @@ export async function loadOnnxRuntime() {
                 if (window.ort) {
                     try {
                         window.ort.env.wasm.wasmPaths = "/vendor/";
-                        window.ort.env.wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
+                        const isIsolated = typeof crossOriginIsolated !== "undefined" && crossOriginIsolated;
+                        window.ort.env.wasm.numThreads = isIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
                         window.ort.env.wasm.simd = true;
                     } catch {}
                     resolve(window.ort);
@@ -136,30 +155,29 @@ export async function getOnnxSession(modelPath = ONNX_CONFIG.modelUrl) {
         const ort = await loadOnnxRuntime();
         if (!ort) throw new Error("ONNX runtime unavailable in this environment");
 
-        // Prefer WebGPU for hardware acceleration if available, fall back to WebAssembly
-        const executionProviders = [];
-        if (typeof navigator !== "undefined" && navigator.gpu) {
-            executionProviders.push("webgpu");
-        }
-        executionProviders.push("wasm");
-
         const candidateModels = [modelPath, ONNX_CONFIG.fallbackModelUrl].filter(Boolean);
         for (const mPath of candidateModels) {
             try {
-                let modelSource = mPath;
-                const cached = await getCachedModelBuffer(mPath);
-                if (cached) {
-                    modelSource = cached;
+                let modelBuffer = await getCachedModelBuffer(mPath);
+                if (!modelBuffer) {
+                    console.log(`[FFDNet ONNX] Downloading model binary from ${mPath}...`);
+                    const resp = await fetch(mPath);
+                    if (!resp.ok) {
+                        throw new Error(`HTTP ${resp.status} fetching model binary from ${mPath}`);
+                    }
+                    modelBuffer = await resp.arrayBuffer();
+                    cacheModelBuffer(mPath, modelBuffer);
+                    console.log(`[FFDNet ONNX] Model loaded & cached (${(modelBuffer.byteLength / 1048576).toFixed(1)} MB).`);
                 }
 
-                ortSession = await ort.InferenceSession.create(modelSource, {
+                // Explicitly use WASM execution provider for quantized model compatibility
+                const executionProviders = ["wasm"];
+                ortSession = await ort.InferenceSession.create(new Uint8Array(modelBuffer), {
                     executionProviders,
                     graphOptimizationLevel: "all"
                 });
 
-                if (typeof modelSource === "string" && typeof fetch !== "undefined") {
-                    fetch(modelSource).then(r => r.arrayBuffer()).then(buf => cacheModelBuffer(mPath, buf)).catch(() => {});
-                }
+                console.log("[FFDNet ONNX] Inference session initialized successfully!");
                 return ortSession;
             } catch (err) {
                 console.warn(`[FFDNet ONNX] Could not load model from ${mPath}:`, err);

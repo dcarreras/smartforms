@@ -407,7 +407,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
 
     let returnedFields = finalUnique;
     if (typeof options.minConfidence === "number" && options.minConfidence > 0) {
-        returnedFields = finalUnique.filter(f => (f.confidence || 0) >= options.minConfidence || f.sourcedFrom === "acroform");
+        returnedFields = finalUnique.filter(f => (f.confidence || 0) >= options.minConfidence || f.detectedBy === "ffdnet-l" || f.sourcedFrom === "acroform");
     }
 
     return {

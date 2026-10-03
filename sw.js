@@ -1,7 +1,7 @@
 // ── Formblatt Offline Service Worker (sw.js) ──────────────────────────
 // Enables 100% client-side offline execution (PWA) — works in Airplane Mode.
 
-const CACHE_NAME = "formblatt-cache-v3.11";
+const CACHE_NAME = "formblatt-cache-v3.13";
 const STATIC_ASSETS = [
     "/",
     "/index.html",
@@ -19,6 +19,7 @@ const STATIC_ASSETS = [
     "/vendor/pdf-lib.min.js",
     "/vendor/lucide.min.js",
     "/vendor/fontkit.umd.min.js",
+    "/vendor/ort.all.min.js",
     "/assets/templates/blank.pdf",
     "/assets/templates/weeklySchedule.pdf",
     "/assets/templates/w9.pdf",
@@ -101,8 +102,8 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
     const url = new URL(event.request.url);
 
-    // Skip non-GET or chrome-extension requests
-    if (event.request.method !== "GET" || url.protocol.startsWith("chrome-extension")) {
+    // Skip non-GET, chrome-extension, or heavy model weights (handled by IndexedDB)
+    if (event.request.method !== "GET" || url.protocol.startsWith("chrome-extension") || url.pathname.startsWith("/models/")) {
         return;
     }
 
