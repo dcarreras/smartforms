@@ -132,9 +132,18 @@
 /* ── Accordion section (prop-group) ── */
 .prop-group {
     border-top: 1px solid #e6e8ec !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     background: #ffffff !important;
     padding: 0 0 4px 0 !important;
     margin: 0 !important;
+}
+
+.prop-group:last-of-type {
+    border-bottom: 1px solid #e6e8ec !important;
 }
 
 /* Section heading row: 44px, label left, chevron right */
