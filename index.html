@@ -1712,17 +1712,13 @@
             
             <!-- RIGHT: Actions (Auto-detect, Preview, Export PDF, Fill Mode actions) -->
             <div class="toolbar-right">
-                <!-- Fill Mode Progress Pill & Download Button (visible in Fill Mode) -->
+                <!-- Fill Mode Progress Pill (visible in Fill Mode) -->
                 <div id="fillToolbarProgress" class="fill-toolbar-progress" style="display: none; align-items: center; gap: 8px; margin-right: 4px;">
                     <div class="fill-toolbar-bar-track" style="width: 80px; height: 6px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
                         <div id="fillToolbarProgressBar" style="height: 100%; width: 0%; background: #2563eb; border-radius: 9999px; transition: width 0.25s ease;"></div>
                     </div>
                     <span id="fillToolbarProgressText" style="font-size: 12px; font-weight: 600; color: #1c1f26; white-space: nowrap;">0 of 0</span>
                 </div>
-                <button id="fillDownloadBtn" type="button" class="btn-primary" style="display: none; height: 32px; padding: 0 14px; font-size: 12px; font-weight: 600; border-radius: 8px; background: #2563eb; color: #ffffff; align-items: center; gap: 6px;" title="Download filled PDF document">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    <span>Download filled PDF</span>
-                </button>
 
                 <!-- Design Mode Actions -->
                 <button id="toggleGuidesBtn" class="ib-btn" data-tooltip="Smart Alignment Guides" data-kbd="⌘;" aria-label="Toggle Smart Alignment Guides" style="display: none;">

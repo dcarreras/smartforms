@@ -298,13 +298,6 @@ body.mode-fill #layersPanelSection {
     box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
-/* Top Toolbar Download Button in Fill Mode */
-#fillDownloadBtn:hover {
-    background: #1d4ed8;
-}
-#fillDownloadBtn:active {
-    transform: scale(0.98);
-}
 
 
 /* ── Fill Mode Filling Tools in Properties Panel (Only visible in Fill Mode) ── */

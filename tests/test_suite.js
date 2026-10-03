@@ -3962,12 +3962,12 @@ async function runAllTests() {
     // ── Suite 51: Form Data Panel, Live Progress Tracking, Filter Chips & Portability in Fill Mode ──
     console.log("\n📋 Suite 51: Form Data Panel, Live Progress Tracking, Filter Chips & Portability in Fill Mode");
 
-    it("index.html defines top toolbar progress, download button, and Form data panel components", () => {
+    it("index.html defines top toolbar progress, Form data panel components, and download action", () => {
         const html = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
         assert.ok(html.includes('id="fillToolbarProgress"'), "Defines #fillToolbarProgress in top toolbar");
         assert.ok(html.includes('id="fillToolbarProgressBar"'), "Defines #fillToolbarProgressBar");
         assert.ok(html.includes('id="fillToolbarProgressText"'), "Defines #fillToolbarProgressText");
-        assert.ok(html.includes('id="fillDownloadBtn"'), "Defines #fillDownloadBtn primary action button");
+        assert.ok(html.includes('id="fillExportPdfBtn"'), "Defines #fillExportPdfBtn primary download button in sticky footer");
         assert.ok(html.includes('id="fillStatusBanner"'), "Defines #fillStatusBanner status card");
         assert.ok(html.includes('id="fillFilterAll"'), "Defines #fillFilterAll filter chip");
         assert.ok(html.includes('id="fillFilterEmpty"'), "Defines #fillFilterEmpty filter chip");

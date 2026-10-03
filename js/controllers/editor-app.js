@@ -242,12 +242,10 @@ export function switchEditorMode(mode = "design") {
 
     // Synchronize Top Toolbar Fill elements
     const fillToolbarProgress = document.getElementById("fillToolbarProgress");
-    const fillDownloadBtn = document.getElementById("fillDownloadBtn");
     const autoDetectBtn = document.getElementById("autoDetectBtn");
     const previewBtn = document.getElementById("previewBtn");
 
     if (fillToolbarProgress) fillToolbarProgress.style.display = isFill ? "flex" : "none";
-    if (fillDownloadBtn) fillDownloadBtn.style.display = isFill ? "inline-flex" : "none";
     if (autoDetectBtn) autoDetectBtn.style.display = isFill ? "none" : "";
     if (previewBtn) previewBtn.style.display = isFill ? "none" : "";
 
@@ -1275,9 +1273,6 @@ export function initEditorSubsystems() {
         showToast("Sample data applied to form fields", "success");
     });
     document.getElementById("fillExportPdfBtn")?.addEventListener("click", async () => {
-        await downloadAcroForm();
-    });
-    document.getElementById("fillDownloadBtn")?.addEventListener("click", async () => {
         await downloadAcroForm();
     });
 
