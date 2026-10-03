@@ -376,11 +376,10 @@ def run_vision_heuristic_detection(
     page_num: int
 ) -> List[Dict[str, Any]]:
     """
-    Token-affordance heuristic engine used when FFDNet-L is unavailable.
-    Analyzes text token patterns (colons, keywords, checkbox glyphs) to infer fields.
+    Token-affordance heuristic engine — EXPLICITLY BLOCKED for pure FFDNet-L testing.
     """
-    detected: List[Dict[str, Any]] = []
-    field_counter = 1
+    print("[Sidecar] Heuristic detection engine is explicitly BLOCKED.")
+    return []
 
     parsed_tokens = []
     for t in tokens:
@@ -665,9 +664,9 @@ async def detect_pdf(request: DetectPdfRequest):
                 engine_used = "ffdnet-l"
             except Exception as e:
                 print(f"[FFDNet] Page {page_num} inference error: {e}")
-                fields = run_vision_heuristic_detection(None, [], pw, ph, page_num)
+                fields = []
         else:
-            fields = run_vision_heuristic_detection(None, [], pw, ph, page_num)
+            fields = []
 
         results_by_page.append({
             "page": page_num,

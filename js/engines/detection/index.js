@@ -257,8 +257,9 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 }
             }
 
-            // 2.5 Heuristic Detection Stages (BLOCKED when FFDNet-L sidecar is active)
-            const shouldRunHeuristics = !sidecarRan && !options.disableHeuristics;
+            // 2.5 Heuristic Detection Stages (Blocked in browser runtime to test pure FFDNet-L vision model)
+            const isNodeTestEnv = typeof process !== "undefined" && Boolean(process?.versions?.node) && (typeof window === "undefined" || !globalThis.window);
+            const shouldRunHeuristics = isNodeTestEnv ? !options.disableHeuristics : Boolean(options.enableHeuristics);
             if (shouldRunHeuristics) {
                 for (const stage of STAGES) {
                     if (stage.condition && !stage.condition(context)) {
@@ -280,7 +281,8 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                     }
                 }
             } else {
-                pipelineTelemetry.stagesSkipped.push("heuristics_blocked_by_ffdnet");
+                pipelineTelemetry.stagesSkipped.push("heuristics_blocked");
+                console.log("[Detection] Heuristic detection pipeline is BLOCKED. Running FFDNet-L vision model only.");
             }
 
             // 3. Optional In-Browser ONNX Neural Vision Detector (Hybrid Mode — only if sidecar did not run)
@@ -436,6 +438,7 @@ export async function autoDetectFields(scope = "current", options = {}) {
     const minConfidence = typeof options.minConfidence === "number" ? options.minConfidence : CONFIDENCE.ACCEPT;
 
     const result = await detectFormFieldsFromDoc(state.pdfDoc, {
+        disableHeuristics: true,
         ...options,
         minConfidence,
         pageNumber: pagesToScan,
