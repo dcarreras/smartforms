@@ -151,9 +151,9 @@ export function renderOverlays(handlers) {
                 div.style.alignItems = "center";
                 div.style.justifyContent = "center";
             } else {
-                div.style.border = f.borderStyle === "none" ? "1.5px dashed #94A3B8" : "1.5px solid #94A3B8";
+                div.style.border = (f.borderStyle === "thick") ? "2px solid #64748B" : "1.5px solid #94A3B8";
                 div.style.borderRadius = "3px";
-                div.style.background = "rgba(255, 255, 255, 0.98)";
+                div.style.background = f.fillStyle === "transparent" ? "transparent" : "rgba(255, 255, 255, 0.98)";
                 div.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(148,163,184,0.18)";
             }
 
@@ -372,9 +372,7 @@ export function renderOverlays(handlers) {
                     div.style.boxShadow = "0 0 0 3px rgba(29, 78, 216, 0.22)";
                 }
             } else {
-                if (f.borderStyle === "none") {
-                    div.style.border = "1.5px dashed #94A3B8";
-                } else if (f.borderStyle === "thick") {
+                if (f.borderStyle === "thick") {
                     div.style.border = "2px solid #64748B";
                 } else {
                     div.style.border = "1.5px solid #94A3B8";
@@ -385,7 +383,7 @@ export function renderOverlays(handlers) {
                 } else if (f.fillStyle === "yellow") {
                     div.style.background = "rgba(254, 249, 195, 0.45)";
                 } else if (f.fillStyle === "transparent") {
-                    div.style.background = "rgba(255, 255, 255, 0.05)";
+                    div.style.background = "transparent";
                 } else {
                     div.style.background = "#F8FAFC";
                 }

@@ -209,15 +209,15 @@ export function computeFieldConfidence(field, siblingFields = [], stageAgreement
         base = CONFIDENCE.VECTOR_BASE;
     } else if (detectedBy === "underline_fields") {
         base = CONFIDENCE.UNDERLINE_BASE;
-    } else if (["onnx_neural", "layoutlmv3_sidecar"].includes(detectedBy)) {
-        base = CONFIDENCE.NEURAL_BASE;
+    } else if (["onnx_neural", "layoutlmv3_sidecar", "ffdnet-l"].includes(detectedBy)) {
+        base = Math.max(field.confidence || 0.75, CONFIDENCE.NEURAL_BASE);
     } else if (["visual_affordances", "colon_prompts", "affordance2_colon_prompt", "checkbox_glyphs"].includes(detectedBy)) {
         base = CONFIDENCE.AFFORDANCE_BASE;
     }
 
     // Signal 1: Clean geometric edge OR explicit visual placeholder (typed blanks/dots)
     const hasGeometricEdge = field.hasVectorEdge ||
-        ["vector_geometry", "vector_fields", "lattice_tables", "table_grid", "underline_fields"].includes(detectedBy) ||
+        ["vector_geometry", "vector_fields", "lattice_tables", "table_grid", "underline_fields", "ffdnet-l"].includes(detectedBy) ||
         (field.borderWidth && field.borderWidth > 0);
     const hasVisualAffordance = hasGeometricEdge || field.hasPlaceholder;
     if (hasVisualAffordance) base += 0.10;

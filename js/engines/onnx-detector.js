@@ -319,8 +319,9 @@ export async function detectNeuralFieldsOnCanvas(pageCanvas, pageNum = 1, viewpo
                     page: pageNum,
                     confidence: bestScore,
                     detectedBy: "neural_vision",
-                    borderStyle: "solid",
-                    fillStyle: "white"
+                    borderStyle: "none",
+                    fillStyle: "transparent",
+                    borderWidth: 0
                 });
             }
         }

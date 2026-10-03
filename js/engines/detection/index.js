@@ -230,27 +230,8 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 }
             };
 
-            for (const stage of STAGES) {
-                if (stage.condition && !stage.condition(context)) {
-                    continue;
-                }
-                pipelineTelemetry.stagesAttempted.push(stage.name);
-                try {
-                    const fields = await stage.detect(context);
-                    const validFields = (fields || []).map(f => {
-                        if (!f.detectedBy) f.detectedBy = stage.name;
-                        return f;
-                    });
-                    rawPageCandidates.push(...validFields);
-                    pipelineTelemetry.countsByStage[stage.name] = (pipelineTelemetry.countsByStage[stage.name] || 0) + validFields.length;
-                    pipelineTelemetry.stagesSucceeded.push(stage.name);
-                } catch (stageErr) {
-                    pipelineTelemetry.stageErrors[stage.name] = stageErr.message;
-                    console.warn(`Detection stage '${stage.name}' failed:`, stageErr);
-                }
-            }
-
-            // 2.5 Optional Local Python LayoutLMv3 Sidecar (http://127.0.0.1:8000)
+            // 2. Local Python FFDNet-L Vision Sidecar (Priority Engine on http://127.0.0.1:8000)
+            let sidecarRan = false;
             if (options.useSidecar !== false && typeof fetch !== "undefined") {
                 pipelineTelemetry.stagesAttempted.push("layoutlmv3_sidecar");
                 try {
@@ -259,11 +240,15 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                     if (sidecarStatus && sidecarStatus.available) {
                         const sidecarFields = await detectFieldsViaSidecar(page, viewport, rawBlocks, pageNum, usedNames);
                         for (const sf of sidecarFields) {
-                            sf.detectedBy = "layoutlmv3_sidecar";
+                            sf.detectedBy = "ffdnet-l";
                         }
                         rawPageCandidates.push(...sidecarFields);
-                        pipelineTelemetry.countsByStage["layoutlmv3_sidecar"] = sidecarFields.length;
+                        pipelineTelemetry.countsByStage["ffdnet-l"] = sidecarFields.length;
                         pipelineTelemetry.stagesSucceeded.push("layoutlmv3_sidecar");
+                        if (sidecarFields.length > 0) {
+                            sidecarRan = true;
+                            console.log(`[Detection] FFDNet-L detected ${sidecarFields.length} fields. Heuristics blocked for pure vision test.`);
+                        }
                     } else {
                         pipelineTelemetry.stagesSkipped.push("layoutlmv3_sidecar_offline");
                     }
@@ -272,8 +257,34 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 }
             }
 
-            // 3. Optional In-Browser ONNX Neural Vision Detector (Hybrid Mode)
-            if (isHybridMode && typeof document !== "undefined") {
+            // 2.5 Heuristic Detection Stages (BLOCKED when FFDNet-L sidecar is active)
+            const shouldRunHeuristics = !sidecarRan && !options.disableHeuristics;
+            if (shouldRunHeuristics) {
+                for (const stage of STAGES) {
+                    if (stage.condition && !stage.condition(context)) {
+                        continue;
+                    }
+                    pipelineTelemetry.stagesAttempted.push(stage.name);
+                    try {
+                        const fields = await stage.detect(context);
+                        const validFields = (fields || []).map(f => {
+                            if (!f.detectedBy) f.detectedBy = stage.name;
+                            return f;
+                        });
+                        rawPageCandidates.push(...validFields);
+                        pipelineTelemetry.countsByStage[stage.name] = (pipelineTelemetry.countsByStage[stage.name] || 0) + validFields.length;
+                        pipelineTelemetry.stagesSucceeded.push(stage.name);
+                    } catch (stageErr) {
+                        pipelineTelemetry.stageErrors[stage.name] = stageErr.message;
+                        console.warn(`Detection stage '${stage.name}' failed:`, stageErr);
+                    }
+                }
+            } else {
+                pipelineTelemetry.stagesSkipped.push("heuristics_blocked_by_ffdnet");
+            }
+
+            // 3. Optional In-Browser ONNX Neural Vision Detector (Hybrid Mode — only if sidecar did not run)
+            if (isHybridMode && !sidecarRan && typeof document !== "undefined") {
                 pipelineTelemetry.stagesAttempted.push("onnx_neural");
                 try {
                     const { detectNeuralFieldsOnCanvas } = await import("../onnx-detector.js");
@@ -433,8 +444,13 @@ export async function autoDetectFields(scope = "current", options = {}) {
         existingFields: preservedFields
     });
 
-    // Only add fields with confidence >= minConfidence (0.90) or authoritative AcroForms
-    const acceptedFields = result.fields.filter(f => (f.confidence || 0) >= minConfidence || f.sourcedFrom === "acroform");
+    // Add fields with confidence >= minConfidence, or any field detected by FFDNet / authoritative AcroForms
+    const acceptedFields = result.fields.filter(f => 
+        (f.confidence || 0) >= minConfidence || 
+        f.detectedBy === "ffdnet-l" || 
+        f.sourcedFrom === "acroform" ||
+        options.includeLowConfidence
+    );
 
     if (acceptedFields.length > 0) {
         state.fields = [...preservedFields, ...acceptedFields];
