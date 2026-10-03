@@ -3493,6 +3493,29 @@ export function initRightPanelTabs(onModeChange, onRerender) {
     tabFill?.addEventListener("click", () => switchTab("fill"));
 }
 
+let currentFillFilter = "all";
+
+export function initFillFilterEvents() {
+    if (typeof document === "undefined") return;
+    const filterAll = document.getElementById("fillFilterAll");
+    const filterEmpty = document.getElementById("fillFilterEmpty");
+    const filterRequired = document.getElementById("fillFilterRequired");
+
+    const setFilter = (filterKey) => {
+        currentFillFilter = filterKey;
+        [filterAll, filterEmpty, filterRequired].forEach(btn => {
+            if (!btn) return;
+            const isActive = btn.dataset.filter === filterKey;
+            btn.classList.toggle("active", isActive);
+        });
+        renderFillPanel();
+    };
+
+    filterAll?.addEventListener("click", () => setFilter("all"));
+    filterEmpty?.addEventListener("click", () => setFilter("empty"));
+    filterRequired?.addEventListener("click", () => setFilter("required"));
+}
+
 export function renderFillPanel() {
     if (typeof document === "undefined") return;
     const fillSection = document.getElementById("fillPanelSection");
@@ -3506,21 +3529,23 @@ export function renderFillPanel() {
     let requiredCount = 0;
     let requiredFilledCount = 0;
 
+    const isFieldFilled = (f) => {
+        if (f.type === "checkBox") {
+            return !!f.defaultChecked || !!f.value;
+        } else if (f.type === "signature") {
+            return !!f.signatureImage || !!f.value;
+        } else {
+            const val = f.value !== undefined && f.value !== null ? String(f.value).trim() : (f.defaultValue !== undefined && f.defaultValue !== null ? String(f.defaultValue).trim() : "");
+            return val.length > 0;
+        }
+    };
+
     interactiveFields.forEach(f => {
         const isRequired = !!f.required;
         if (isRequired) requiredCount++;
 
-        let isFilled = false;
-        if (f.type === "checkBox") {
-            isFilled = !!f.defaultChecked || !!f.value;
-        } else if (f.type === "signature") {
-            isFilled = !!f.signatureImage || !!f.value;
-        } else {
-            const val = f.value !== undefined && f.value !== null ? String(f.value).trim() : (f.defaultValue !== undefined && f.defaultValue !== null ? String(f.defaultValue).trim() : "");
-            isFilled = val.length > 0;
-        }
-
-        if (isFilled) {
+        const filled = isFieldFilled(f);
+        if (filled) {
             filledCount++;
             if (isRequired) requiredFilledCount++;
         }
@@ -3528,7 +3553,22 @@ export function renderFillPanel() {
 
     const percent = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
     const reqRemaining = requiredCount - requiredFilledCount;
+    const isAllComplete = (totalCount > 0 && filledCount === totalCount && reqRemaining === 0);
 
+    // ── 1. Top Bar Progress Group ──
+    const toolbarProgress = document.getElementById("fillToolbarProgress");
+    const toolbarBar = document.getElementById("fillToolbarProgressBar");
+    const toolbarText = document.getElementById("fillToolbarProgressText");
+
+    if (toolbarBar) {
+        toolbarBar.style.width = `${percent}%`;
+        toolbarBar.style.background = isAllComplete ? "#10b981" : "#2563eb";
+    }
+    if (toolbarText) {
+        toolbarText.textContent = `${filledCount} of ${totalCount}`;
+    }
+
+    // ── 2. Inspector Metrics & Progress Bar ──
     const percentEl = document.getElementById("fillProgressPercent");
     const barEl = document.getElementById("fillProgressBar");
     const countEl = document.getElementById("fillFieldsCountText");
@@ -3538,70 +3578,146 @@ export function renderFillPanel() {
     if (percentEl) percentEl.textContent = `${percent}%`;
     if (barEl) {
         barEl.style.width = `${percent}%`;
-        barEl.style.background = reqRemaining === 0 && totalCount > 0 ? "#16a34a" : "#2563eb";
+        barEl.style.background = isAllComplete ? "#10b981" : "#2563eb";
     }
-    if (countEl) countEl.textContent = `${filledCount} of ${totalCount} fields filled`;
+    if (countEl) countEl.textContent = `${filledCount} of ${totalCount} filled`;
     if (reqEl) {
         if (requiredCount === 0) {
-            reqEl.textContent = "No required fields";
+            reqEl.textContent = "0 required missing";
             reqEl.style.color = "#5b6270";
         } else if (reqRemaining === 0) {
-            reqEl.textContent = "All required fields filled ✓";
-            reqEl.style.color = "#16a34a";
+            reqEl.textContent = "0 required missing";
+            reqEl.style.color = "#059669";
         } else {
-            reqEl.textContent = `${reqRemaining} required field${reqRemaining === 1 ? '' : 's'} remaining`;
+            reqEl.textContent = `${reqRemaining} required missing`;
             reqEl.style.color = "#dc2626";
         }
     }
     if (reqBadge) reqBadge.textContent = `${totalCount} Fields`;
 
-    // Render Field Checklist
+    // ── 3. Status Banner Card ──
+    const statusBanner = document.getElementById("fillStatusBanner");
+    const statusIcon = document.getElementById("fillStatusIcon");
+    const statusTitle = document.getElementById("fillStatusTitle");
+    const statusSubtitle = document.getElementById("fillStatusSubtitle");
+
+    if (statusBanner && statusIcon && statusTitle && statusSubtitle) {
+        if (totalCount === 0) {
+            statusBanner.className = "fill-status-card ready";
+            statusBanner.style.background = "#f8fafc";
+            statusBanner.style.borderColor = "#e2e8f0";
+            statusIcon.style.background = "#94a3b8";
+            statusIcon.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+            statusTitle.textContent = "No interactive fields.";
+            statusSubtitle.textContent = "Add fields in Design mode to begin.";
+            statusTitle.style.color = "#475569";
+            statusSubtitle.style.color = "#64748b";
+        } else if (isAllComplete) {
+            statusBanner.className = "fill-status-card ready";
+            statusBanner.style.background = "#ecfdf5";
+            statusBanner.style.borderColor = "#a7f3d0";
+            statusIcon.style.background = "#10b981";
+            statusIcon.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            statusTitle.textContent = `All ${totalCount} fields complete.`;
+            statusSubtitle.textContent = "Ready to download.";
+            statusTitle.style.color = "#065f46";
+            statusSubtitle.style.color = "#047857";
+        } else if (reqRemaining > 0) {
+            statusBanner.className = "fill-status-card incomplete";
+            statusBanner.style.background = "#fffbeb";
+            statusBanner.style.borderColor = "#fde68a";
+            statusIcon.style.background = "#f59e0b";
+            statusIcon.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+            statusTitle.textContent = `${reqRemaining} required field${reqRemaining === 1 ? '' : 's'} missing.`;
+            statusSubtitle.textContent = "Fill all required fields to complete.";
+            statusTitle.style.color = "#92400e";
+            statusSubtitle.style.color = "#b45309";
+        } else {
+            statusBanner.className = "fill-status-card ready";
+            statusBanner.style.background = "#eff6ff";
+            statusBanner.style.borderColor = "#bfdbfe";
+            statusIcon.style.background = "#3b82f6";
+            statusIcon.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            statusTitle.textContent = "Required fields complete.";
+            statusSubtitle.textContent = `${totalCount - filledCount} optional field${(totalCount - filledCount) === 1 ? '' : 's'} remaining.`;
+            statusTitle.style.color = "#1e40af";
+            statusSubtitle.style.color = "#2563eb";
+        }
+    }
+
+    // ── 4. Filter Chips Count Updates ──
+    const filterAll = document.getElementById("fillFilterAll");
+    const filterEmpty = document.getElementById("fillFilterEmpty");
+    const filterRequired = document.getElementById("fillFilterRequired");
+
+    if (filterAll) filterAll.textContent = `All ${totalCount}`;
+    if (filterEmpty) filterEmpty.textContent = `Empty ${totalCount - filledCount}`;
+    if (filterRequired) filterRequired.textContent = `Required ${requiredCount}`;
+
+    // ── 5. Page Grouping Header ──
+    const curPage = state.currentPageNum || 1;
+    const pageFields = interactiveFields.filter(f => (f.page || 1) === curPage);
+    const groupingHeader = document.getElementById("fillPageGroupingHeader");
+    if (groupingHeader) {
+        groupingHeader.textContent = `PAGE ${curPage} · ${pageFields.length} FIELD${pageFields.length === 1 ? '' : 'S'}`;
+    }
+
+    // ── 6. Filter & Render Field Checklist ──
+    let displayedFields = interactiveFields;
+    if (currentFillFilter === "empty") {
+        displayedFields = interactiveFields.filter(f => !isFieldFilled(f));
+    } else if (currentFillFilter === "required") {
+        displayedFields = interactiveFields.filter(f => !!f.required);
+    }
+
     const listEl = document.getElementById("fillRequirementsList");
     if (!listEl) return;
     listEl.innerHTML = "";
 
-    if (totalCount === 0) {
-        listEl.innerHTML = '<p class="empty-msg" style="padding: 12px; color: #94a3b8; font-size: 12px; text-align: center;">No interactive fields added to this document yet.</p>';
+    if (displayedFields.length === 0) {
+        const emptyLabels = {
+            all: "No interactive fields added to this document yet.",
+            empty: "No empty fields remaining — everything is filled! 🎉",
+            required: "No required fields defined in this document."
+        };
+        listEl.innerHTML = `<p class="empty-msg" style="padding: 14px; color: #94a3b8; font-size: 12px; text-align: center;">${emptyLabels[currentFillFilter] || 'No fields match the current filter.'}</p>`;
         return;
     }
 
-    interactiveFields.forEach((f, idx) => {
-        let isFilled = false;
+    displayedFields.forEach((f, idx) => {
+        const filled = isFieldFilled(f);
         let displayVal = "";
         if (f.type === "checkBox") {
-            isFilled = !!f.defaultChecked || !!f.value;
-            displayVal = isFilled ? "Checked (✓)" : "Unchecked";
+            displayVal = filled ? "Checked (✓)" : "Unchecked";
         } else if (f.type === "signature") {
-            isFilled = !!f.signatureImage || !!f.value;
-            displayVal = isFilled ? "Signed" : "Unsigned";
+            displayVal = filled ? "Signed" : "Unsigned";
         } else {
             const val = f.value !== undefined && f.value !== null ? String(f.value).trim() : (f.defaultValue !== undefined && f.defaultValue !== null ? String(f.defaultValue).trim() : "");
-            isFilled = val.length > 0;
-            displayVal = isFilled ? val : "Empty";
+            displayVal = filled ? val : "Empty";
         }
 
         const isReq = !!f.required;
-        const item = document.createElement("div");
-        item.className = "fill-req-item" + (isFilled ? " filled" : "") + (isReq && !isFilled ? " missing-required" : "");
+        const isSelected = state.selectedFieldIds && (state.selectedFieldIds.has(f.id) || state.selectedFieldIds.has(String(f.id)));
 
-        const statusIcon = isFilled 
-            ? '<i data-lucide="check-circle-2" style="width: 14px; height: 14px; color: #16a34a; flex-shrink: 0;"></i>'
-            : (isReq 
-                ? '<i data-lucide="alert-circle" style="width: 14px; height: 14px; color: #dc2626; flex-shrink: 0;"></i>'
-                : '<i data-lucide="circle" style="width: 14px; height: 14px; color: #94a3b8; flex-shrink: 0;"></i>');
+        const item = document.createElement("div");
+        item.className = "fill-req-item" + (filled ? " filled" : "") + (isReq && !filled ? " missing-required" : "") + (isSelected ? " selected" : "");
+
+        const dotClass = filled 
+            ? "fill-status-dot filled" 
+            : (isReq ? "fill-status-dot missing-required" : "fill-status-dot empty");
 
         const reqBadgeHtml = isReq ? '<span style="font-size: 9.5px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 0 4px; border-radius: 4px; font-weight: 700; flex-shrink: 0;">REQ</span>' : '';
 
         item.innerHTML = `
-            ${statusIcon}
-            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <span style="font-weight: 600; color: #1c1f26; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(f.name || `Field ${idx + 1}`)}</span>
+            <div class="${dotClass}" title="${filled ? 'Filled' : (isReq ? 'Required Missing' : 'Empty')}"></div>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <span style="font-weight: 600; font-size: 12px; color: #1c1f26; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(f.name || `Field ${idx + 1}`)}</span>
                     ${reqBadgeHtml}
                 </div>
-                <span style="font-size: 10.5px; color: ${isFilled ? '#4a505c' : '#94a3b8'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(displayVal)}</span>
+                <span style="font-size: 11px; color: ${filled ? '#4a505c' : '#94a3b8'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(displayVal)}</span>
             </div>
-            <span style="font-size: 10px; color: #5b6270; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; flex-shrink: 0;">P${f.page || 1}</span>
+            <span style="font-size: 10px; color: #5b6270; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; flex-shrink: 0; font-weight: 600;">P${f.page || 1}</span>
         `;
 
         item.addEventListener("click", async () => {
@@ -3639,17 +3755,22 @@ function focusFieldOnCanvas(fieldId) {
     }
     if (f) {
         populateProperties(f);
-        const inspectorSection = document.getElementById("inspectorPanelSection");
-        const fillSection = document.getElementById("fillPanelSection");
-        const tabInspector = document.getElementById("rightTabInspector");
-        const tabFill = document.getElementById("rightTabFill");
-        if (inspectorSection && fillSection) {
-            inspectorSection.style.display = "flex";
-            fillSection.style.display = "none";
-            tabInspector?.classList.add("active");
-            tabInspector?.setAttribute("aria-selected", "true");
-            tabFill?.classList.remove("active");
-            tabFill?.setAttribute("aria-selected", "false");
+        // In Fill Mode, maintain the Fill tab and refresh the list highlight instead of switching back to Inspector
+        if (state.editorMode !== "fill") {
+            const inspectorSection = document.getElementById("inspectorPanelSection");
+            const fillSection = document.getElementById("fillPanelSection");
+            const tabInspector = document.getElementById("rightTabInspector");
+            const tabFill = document.getElementById("rightTabFill");
+            if (inspectorSection && fillSection) {
+                inspectorSection.style.display = "flex";
+                fillSection.style.display = "none";
+                tabInspector?.classList.add("active");
+                tabInspector?.setAttribute("aria-selected", "true");
+                tabFill?.classList.remove("active");
+                tabFill?.setAttribute("aria-selected", "false");
+            }
+        } else {
+            renderFillPanel();
         }
     }
 }

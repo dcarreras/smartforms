@@ -3,7 +3,7 @@ import { state, getSelectedField, setSelectedField, setSelectedFields, getFields
 import { renderPage, goToPage, setTransformScale, fitToWidth, fitToPage, updateTopBarDocInfo, loadPdfLibraries } from "../engines/pdf-engine.js";
 import { buildPdf, downloadAcroForm } from "../engines/acroform-builder.js";
 import { renderLayers, updateLayerSelectionDOM, renderPagesList, initLeftPanelTabs } from "../ui/layers-panel.js";
-import { initPropertiesPanel, populateProperties, syncDimensionInputsLive, alignSelectedFields, distributeSelectedFields, initRightPanelTabs, renderFillPanel } from "../ui/properties-panel.js";
+import { initPropertiesPanel, populateProperties, syncDimensionInputsLive, alignSelectedFields, distributeSelectedFields, initRightPanelTabs, renderFillPanel, initFillFilterEvents } from "../ui/properties-panel.js";
 import { renderOverlays, updateOverlayPositionsDirectly } from "../ui/overlay-manager.js";
 import { initCanvasController, handleFieldMouseDown, handleResizeStart, showVernierHud } from "../ui/canvas-controller.js";
 import { loadTemplate } from "./landing-controller.js";
@@ -235,6 +235,17 @@ export function switchEditorMode(mode = "design") {
 
     if (inspectorSection) inspectorSection.style.display = isFill ? "none" : "flex";
     if (fillSection) fillSection.style.display = isFill ? "flex" : "none";
+
+    // Synchronize Top Toolbar Fill elements
+    const fillToolbarProgress = document.getElementById("fillToolbarProgress");
+    const fillDownloadBtn = document.getElementById("fillDownloadBtn");
+    const autoDetectBtn = document.getElementById("autoDetectBtn");
+    const previewBtn = document.getElementById("previewBtn");
+
+    if (fillToolbarProgress) fillToolbarProgress.style.display = isFill ? "flex" : "none";
+    if (fillDownloadBtn) fillDownloadBtn.style.display = isFill ? "inline-flex" : "none";
+    if (autoDetectBtn) autoDetectBtn.style.display = isFill ? "none" : "";
+    if (previewBtn) previewBtn.style.display = isFill ? "none" : "";
 
     // When entering Fill mode, ensure the right panel is expanded so requirements are visible
     if (isFill) {
@@ -1243,6 +1254,56 @@ export function initEditorSubsystems() {
     document.getElementById("fillExportPdfBtn")?.addEventListener("click", async () => {
         await downloadAcroForm();
     });
+    document.getElementById("fillDownloadBtn")?.addEventListener("click", async () => {
+        await downloadAcroForm();
+    });
+
+    // Form data portability & filter controls
+    document.getElementById("fillImportDataBtn")?.addEventListener("click", () => {
+        document.getElementById("fillImportFileInput")?.click();
+    });
+    document.getElementById("fillImportFileInput")?.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = evt => {
+                const text = evt.target.result;
+                const result = importFormData(text, "auto", state);
+                if (result.success) {
+                    refreshUI();
+                    renderFillPanel();
+                    showToast("Form data imported successfully", "success");
+                } else {
+                    showToast("Could not import form data: format not recognized", "warning");
+                }
+            };
+            reader.readAsText(file);
+        }
+        e.target.value = "";
+    });
+    document.getElementById("fillExportDataBtn")?.addEventListener("click", () => {
+        const baseName = (state.filename ? state.filename.replace(/\.pdf$/i, "") : "form-data");
+        exportFormDataAsJson(state.fields, `${baseName}-data.json`);
+        showToast("Form data exported as JSON", "success");
+    });
+    document.getElementById("fillHeaderMoreBtn")?.addEventListener("click", () => {
+        const hasValues = (state.fields || []).some(f => (f.value !== undefined && f.value !== null && String(f.value).trim() !== "") || f.defaultChecked || f.signatureImage);
+        if (hasValues) {
+            if (confirm("Reset and clear all entered form values?")) {
+                clearAllTestValues();
+                refreshUI();
+                renderFillPanel();
+                showToast("Form values reset", "info");
+            }
+        } else {
+            fillSampleTestValues();
+            refreshUI();
+            renderFillPanel();
+            showToast("Sample values populated", "success");
+        }
+    });
+
+    initFillFilterEvents();
 
     const previewBtn = document.getElementById("previewBtn");
     const previewModal = document.getElementById("previewModal");

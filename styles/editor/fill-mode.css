@@ -183,34 +183,108 @@ body.mode-fill .right-panel {
     color: #1c1f26;
 }
 
+/* ── Form Data Portability & Action Buttons ── */
+.fill-portability-btn:hover {
+    border-color: #94a3b8 !important;
+    background: #f8fafc !important;
+    color: #0f172a !important;
+}
+.fill-portability-btn:active {
+    transform: scale(0.98);
+}
+
+/* ── Filter Chips ── */
+.fill-filter-chip {
+    transition: all 0.12s ease;
+    user-select: none;
+}
+.fill-filter-chip:hover:not(.active) {
+    background: #f1f5f9 !important;
+    color: #1c1f26 !important;
+    border-color: #cbd5e1 !important;
+}
+.fill-filter-chip.active {
+    background: #1c1f26 !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.15);
+}
+
+/* ── Status Banner Card ── */
+.fill-status-card {
+    transition: all 0.15s ease;
+}
+.fill-status-card.ready {
+    background: #ecfdf5 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+.fill-status-card.incomplete {
+    background: #fffbeb !important;
+    border: 1px solid #fde68a !important;
+}
+
+/* ── Field Checklist Items (Modern Card Layout) ── */
 .fill-req-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 7px 9px;
-    border-radius: 6px;
-    font-size: 11.5px;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12px;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     cursor: pointer;
-    transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
+    transition: all 0.12s ease;
     user-select: none;
 }
 
 .fill-req-item:hover {
-    background: #f1f5f9;
+    background: #f8fafc;
     border-color: #cbd5e1;
-    transform: translateX(1px);
+    transform: translateY(-0.5px);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.fill-req-item.selected {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
 }
 
 .fill-req-item.missing-required {
-    border-color: #fecaca;
-    background: #fffafa;
+    border-color: #fed7aa;
+    background: #fffbf5;
 }
 
 .fill-req-item.missing-required:hover {
-    background: #fef2f2;
-    border-color: #fca5a5;
+    background: #fff7ed;
+    border-color: #fdba74;
+}
+
+.fill-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.fill-status-dot.filled {
+    background: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+.fill-status-dot.empty {
+    background: #cbd5e1;
+}
+.fill-status-dot.missing-required {
+    background: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* Top Toolbar Download Button in Fill Mode */
+#fillDownloadBtn:hover {
+    background: #1d4ed8;
+}
+#fillDownloadBtn:active {
+    transform: scale(0.98);
 }
 
 

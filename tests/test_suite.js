@@ -3959,6 +3959,43 @@ async function runAllTests() {
         assert.ok(globalThis._localFontBytesCache.has("StudioCustom"), "Caches raw bytes under font family name");
     });
 
+    // ── Suite 51: Form Data Panel, Live Progress Tracking, Filter Chips & Portability in Fill Mode ──
+    console.log("\n📋 Suite 51: Form Data Panel, Live Progress Tracking, Filter Chips & Portability in Fill Mode");
+
+    it("index.html defines top toolbar progress, download button, and Form data panel components", () => {
+        const html = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        assert.ok(html.includes('id="fillToolbarProgress"'), "Defines #fillToolbarProgress in top toolbar");
+        assert.ok(html.includes('id="fillToolbarProgressBar"'), "Defines #fillToolbarProgressBar");
+        assert.ok(html.includes('id="fillToolbarProgressText"'), "Defines #fillToolbarProgressText");
+        assert.ok(html.includes('id="fillDownloadBtn"'), "Defines #fillDownloadBtn primary action button");
+        assert.ok(html.includes('id="fillStatusBanner"'), "Defines #fillStatusBanner status card");
+        assert.ok(html.includes('id="fillFilterAll"'), "Defines #fillFilterAll filter chip");
+        assert.ok(html.includes('id="fillFilterEmpty"'), "Defines #fillFilterEmpty filter chip");
+        assert.ok(html.includes('id="fillFilterRequired"'), "Defines #fillFilterRequired filter chip");
+        assert.ok(html.includes('id="fillImportDataBtn"'), "Defines #fillImportDataBtn portability button");
+        assert.ok(html.includes('id="fillExportDataBtn"'), "Defines #fillExportDataBtn portability button");
+    });
+
+    it("styles/editor/fill-mode.css defines styles for portability buttons, filter chips, and card layout", () => {
+        const css = fs.readFileSync(path.join(WEB_DIR, 'styles', 'editor', 'fill-mode.css'), 'utf8');
+        assert.ok(css.includes('.fill-portability-btn'), "Defines .fill-portability-btn");
+        assert.ok(css.includes('.fill-filter-chip'), "Defines .fill-filter-chip");
+        assert.ok(css.includes('.fill-status-card'), "Defines .fill-status-card");
+        assert.ok(css.includes('.fill-status-dot'), "Defines .fill-status-dot");
+    });
+
+    it("properties-panel.js exports initFillFilterEvents and renderFillPanel updates DOM with correct metrics", async () => {
+        const { initFillFilterEvents, renderFillPanel } = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+        assert.equal(typeof initFillFilterEvents, 'function', "Exports initFillFilterEvents");
+        assert.equal(typeof renderFillPanel, 'function', "Exports renderFillPanel");
+    });
+
+    it("layers-panel.js renderPagesList updates badges with completion progress in Fill mode", async () => {
+        const { renderPagesList, updatePagesListSelectionDOM } = await import(path.join(WEB_DIR, 'js', 'ui', 'layers-panel.js'));
+        assert.equal(typeof renderPagesList, 'function', "Exports renderPagesList");
+        assert.equal(typeof updatePagesListSelectionDOM, 'function', "Exports updatePagesListSelectionDOM");
+    });
+
     // ── Summary ──
     console.log("\n=================================================");
     console.log(`🏁 TEST RUN SUMMARY:`);

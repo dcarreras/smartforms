@@ -648,19 +648,48 @@ export function renderPagesList(onPageSelect) {
     for (let p = 1; p <= totalPages; p++) {
         const pageNum = p;
         const pageFields = (state.fields || []).filter(f => f.page === pageNum);
+        const interactiveFields = pageFields.filter(f => f.type !== "staticText" && f.type !== "label");
         const isCurrent = pageNum === state.currentPageNum;
+
+        let badgeText = `${pageFields.length}`;
+        let badgeTitle = `${pageFields.length} fields on page ${pageNum}`;
+        let badgeBg = isCurrent ? "#ffffff" : "#f1f5f9";
+        let badgeColor = isCurrent ? "#1c1f26" : "#5b6270";
+
+        if (state.editorMode === "fill" && interactiveFields.length > 0) {
+            let filledOnPage = 0;
+            interactiveFields.forEach(f => {
+                let isFilled = false;
+                if (f.type === "checkBox") isFilled = !!f.defaultChecked || !!f.value;
+                else if (f.type === "signature") isFilled = !!f.signatureImage || !!f.value;
+                else {
+                    const val = f.value !== undefined && f.value !== null ? String(f.value).trim() : (f.defaultValue !== undefined && f.defaultValue !== null ? String(f.defaultValue).trim() : "");
+                    isFilled = val.length > 0;
+                }
+                if (isFilled) filledOnPage++;
+            });
+            badgeText = `${filledOnPage}/${interactiveFields.length}`;
+            badgeTitle = `${filledOnPage} of ${interactiveFields.length} fields filled on page ${pageNum}`;
+            if (filledOnPage === interactiveFields.length) {
+                badgeBg = "#dcfce7";
+                badgeColor = "#15803d";
+            } else if (filledOnPage > 0) {
+                badgeBg = "#eff6ff";
+                badgeColor = "#1d4ed8";
+            }
+        }
 
         const item = document.createElement("div");
         item.className = "page-tree-item" + (isCurrent ? " selected" : "");
         item.dataset.page = pageNum;
         item.setAttribute("role", "button");
         item.setAttribute("tabindex", "0");
-        item.setAttribute("aria-label", `Page ${pageNum}, ${pageFields.length} field${pageFields.length === 1 ? '' : 's'}`);
+        item.setAttribute("aria-label", `Page ${pageNum}, ${badgeTitle}`);
 
         item.innerHTML = `
             <i data-lucide="file-text" class="page-tree-icon" style="width: 14px; height: 14px; flex-shrink: 0; color: ${isCurrent ? '#2563eb' : '#5b6270'};"></i>
             <span class="page-tree-name" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: ${isCurrent ? '600' : '500'}; color: #1c1f26;">Page ${pageNum}</span>
-            <span class="page-tree-badge" title="${pageFields.length} fields on page ${pageNum}" style="font-size: 10px; color: ${isCurrent ? '#1c1f26' : '#5b6270'}; background: ${isCurrent ? '#ffffff' : '#f1f5f9'}; padding: 1px 6px; border-radius: 9999px; font-weight: 600; flex-shrink: 0;">${pageFields.length}</span>
+            <span class="page-tree-badge" title="${badgeTitle}" style="font-size: 10px; color: ${badgeColor}; background: ${badgeBg}; padding: 1px 6px; border-radius: 9999px; font-weight: 600; flex-shrink: 0;">${badgeText}</span>
         `;
 
         item.addEventListener("click", () => {
@@ -695,6 +724,9 @@ export function updatePagesListSelectionDOM() {
     list.querySelectorAll(".page-tree-item").forEach(item => {
         const pageNum = parseInt(item.dataset.page, 10);
         const isCurrent = pageNum === state.currentPageNum;
+        const pageFields = (state.fields || []).filter(f => f.page === pageNum);
+        const interactiveFields = pageFields.filter(f => f.type !== "staticText" && f.type !== "label");
+
         item.classList.toggle("selected", isCurrent);
         const icon = item.querySelector(".page-tree-icon");
         if (icon) icon.style.color = isCurrent ? "#2563eb" : "#5b6270";
@@ -702,8 +734,34 @@ export function updatePagesListSelectionDOM() {
         if (name) name.style.fontWeight = isCurrent ? "600" : "500";
         const badge = item.querySelector(".page-tree-badge");
         if (badge) {
-            badge.style.background = isCurrent ? "#ffffff" : "#f1f5f9";
-            badge.style.color = isCurrent ? "#1c1f26" : "#5b6270";
+            let badgeText = `${pageFields.length}`;
+            let badgeBg = isCurrent ? "#ffffff" : "#f1f5f9";
+            let badgeColor = isCurrent ? "#1c1f26" : "#5b6270";
+
+            if (state.editorMode === "fill" && interactiveFields.length > 0) {
+                let filledOnPage = 0;
+                interactiveFields.forEach(f => {
+                    let isFilled = false;
+                    if (f.type === "checkBox") isFilled = !!f.defaultChecked || !!f.value;
+                    else if (f.type === "signature") isFilled = !!f.signatureImage || !!f.value;
+                    else {
+                        const val = f.value !== undefined && f.value !== null ? String(f.value).trim() : (f.defaultValue !== undefined && f.defaultValue !== null ? String(f.defaultValue).trim() : "");
+                        isFilled = val.length > 0;
+                    }
+                    if (isFilled) filledOnPage++;
+                });
+                badgeText = `${filledOnPage}/${interactiveFields.length}`;
+                if (filledOnPage === interactiveFields.length) {
+                    badgeBg = "#dcfce7";
+                    badgeColor = "#15803d";
+                } else if (filledOnPage > 0) {
+                    badgeBg = "#eff6ff";
+                    badgeColor = "#1d4ed8";
+                }
+            }
+            badge.textContent = badgeText;
+            badge.style.background = badgeBg;
+            badge.style.color = badgeColor;
         }
     });
 }
