@@ -9,16 +9,15 @@ export const ONNX_CONFIG = {
     // Local vendor path first, then optional CDN endpoint with fallback
     localOrtPath: "/vendor/ort.all.min.js",
     ortCdn: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.all.min.js",
-    modelUrl: "/models/ffdnet_s_quantized.onnx",
+    modelUrl: "/models/FFDNet-L.quant.onnx",
+    fallbackModelUrl: "/models/FFDNet-L.onnx",
     inputSize: 640,
-    confThreshold: 0.30,
+    confThreshold: 0.20,
     iouThreshold: 0.45,
     classes: [
         { id: 0, type: "textField", label: "Text Input" },
         { id: 1, type: "checkBox", label: "Choice Button" },
-        { id: 2, type: "signature", label: "Signature" },
-        { id: 3, type: "dateField", label: "Date Field" },
-        { id: 4, type: "radioGroup", label: "Radio Option" }
+        { id: 2, type: "signature", label: "Signature" }
     ]
 };
 
@@ -96,8 +95,11 @@ export async function loadOnnxRuntime() {
             script.async = true;
             script.onload = () => {
                 if (window.ort) {
-                    window.ort.env.wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
-                    window.ort.env.wasm.simd = true;
+                    try {
+                        window.ort.env.wasm.wasmPaths = "/vendor/";
+                        window.ort.env.wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
+                        window.ort.env.wasm.simd = true;
+                    } catch {}
                     resolve(window.ort);
                 } else {
                     reject(new Error("ONNX Runtime loaded but window.ort is undefined"));
@@ -134,13 +136,6 @@ export async function getOnnxSession(modelPath = ONNX_CONFIG.modelUrl) {
         const ort = await loadOnnxRuntime();
         if (!ort) throw new Error("ONNX runtime unavailable in this environment");
 
-        // Check IndexedDB cache for preloaded model buffer
-        let modelSource = modelPath;
-        const cached = await getCachedModelBuffer(modelPath);
-        if (cached) {
-            modelSource = cached;
-        }
-
         // Prefer WebGPU for hardware acceleration if available, fall back to WebAssembly
         const executionProviders = [];
         if (typeof navigator !== "undefined" && navigator.gpu) {
@@ -148,17 +143,29 @@ export async function getOnnxSession(modelPath = ONNX_CONFIG.modelUrl) {
         }
         executionProviders.push("wasm");
 
-        ortSession = await ort.InferenceSession.create(modelSource, {
-            executionProviders,
-            graphOptimizationLevel: "all"
-        });
+        const candidateModels = [modelPath, ONNX_CONFIG.fallbackModelUrl].filter(Boolean);
+        for (const mPath of candidateModels) {
+            try {
+                let modelSource = mPath;
+                const cached = await getCachedModelBuffer(mPath);
+                if (cached) {
+                    modelSource = cached;
+                }
 
-        // If fetched via network, cache binary array buffer
-        if (typeof modelSource === "string" && typeof fetch !== "undefined") {
-            fetch(modelSource).then(r => r.arrayBuffer()).then(buf => cacheModelBuffer(modelPath, buf)).catch(() => {});
+                ortSession = await ort.InferenceSession.create(modelSource, {
+                    executionProviders,
+                    graphOptimizationLevel: "all"
+                });
+
+                if (typeof modelSource === "string" && typeof fetch !== "undefined") {
+                    fetch(modelSource).then(r => r.arrayBuffer()).then(buf => cacheModelBuffer(mPath, buf)).catch(() => {});
+                }
+                return ortSession;
+            } catch (err) {
+                console.warn(`[FFDNet ONNX] Could not load model from ${mPath}:`, err);
+            }
         }
-
-        return ortSession;
+        return null;
     } catch (err) {
         console.warn("Could not initialize local ONNX neural model session:", err);
         return null;
@@ -186,7 +193,7 @@ export function preprocessCanvasToTensor(sourceCanvas, targetSize = ONNX_CONFIG.
     const dx = Math.round((targetSize - scaledWidth) / 2);
     const dy = Math.round((targetSize - scaledHeight) / 2);
 
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#727272";
     ctx.fillRect(0, 0, targetSize, targetSize);
     ctx.drawImage(sourceCanvas, dx, dy, scaledWidth, scaledHeight);
 
@@ -302,10 +309,11 @@ export async function detectNeuralFieldsOnCanvas(pageCanvas, pageNum = 1, viewpo
 
             if (bestScore >= ONNX_CONFIG.confThreshold) {
                 // Map coordinates from letterbox space back to original page coordinates
-                const unscaledX = (cx - w / 2 - dx) / scale;
-                const unscaledY = (cy - h / 2 - dy) / scale;
-                const unscaledW = w / scale;
-                const unscaledH = h / scale;
+                const canvasScale = (viewport && viewport.width) ? (originalWidth / viewport.width) : 1.0;
+                const unscaledX = ((cx - w / 2 - dx) / scale) / canvasScale;
+                const unscaledY = ((cy - h / 2 - dy) / scale) / canvasScale;
+                const unscaledW = (w / scale) / canvasScale;
+                const unscaledH = (h / scale) / canvasScale;
 
                 const classDef = ONNX_CONFIG.classes[bestClassId] || ONNX_CONFIG.classes[0];
 
@@ -318,7 +326,7 @@ export async function detectNeuralFieldsOnCanvas(pageCanvas, pageNum = 1, viewpo
                     height: Math.max(12, Math.round(unscaledH)),
                     page: pageNum,
                     confidence: bestScore,
-                    detectedBy: "neural_vision",
+                    detectedBy: "ffdnet-l",
                     borderStyle: "none",
                     fillStyle: "transparent",
                     borderWidth: 0

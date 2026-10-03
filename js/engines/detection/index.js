@@ -44,6 +44,7 @@ export const STAGE_PRIORITIES = {
     vector_fields: 70,
     boundary_underlines: 60,
     underline_fields: 60,
+    "ffdnet-l": 75,
     onnx_neural: 65,
     layoutlmv3_sidecar: 65,
     tax_schedules: 50,
@@ -285,28 +286,35 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 console.log("[Detection] Heuristic detection pipeline is BLOCKED. Running FFDNet-L vision model only.");
             }
 
-            // 3. Optional In-Browser ONNX Neural Vision Detector (Hybrid Mode — only if sidecar did not run)
-            if (isHybridMode && !sidecarRan && typeof document !== "undefined") {
-                pipelineTelemetry.stagesAttempted.push("onnx_neural");
+            // 3. In-Browser FFDNet-L Neural Vision Detector (WASM / WebGPU via ONNX Runtime Web)
+            // Activates automatically when local Python sidecar is offline (e.g. on Vercel deployment)
+            const shouldRunOnnx = !sidecarRan && typeof document !== "undefined" && options.useNeural !== false;
+            if (shouldRunOnnx) {
+                pipelineTelemetry.stagesAttempted.push("ffdnet_onnx");
                 try {
                     const { detectNeuralFieldsOnCanvas } = await import("../onnx-detector.js");
+                    const renderScale = 1.5;
+                    const renderViewport = page.getViewport({ scale: renderScale });
                     const renderCanvas = document.createElement("canvas");
-                    renderCanvas.width = viewport.width;
-                    renderCanvas.height = viewport.height;
-                    const renderCtx = renderCanvas.getContext("2d");
-                    await page.render({ canvasContext: renderCtx, viewport }).promise;
+                    renderCanvas.width = renderViewport.width;
+                    renderCanvas.height = renderViewport.height;
+                    const renderCtx = renderCanvas.getContext("2d", { willReadFrequently: true });
+                    await page.render({ canvasContext: renderCtx, viewport: renderViewport }).promise;
 
                     const rawNeural = await detectNeuralFieldsOnCanvas(renderCanvas, pageNum, viewport);
-                    const neuralFields = enrichNeuralFieldsWithText(rawNeural, rawBlocks, usedNames, pageNum);
-                    for (const nf of neuralFields) {
-                        nf.detectedBy = "onnx_neural";
+                    if (rawNeural && rawNeural.length > 0) {
+                        const neuralFields = enrichNeuralFieldsWithText(rawNeural, rawBlocks, usedNames, pageNum);
+                        for (const nf of neuralFields) {
+                            nf.detectedBy = "ffdnet-l";
+                        }
+                        rawPageCandidates.push(...neuralFields);
+                        pipelineTelemetry.countsByStage["ffdnet-l"] = (pipelineTelemetry.countsByStage["ffdnet-l"] || 0) + neuralFields.length;
+                        pipelineTelemetry.stagesSucceeded.push("ffdnet_onnx");
+                        console.log(`[Detection] In-browser FFDNet-L (ONNX) detected ${neuralFields.length} fields on page ${pageNum}.`);
                     }
-                    rawPageCandidates.push(...neuralFields);
-                    pipelineTelemetry.countsByStage["onnx_neural"] = neuralFields.length;
-                    pipelineTelemetry.stagesSucceeded.push("onnx_neural");
                 } catch (neuralErr) {
-                    pipelineTelemetry.stageErrors["onnx_neural"] = neuralErr.message;
-                    console.warn("Neural vision inference skipped:", neuralErr);
+                    pipelineTelemetry.stageErrors["ffdnet_onnx"] = neuralErr.message;
+                    console.warn("[Detection] In-browser FFDNet-L neural vision inference failed:", neuralErr);
                 }
             }
 

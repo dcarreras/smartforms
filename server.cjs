@@ -21,7 +21,9 @@ const MIME_TYPES = {
     ".woff2": "font/woff2",
     ".ttf": "font/ttf",
     ".mp4": "video/mp4",
-    ".pdf": "application/pdf"
+    ".pdf": "application/pdf",
+    ".wasm": "application/wasm",
+    ".onnx": "application/octet-stream"
 };
 
 function createServerOnPort(port) {
