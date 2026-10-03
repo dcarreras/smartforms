@@ -849,10 +849,16 @@ export function initEditorSubsystems() {
             scanHud.className = "scan-hud";
             scanHud.innerHTML = `
                 <div class="scan-overlay"></div>
+                <div class="scan-radar-container">
+                    <div class="scan-radar-ring ring-1"></div>
+                    <div class="scan-radar-ring ring-2"></div>
+                    <div class="scan-radar-ring ring-3"></div>
+                    <div class="scan-radar-sweep"></div>
+                </div>
                 <div class="scan-line"></div>
                 <div class="scan-status-pill">
-                    <i data-lucide="scan" style="width: 14px; height: 14px; color: #60a5fa;"></i>
-                    <span id="scanStatusText">Analyzing vector layout & grid...</span>
+                    <i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px; color: #38bdf8;"></i>
+                    <span id="scanStatusText">Detecting form fields with FFDNet-L...</span>
                 </div>
             `;
             canvasContainer.appendChild(scanHud);

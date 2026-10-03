@@ -283,6 +283,15 @@
   transform:translate(-50%,-50%) scale(1.5) !important;
   box-shadow:0 0 0 2px rgba(47,91,234,0.5),0 0 8px #2f5bea !important;
 }
+.spin{
+  animation:roundSpin 1s linear infinite !important;
+  display:inline-block;
+  transform-origin:center;
+}
+@keyframes roundSpin{
+  0%{transform:rotate(0deg)}
+  100%{transform:rotate(360deg)}
+}
 .scan-hud{
   position:absolute;
   inset:0;
@@ -294,9 +303,58 @@
 .scan-overlay{
   position:absolute;
   inset:0;
-  background:radial-gradient(circle at center,rgba(2,132,199,0.05) 0%,rgba(2,132,199,0.15) 100%);
+  background:radial-gradient(circle at center,rgba(2,132,199,0.05) 0%,rgba(2,132,199,0.18) 100%);
   backdrop-filter:blur(0.5px);
   animation:scanOverlayPulse 1.2s ease-in-out infinite alternate;
+}
+.scan-radar-container{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:min(80vw,480px);
+  height:min(80vw,480px);
+  pointer-events:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.scan-radar-ring{
+  position:absolute;
+  border-radius:50%;
+  border:1.5px solid rgba(56,189,248,0.25);
+  box-shadow:0 0 15px rgba(14,165,233,0.15);
+  pointer-events:none;
+}
+.scan-radar-ring.ring-1{
+  width:30%;
+  height:30%;
+  animation:radarPulse 2.4s ease-out infinite;
+}
+.scan-radar-ring.ring-2{
+  width:60%;
+  height:60%;
+  animation:radarPulse 2.4s ease-out infinite 0.8s;
+}
+.scan-radar-ring.ring-3{
+  width:95%;
+  height:95%;
+  animation:radarPulse 2.4s ease-out infinite 1.6s;
+}
+.scan-radar-sweep{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 240deg,
+    rgba(56,189,248,0.08) 280deg,
+    rgba(14,165,233,0.3) 345deg,
+    rgba(56,189,248,0.8) 360deg
+  );
+  animation:roundSpin 2s linear infinite;
+  box-shadow:inset 0 0 35px rgba(56,189,248,0.25);
 }
 .scan-line{
   position:absolute;
@@ -305,7 +363,7 @@
   height:3.5px;
   background:linear-gradient(90deg,rgba(2,132,199,0) 0%,rgba(56,189,248,1) 30%,rgba(14,165,233,1) 70%,rgba(2,132,199,0) 100%);
   box-shadow:0 0 16px 4px rgba(56,189,248,0.8),0 0 32px 8px rgba(14,165,233,0.45);
-  animation:laserScanSweep 0.85s cubic-bezier(0.4,0,0.2,1) forwards;
+  animation:laserScanSweep 2.2s ease-in-out infinite alternate;
 }
 .scan-status-pill{
   position:absolute;
@@ -328,7 +386,16 @@
   animation:statusPillFadeIn 0.3s ease-out;
   white-space:nowrap;
 }
-@keyframes laserScanSweep{0%{top:0%;opacity:0.8}50%{opacity:1}100%{top:100%;opacity:0.2}}
+@keyframes laserScanSweep{
+  0%{top:3%;opacity:0.35}
+  50%{opacity:1}
+  100%{top:97%;opacity:0.35}
+}
+@keyframes radarPulse{
+  0%{transform:scale(0.88);opacity:0.8}
+  50%{opacity:0.35}
+  100%{transform:scale(1.08);opacity:0.8}
+}
 @keyframes scanOverlayPulse{0%{opacity:0.6}100%{opacity:1}}
 @keyframes statusPillFadeIn{from{opacity:0;transform:translate(-50%,-10px) scale(0.95)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
 .field-overlay.field-spawned{animation:fieldSpawnPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards}

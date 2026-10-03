@@ -143,7 +143,7 @@ export async function loadOnnxRuntime() {
 /**
  * Initialize or retrieve the cached ONNX inference session.
  */
-export async function getOnnxSession(modelPath = ONNX_CONFIG.modelUrl) {
+export async function getOnnxSession(modelPath = ONNX_CONFIG.modelUrl, onProgress = null) {
     if (ortSession) return ortSession;
     if (isInitializing) {
         while (isInitializing) await new Promise(r => setTimeout(r, 50));
@@ -160,6 +160,9 @@ export async function getOnnxSession(modelPath = ONNX_CONFIG.modelUrl) {
             try {
                 let modelBuffer = await getCachedModelBuffer(mPath);
                 if (!modelBuffer) {
+                    if (typeof onProgress === "function") {
+                        onProgress("Downloading FFDNet-L model weights...", 20);
+                    }
                     console.log(`[FFDNet ONNX] Downloading model binary from ${mPath}...`);
                     const resp = await fetch(mPath);
                     if (!resp.ok) {
@@ -168,6 +171,10 @@ export async function getOnnxSession(modelPath = ONNX_CONFIG.modelUrl) {
                     modelBuffer = await resp.arrayBuffer();
                     cacheModelBuffer(mPath, modelBuffer);
                     console.log(`[FFDNet ONNX] Model loaded & cached (${(modelBuffer.byteLength / 1048576).toFixed(1)} MB).`);
+                }
+
+                if (typeof onProgress === "function") {
+                    onProgress("Compiling WebAssembly neural session...", 40);
                 }
 
                 // Explicitly use WASM execution provider for quantized model compatibility
@@ -283,15 +290,21 @@ export function nonMaximumSuppression(boxes, iouThreshold = ONNX_CONFIG.iouThres
  * Run client-side neural vision inference on a rendered PDF page canvas.
  * Returns an array of detected form field candidates with bounding coordinates.
  */
-export async function detectNeuralFieldsOnCanvas(pageCanvas, pageNum = 1, viewport = null) {
+export async function detectNeuralFieldsOnCanvas(pageCanvas, pageNum = 1, viewport = null, onProgress = null) {
     if (!pageCanvas) return [];
 
     try {
-        const session = await getOnnxSession();
+        if (typeof onProgress === "function") {
+            onProgress("Initializing FFDNet-L neural detector...", 25);
+        }
+        const session = await getOnnxSession(ONNX_CONFIG.modelUrl, onProgress);
         if (!session || typeof window === "undefined" || !window.ort) {
             return [];
         }
 
+        if (typeof onProgress === "function") {
+            onProgress(`Analyzing visual boxes on page ${pageNum}...`, 60);
+        }
         const preprocessed = preprocessCanvasToTensor(pageCanvas);
         if (!preprocessed) return [];
 

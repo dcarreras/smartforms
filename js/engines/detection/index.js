@@ -291,6 +291,9 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             const shouldRunOnnx = !sidecarRan && typeof document !== "undefined" && options.useNeural !== false;
             if (shouldRunOnnx) {
                 pipelineTelemetry.stagesAttempted.push("ffdnet_onnx");
+                if (typeof options.onProgress === "function") {
+                    options.onProgress(`Running FFDNet-L vision model on page ${pageNum}...`, 30);
+                }
                 try {
                     const { detectNeuralFieldsOnCanvas } = await import("../onnx-detector.js");
                     const renderScale = 1.5;
@@ -301,7 +304,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                     const renderCtx = renderCanvas.getContext("2d", { willReadFrequently: true });
                     await page.render({ canvasContext: renderCtx, viewport: renderViewport }).promise;
 
-                    const rawNeural = await detectNeuralFieldsOnCanvas(renderCanvas, pageNum, viewport);
+                    const rawNeural = await detectNeuralFieldsOnCanvas(renderCanvas, pageNum, viewport, options.onProgress);
                     if (rawNeural && rawNeural.length > 0) {
                         const neuralFields = enrichNeuralFieldsWithText(rawNeural, rawBlocks, usedNames, pageNum);
                         for (const nf of neuralFields) {
