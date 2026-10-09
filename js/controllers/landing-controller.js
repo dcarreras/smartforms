@@ -1162,13 +1162,13 @@ export function initLandingController(onLoaded) {
         document.body.style.overflow = "";
     };
 
-    // Interactive Dropzone with Drag & Drop & Click-to-Play Modal
+    // Interactive dropzone with drag, drop and file selection
     const heroDropzone = document.getElementById("heroDropzone");
     if (heroDropzone) {
         heroDropzone.addEventListener("click", e => {
             e.preventDefault();
             e.stopPropagation();
-            window.openHeroVideoModal();
+            document.getElementById("heroPdfUpload")?.click();
         });
         ["dragenter", "dragover"].forEach(name => {
             heroDropzone.addEventListener(name, e => {

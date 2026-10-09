@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
     <!-- Primary SEO Meta Tags -->
-    <title>Formblatt: Free Interactive PDF Form Creator &amp; AcroForm Editor</title>
-    <meta name="title" content="Formblatt: Free Interactive PDF Form Creator &amp; AcroForm Editor">
+    <title>SmartForms: Construction PDF Form Builder</title>
+    <meta name="title" content="SmartForms: Construction PDF Form Builder">
     <meta name="description" content="Create fillable PDF forms online for free. Add text boxes, checkboxes, dropdown menus, radio buttons, and digital signatures. 100% private, client-side PDF form builder.">
     <meta name="author" content="Sagar Shrestha">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -157,7 +157,7 @@
 
     <link rel="preload" href="styles/fonts.css?v=21.0" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="styles/fonts.css?v=21.0"></noscript>
-    <link rel="stylesheet" href="styles/smartforms-theme.css?v=1.0">
+    <link rel="stylesheet" href="styles/smartforms-theme.css?v=1.6">
 
     <!-- Module Preloads to eliminate JS waterfalls and Critical Request Chains -->
     <link rel="modulepreload" href="js/main.js?v=21.0">
@@ -176,13 +176,13 @@
             <div class="header-inner">
                 <nav class="landing-nav-bar">
                     <a href="#hero" class="brand" id="landingLogoBtn" onclick="document.getElementById('landingScreen')?.scrollTo({top:0,behavior:'smooth'}); window.scrollTo({top:0,behavior:'smooth'}); return false;" style="cursor: pointer; text-decoration: none;">
-                        <span class="brand-mark" title="Formblatt">
+                        <span class="brand-mark" title="SmartForms">
                             <svg viewBox="0 0 100 100" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <rect width="100" height="100" rx="22" fill="#0B63CE"/>
                                 <path d="M22 18 H78 V36 H42 V47 H70 V63 H42 V82 H22 Z" fill="#FFFFFF"/>
                             </svg>
                         </span>
-                        <span class="brand-text"><span class="brand-name-primary">Form</span><span class="brand-name-accent">blatt</span></span>
+                        <span class="brand-text"><span class="brand-name-primary">Smart</span><span class="brand-name-accent">Forms</span></span>
                     </a>
                     <div class="nav-links">
                         <a href="#how-it-works" onclick="document.getElementById('how-it-works')?.scrollIntoView({behavior:'smooth'}); return false;">How it works</a>
@@ -273,7 +273,7 @@
                     </div>
 
                     <div class="rig">
-                        <div class="hero-video-card" id="heroDropzone" onclick="if(window.openHeroVideoModal) window.openHeroVideoModal();" title="Click to watch full video demo">
+                        <div class="hero-video-card" id="heroDropzone" title="Open or drop a PDF form">
                             <!-- Clean Video Showcase Frame -->
                             <div class="video-card-inner">
                                 <video class="hero-showcase-video" autoplay loop muted playsinline preload="metadata" poster="assets/hero-poster.webp?v=9.0" aria-label="Formblatt interactive visual editor demo" width="634" height="499" fetchpriority="high" style="aspect-ratio: 2740 / 2160;">
@@ -762,15 +762,15 @@
             <div class="foot-wrap">
                 <div>
                     <a href="#hero" class="foot-brand" id="footerBrandLogo" onclick="document.getElementById('landingScreen')?.scrollTo({top:0,behavior:'smooth'}); window.scrollTo({top:0,behavior:'smooth'}); return false;">
-                        <span class="brand-mark" title="Formblatt">
+                        <span class="brand-mark" title="SmartForms">
                             <svg viewBox="0 0 100 100" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <rect width="100" height="100" rx="22" fill="#0B63CE"/>
                                 <path d="M22 18 H78 V36 H42 V47 H70 V63 H42 V82 H22 Z" fill="#FFFFFF"/>
                             </svg>
                         </span>
-                        <span class="brand-text"><span class="brand-name-primary">Form</span><span class="brand-name-accent">blatt</span></span>
+                        <span class="brand-text"><span class="brand-name-primary">Smart</span><span class="brand-name-accent">Forms</span></span>
                     </a>
-                    <p class="desc">A PDF form editor that runs entirely in your browser. Free, open source, and built so your documents never have to leave your computer.</p>
+                    <p class="desc">Construction PDF form builder. Processing stays in your browser.</p>
                 </div>
                 <div class="foot-col">
                     <h3 class="foot-col-title">Product</h3>
@@ -797,8 +797,8 @@
                 </div>
             </div>
             <div class="foot-bottom">
-                <span>Free and open source under the GNU AGPLv3 License</span>
-                <span>Built by <a href="https://sagarshrestha23.com.np" target="_blank" rel="noopener noreferrer" style="color: #cbd5e1; text-decoration: underline;">Sagar Shrestha</a></span>
+                <span>Based on Formblatt · GNU AGPLv3</span>
+                <span>Original project by <a href="https://github.com/sshrestha-design/formblatt" target="_blank" rel="noopener noreferrer" style="color: #cbd5e1; text-decoration: underline;">Sagar Shrestha</a></span>
             </div>
         </footer>
     </div>
@@ -820,9 +820,9 @@
     <div id="appEditorScreen" style="display: none; height: 100vh; flex-direction: column; overflow: hidden;">
         <header class="toolbar">
             <div class="toolbar-left">
-                <button type="button" class="editor-brand-logo" id="editorBrandLogo" title="Formblatt Dashboard" aria-label="Formblatt Dashboard">
-                    <span class="editor-brand-icon" style="width: 32px; height: 32px; border-radius: 8px; background: #2563eb; display: inline-flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 18px; line-height: 1; flex-shrink: 0; user-select: none;">F</span>
-                    <span class="editor-brand-name"><span class="brand-name-primary">Form</span><span class="brand-name-accent">blatt</span></span>
+                <button type="button" class="editor-brand-logo" id="editorBrandLogo" title="SmartForms Dashboard" aria-label="SmartForms Dashboard">
+                    <span class="editor-brand-icon" style="width: 32px; height: 32px; border-radius: 8px; background: #1b222b; display: inline-flex; align-items: center; justify-content: center; color: #e8edf2; font-weight: 700; font-size: 18px; line-height: 1; flex-shrink: 0; user-select: none;">S</span>
+                    <span class="editor-brand-name"><span class="brand-name-primary">Smart</span><span class="brand-name-accent">Forms</span></span>
                 </button>
 
                 <!-- Document Header Info -->

@@ -107,7 +107,6 @@ body,
 }
 
 .landing-page .nav-links,
-.landing-page .hero .rig,
 #landingMain > section:not(.hero-section) {
   display: none !important;
 }
@@ -119,12 +118,57 @@ body,
 }
 
 .landing-page .hero {
-  grid-template-columns: minmax(0, 640px) !important;
-  justify-content: center;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr) !important;
+  align-items: center;
 }
 
 .landing-page .hero .left {
   max-width: 640px;
+}
+
+.landing-page .hero-video-card {
+  min-height: 280px;
+  border: 1px dashed var(--border-strong) !important;
+  border-radius: 0 !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+
+.landing-page .hero-showcase-video,
+.landing-page .hero-showcase-fallback,
+.landing-page .video-play-badge {
+  display: none !important;
+}
+
+.landing-page .hero-video-card::before,
+.landing-page .hero-video-card::after {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.landing-page .hero-video-card::before {
+  top: calc(50% - 22px);
+  content: "DROP A PDF FORM HERE";
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.landing-page .hero-video-card::after {
+  top: calc(50% + 12px);
+  content: "or click to browse";
+  color: var(--secondary);
+  font-size: 12px;
+}
+
+.landing-page .hero-video-card:hover {
+  transform: none !important;
+  border-color: var(--brand) !important;
+  box-shadow: none !important;
 }
 
 .landing-page .sub::after {
@@ -135,6 +179,61 @@ body,
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+
+.landing-page .brand-mark svg {
+  display: none;
+}
+
+.landing-page .brand-mark {
+  position: relative;
+  border: 1px solid var(--border-strong) !important;
+  background: var(--surface-raised) !important;
+}
+
+.landing-page .brand-mark::after {
+  content: "S";
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.landing-page .cta-band,
+.landing-page .foot-col {
+  display: none !important;
+}
+
+.landing-page footer.landing-footer {
+  padding: 28px 24px 20px;
+  background: var(--surface) !important;
+  border-top: 1px solid var(--border);
+}
+
+.landing-page .foot-wrap {
+  display: block;
+  max-width: 1180px;
+}
+
+.landing-page footer.landing-footer p.desc {
+  max-width: 520px;
+  color: var(--ink-muted) !important;
+}
+
+.landing-page .foot-bottom {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-color: var(--border);
+  color: var(--ink-subtle);
+}
+
+@media (max-width: 760px) {
+  .landing-page .hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-page .hero-video-card {
+    min-height: 190px;
+  }
 }
 
 .landing-page .brand-mark,
@@ -256,4 +355,1112 @@ button:active,
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border-strong);
   border-radius: 0;
+}
+
+/* Editor shell */
+#appEditorScreen,
+#appEditorScreen .workspace {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .toolbar,
+#appEditorScreen .editor-status-bar,
+#appEditorScreen .docked-status-bar {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .toolbar-doc-title,
+#appEditorScreen .editor-brand-logo,
+#appEditorScreen .editor-brand-name .brand-name-primary,
+#appEditorScreen .mode-toggle-btn.active,
+#appEditorScreen .toolbar-action-btn,
+#appEditorScreen .menu-btn,
+#appEditorScreen .toolbar-smart-btn {
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .toolbar-doc-status,
+#appEditorScreen .mode-toggle-btn,
+#appEditorScreen .toolbar-action-btn,
+#appEditorScreen .menu-btn,
+#appEditorScreen .toolbar-smart-btn,
+#appEditorScreen .docked-status-bar {
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .toolbar-action-btn,
+#appEditorScreen .menu-btn,
+#appEditorScreen .toolbar-smart-btn,
+#appEditorScreen .toolbar-quick-actions,
+#appEditorScreen .mode-segmented-toggle,
+#appEditorScreen .docked-page-nav,
+#appEditorScreen .docked-zoom-pill,
+#appEditorScreen .docked-zoom-btn {
+  background: var(--surface-raised) !important;
+  border-color: var(--border-subtle) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .toolbar-action-btn:hover,
+#appEditorScreen .menu-btn:hover,
+#appEditorScreen .toolbar-smart-btn:hover,
+#appEditorScreen .mode-toggle-btn:hover,
+#appEditorScreen .docked-page-nav button:hover,
+#appEditorScreen .docked-zoom-btn:hover {
+  background: #222b35 !important;
+  border-color: var(--brand-border) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .toolbar-export-btn {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+  color: #101419 !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .toolbar-export-btn:hover {
+  background: var(--brand-hover) !important;
+  border-color: var(--brand-hover) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .left-panel,
+#appEditorScreen .right-panel {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .left-panel-top-bar,
+#appEditorScreen .section-sub-header,
+#appEditorScreen .layers-list,
+#appEditorScreen .pages-list,
+#appEditorScreen .prop-panel-body,
+#appEditorScreen #propFieldHeaderBlock,
+#appEditorScreen .prop-group,
+#appEditorScreen .prop-section-heading,
+#appEditorScreen .prop-footer {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .left-panel-segmented-tabs,
+#appEditorScreen .left-tab-btn.active,
+#appEditorScreen .mode-segmented-indicator,
+#appEditorScreen .prop-chip-toggle,
+#appEditorScreen .prop-inline-select,
+#appEditorScreen .preset-pill-btn,
+#appEditorScreen .prop-drawer {
+  background: var(--surface-raised) !important;
+  border-color: var(--border-subtle) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .left-tab-btn,
+#appEditorScreen .sub-header-title,
+#appEditorScreen .layer-item,
+#appEditorScreen .page-tree-item,
+#appEditorScreen #propFieldHeaderTitle,
+#appEditorScreen .prop-section-heading,
+#appEditorScreen .prop-label,
+#appEditorScreen .prop-chip-toggle,
+#appEditorScreen .prop-inline-select,
+#appEditorScreen .preset-pill-btn,
+#appEditorScreen .prop-drawer-summary {
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .layer-item:hover,
+#appEditorScreen .layer-item.canvas-hover-highlight,
+#appEditorScreen .page-tree-item:hover,
+#appEditorScreen .prop-chip-toggle:hover,
+#appEditorScreen .preset-pill-btn:hover {
+  background: #222b35 !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .layer-item.selected,
+#appEditorScreen .page-tree-item.selected {
+  background: #263442 !important;
+  color: var(--ink) !important;
+  box-shadow: inset 2px 0 0 var(--secondary) !important;
+}
+
+#appEditorScreen #propFieldHeaderIcon,
+#appEditorScreen .prop-type-pill {
+  background: #263442 !important;
+  border-color: var(--border-strong) !important;
+  color: var(--secondary) !important;
+}
+
+#appEditorScreen #propFieldHeaderSubtitle,
+#appEditorScreen .prop-meta-badge,
+#appEditorScreen .layer-item .layer-meta,
+#appEditorScreen .page-tree-meta {
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .floating-tool-island,
+#appEditorScreen .segmented-toolbar,
+#appEditorScreen .page-nav-pill {
+  background: var(--surface-raised) !important;
+  border-color: var(--border-subtle) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .floating-tool-island .tool-btn,
+#appEditorScreen .segmented-toolbar .tool-btn {
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .floating-tool-island .tool-btn:hover,
+#appEditorScreen .segmented-toolbar .tool-btn:hover {
+  background: #222b35 !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .floating-tool-island .tool-btn.active,
+#appEditorScreen .segmented-toolbar .tool-btn.active {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+  color: #101419 !important;
+  box-shadow: none !important;
+}
+
+/* Editor redesign — a compact, technical workspace which mirrors the landing page. */
+#appEditorScreen {
+  --editor-canvas: #0b0e12;
+  --editor-panel: #11161d;
+  --editor-panel-raised: #181f27;
+  --editor-hover: #202934;
+  --editor-selected: #1b2a39;
+  --editor-accent: #8eb9e8;
+  background: var(--editor-canvas) !important;
+}
+
+#appEditorScreen .toolbar {
+  height: 60px !important;
+  padding: 0 20px !important;
+  gap: 16px !important;
+  background: var(--editor-panel) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+#appEditorScreen .editor-brand-icon {
+  background: var(--editor-accent) !important;
+  border: 1px solid #b9d4ef !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: #0b0e12 !important;
+}
+
+#appEditorScreen .editor-brand-name .brand-name-accent,
+#appEditorScreen .toolbar-doc-status,
+#appEditorScreen .toolbar-smart-btn svg,
+#appEditorScreen .toolbar-smart-btn i,
+#appEditorScreen .toolbar-smart-btn [data-lucide] {
+  color: var(--editor-accent) !important;
+}
+
+#appEditorScreen .toolbar-doc-info {
+  padding-left: 12px !important;
+  border-left: 1px solid var(--border) !important;
+}
+
+#appEditorScreen .toolbar-doc-title {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+}
+
+#appEditorScreen .toolbar-doc-status {
+  font-size: 10px !important;
+  letter-spacing: 0.04em !important;
+}
+
+#appEditorScreen .toolbar-action-btn,
+#appEditorScreen .menu-btn.toolbar-action-btn,
+#appEditorScreen .toolbar-smart-btn,
+#appEditorScreen .toolbar-assistants-group .tool-btn {
+  min-height: 34px !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .toolbar-quick-actions {
+  padding: 0 !important;
+  gap: 0 !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+}
+
+#appEditorScreen .toolbar-quick-actions .toolbar-action-btn {
+  border-width: 0 1px 0 0 !important;
+  border-radius: 0 !important;
+}
+
+#appEditorScreen .toolbar-quick-actions .toolbar-action-btn:last-child {
+  border-right: 0 !important;
+}
+
+#appEditorScreen .segmented-toolbar,
+#appEditorScreen .mode-segmented-toggle {
+  height: 36px !important;
+  padding: 2px !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+}
+
+#appEditorScreen .segmented-indicator,
+#appEditorScreen .mode-segmented-indicator {
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 0 !important;
+  background: #263442 !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .mode-toggle-btn.active,
+#appEditorScreen .segmented-toolbar .tool-btn.active {
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .toolbar-export-btn {
+  min-height: 36px !important;
+  border: 1px solid #b9d4ef !important;
+  border-radius: 0 !important;
+  background: var(--editor-accent) !important;
+  color: #0b0e12 !important;
+  font-weight: 800 !important;
+}
+
+#appEditorScreen .workspace,
+#appEditorScreen .center-canvas {
+  background: var(--editor-canvas) !important;
+}
+
+#appEditorScreen .left-panel,
+#appEditorScreen .right-panel {
+  margin: 0 !important;
+  height: 100% !important;
+  max-height: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel) !important;
+}
+
+#appEditorScreen .left-panel {
+  border-right: 1px solid var(--border) !important;
+}
+
+#appEditorScreen .right-panel {
+  border-left: 1px solid var(--border) !important;
+}
+
+#appEditorScreen .panel-resizer {
+  width: 5px !important;
+  margin: 0 !important;
+  background: var(--editor-canvas) !important;
+}
+
+#appEditorScreen .panel-resizer::after {
+  width: 1px !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  background: var(--border) !important;
+}
+
+#appEditorScreen .panel-resizer:hover,
+#appEditorScreen .panel-resizer.is-resizing {
+  background: var(--editor-selected) !important;
+}
+
+#appEditorScreen .panel-resizer:hover::after,
+#appEditorScreen .panel-resizer.is-resizing::after {
+  background: var(--editor-accent) !important;
+}
+
+#appEditorScreen .left-panel-tabs,
+#appEditorScreen .left-panel-top-bar,
+#appEditorScreen .left-panel-header {
+  min-height: 48px !important;
+  padding: 0 12px !important;
+  background: var(--editor-panel) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+#appEditorScreen .left-tab-btn {
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ink-muted) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+
+#appEditorScreen .left-tab-btn.active {
+  border-bottom-color: var(--editor-accent) !important;
+  background: transparent !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .layers-panel-section,
+#appEditorScreen .pages-panel-section,
+#appEditorScreen .layers-list,
+#appEditorScreen .pages-list {
+  background: var(--editor-panel) !important;
+}
+
+#appEditorScreen #layerSearchInput,
+#appEditorScreen .layers-search-input {
+  height: 34px !important;
+  margin: 12px !important;
+  width: calc(100% - 24px) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: #0f141a !important;
+  color: var(--ink) !important;
+  font-size: 11px !important;
+}
+
+#appEditorScreen .layer-item,
+#appEditorScreen .page-tree-item {
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(58, 70, 84, 0.45) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ink-muted) !important;
+  font-size: 11px !important;
+}
+
+#appEditorScreen .layer-item:hover,
+#appEditorScreen .page-tree-item:hover {
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .layer-item.selected,
+#appEditorScreen .page-tree-item.selected {
+  border-left: 2px solid var(--editor-accent) !important;
+  background: var(--editor-selected) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .layer-action-btn,
+#appEditorScreen .layer-visibility-btn,
+#appEditorScreen .layer-lock-btn {
+  color: var(--ink-subtle) !important;
+  border-radius: 0 !important;
+}
+
+#appEditorScreen .layer-action-btn:hover,
+#appEditorScreen .layer-visibility-btn:hover,
+#appEditorScreen .layer-lock-btn:hover {
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .right-panel-empty,
+#appEditorScreen .right-panel-empty-body,
+#appEditorScreen .prop-panel-body,
+#appEditorScreen #propFieldHeaderBlock,
+#appEditorScreen .prop-group,
+#appEditorScreen .prop-drawer,
+#appEditorScreen .prop-footer,
+#appEditorScreen #multiSelectProps .prop-panel-header {
+  background: var(--editor-panel) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen #propFieldHeaderBlock,
+#appEditorScreen #multiSelectProps .prop-panel-header {
+  min-height: 64px !important;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+#appEditorScreen #propFieldHeaderTitle,
+#appEditorScreen #multiSelectProps .prop-panel-title,
+#appEditorScreen .prop-section-heading,
+#appEditorScreen .prop-drawer-summary {
+  color: var(--ink) !important;
+}
+
+#appEditorScreen #propFieldHeaderIcon,
+#appEditorScreen .prop-type-pill,
+#appEditorScreen #multiSelectProps .prop-type-pill {
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 0 !important;
+  background: var(--editor-selected) !important;
+  color: var(--editor-accent) !important;
+}
+
+#appEditorScreen .prop-group,
+#appEditorScreen .prop-drawer {
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 0 !important;
+}
+
+#appEditorScreen .prop-section-heading,
+#appEditorScreen .prop-drawer-summary {
+  height: 42px !important;
+  padding: 0 16px !important;
+  border: 0 !important;
+  background: var(--editor-panel) !important;
+  color: var(--ink) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
+}
+
+#appEditorScreen .prop-section-heading:hover,
+#appEditorScreen .prop-drawer-summary:hover {
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .prop-label,
+#appEditorScreen .prop-meta-badge,
+#appEditorScreen #propFieldHeaderSubtitle,
+#appEditorScreen .right-panel-empty-body {
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .prop-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+
+#appEditorScreen .prop-input,
+#appEditorScreen .prop-select,
+#appEditorScreen .prop-textarea,
+#appEditorScreen .prop-inline-select select,
+#appEditorScreen .font-format-btn,
+#appEditorScreen .btn-font-format {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: #0f141a !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .prop-input:focus,
+#appEditorScreen .prop-select:focus,
+#appEditorScreen .prop-textarea:focus,
+#appEditorScreen .prop-inline-select select:focus {
+  border-color: var(--editor-accent) !important;
+  outline: 1px solid var(--editor-accent) !important;
+  outline-offset: -1px !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .prop-chip-toggle,
+#appEditorScreen .prop-align-container,
+#appEditorScreen .prop-inline-select,
+#appEditorScreen .preset-pill-btn,
+#appEditorScreen .prop-quick-type-btn,
+#appEditorScreen .prop-tool-btn {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .prop-chip-toggle:hover,
+#appEditorScreen .preset-pill-btn:hover,
+#appEditorScreen .prop-quick-type-btn:hover,
+#appEditorScreen .prop-tool-btn:hover,
+#appEditorScreen .btn-font-format:hover {
+  border-color: var(--editor-accent) !important;
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen input[type="checkbox"] {
+  accent-color: var(--editor-accent) !important;
+}
+
+#appEditorScreen .prop-footer {
+  padding: 12px 16px !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+#appEditorScreen .prop-btn-duplicate,
+#appEditorScreen .prop-btn-table,
+#appEditorScreen .prop-btn-group,
+#appEditorScreen .prop-btn-delete,
+#appEditorScreen .btn-danger-outline {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .prop-btn-duplicate {
+  border-color: var(--border-subtle) !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .prop-btn-delete,
+#appEditorScreen .btn-danger-outline {
+  border-color: var(--danger-border) !important;
+  background: transparent !important;
+  color: var(--danger) !important;
+}
+
+#appEditorScreen .prop-btn-delete:hover,
+#appEditorScreen .btn-danger-outline:hover {
+  background: var(--danger-light) !important;
+  color: var(--danger-hover) !important;
+}
+
+#appEditorScreen .center-canvas {
+  padding-top: 36px !important;
+  background-image: none !important;
+}
+
+#appEditorScreen .canvas-container {
+  border: 1px solid #3a4654 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .floating-tool-island,
+#appEditorScreen #floatingToolIsland {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .floating-tool-island .tool-btn,
+#appEditorScreen #floatingToolIsland .tool-btn {
+  border-radius: 0 !important;
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .floating-tool-island .tool-btn:hover,
+#appEditorScreen #floatingToolIsland .tool-btn:hover {
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .floating-tool-island .tool-btn.active,
+#appEditorScreen #floatingToolIsland .tool-btn.active {
+  border-left: 2px solid var(--editor-accent) !important;
+  background: var(--editor-selected) !important;
+  color: var(--editor-accent) !important;
+}
+
+#appEditorScreen .docked-status-bar,
+#appEditorScreen #dockedStatusBar {
+  bottom: 14px !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink-muted) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .docked-status-bar button,
+#appEditorScreen #dockedStatusBar button {
+  border-radius: 0 !important;
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .docked-status-bar button:hover,
+#appEditorScreen #dockedStatusBar button:hover {
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .field-overlay {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .field-overlay.selected {
+  border-color: var(--editor-accent) !important;
+  background: rgba(142, 185, 232, 0.18) !important;
+  box-shadow: none !important;
+}
+
+/* Secondary surfaces: menus, popovers and temporary editor states. */
+#appEditorScreen .btn-outline-pill,
+#appEditorScreen .toolbar-smart-btn,
+#appEditorScreen .menu-bar-btn {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .mode-toggle-btn.active {
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 0 !important;
+  background: var(--editor-selected) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .mode-toggle-btn.active svg,
+#appEditorScreen .mode-toggle-btn.active i,
+#appEditorScreen .mode-toggle-btn.active [data-lucide] {
+  color: var(--editor-accent) !important;
+}
+
+#appEditorScreen .layer-filter-btn,
+#appEditorScreen #autoSortTabOrderBtn {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink-muted) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .layer-filter-btn:hover,
+#appEditorScreen #autoSortTabOrderBtn:hover {
+  border-color: var(--editor-accent) !important;
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .btn-outline-pill:hover,
+#appEditorScreen .toolbar-smart-btn:hover,
+#appEditorScreen .menu-bar-btn:hover,
+#appEditorScreen .menu-bar-item.active .menu-bar-btn {
+  border-color: var(--editor-accent) !important;
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .btn-export-pill,
+#appEditorScreen #generatePdfBtn {
+  border: 1px solid #b9d4ef !important;
+  border-radius: 0 !important;
+  background: var(--editor-accent) !important;
+  color: #0b0e12 !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .btn-export-pill:hover,
+#appEditorScreen #generatePdfBtn:hover {
+  background: #b9d4ef !important;
+  color: #0b0e12 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#appEditorScreen .app-menu-bar,
+#appEditorScreen .menu-bar-dropdown,
+#appEditorScreen .menu-submenu-content,
+#appEditorScreen .dropdown-content,
+#appEditorScreen .table-preset-popover,
+#appEditorScreen .zoom-dropdown-menu {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .menu-bar-dropdown-item,
+#appEditorScreen .dropdown-item,
+#appEditorScreen .menu-section-header,
+#appEditorScreen .menu-item-kbd {
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .menu-bar-dropdown-item:hover,
+#appEditorScreen .dropdown-item:hover {
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+  transform: none !important;
+}
+
+#appEditorScreen .menu-item-kbd {
+  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: #0f141a !important;
+}
+
+#appEditorScreen .menu-divider,
+#appEditorScreen .dropdown-divider {
+  background: var(--border) !important;
+}
+
+#appEditorScreen .right-panel-empty {
+  border: 0 !important;
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .right-panel-empty-body {
+  max-width: 230px !important;
+  margin: auto !important;
+  line-height: 1.65 !important;
+}
+
+#appEditorScreen #fillPanelSection,
+#appEditorScreen .fill-panel-section,
+#appEditorScreen .fill-status-card,
+#appEditorScreen #propFillCheckboxRow,
+#appEditorScreen #propFillValidationCard,
+#appEditorScreen #propFillSigPreview {
+  border-color: var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen #fillPanelSection *,
+#appEditorScreen #propFillSectionContent * {
+  border-radius: 0 !important;
+}
+
+#appEditorScreen .fill-portability-btn,
+#appEditorScreen .prop-fill-tool-btn,
+#appEditorScreen .prop-nav-btn,
+#appEditorScreen .prop-action-btn.secondary,
+#appEditorScreen #propFillTodayBtn,
+#appEditorScreen #propFillClearSigBtn {
+  border: 1px solid var(--border-subtle) !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .prop-action-btn.primary,
+#appEditorScreen #propFillSignBtn,
+#appEditorScreen #fillExportPdfBtn {
+  border: 1px solid #b9d4ef !important;
+  background: var(--editor-accent) !important;
+  color: #0b0e12 !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .fill-filter-chip {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .fill-filter-chip.active {
+  border-color: var(--editor-accent) !important;
+  background: var(--editor-selected) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .wp-format-toolbar,
+#appEditorScreen .wp-table-toolbar,
+#appEditorScreen .contextual-quick-bar,
+#appEditorScreen .canvas-zoom-hud,
+#appEditorScreen .floating-tool-stamp {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .wp-format-toolbar .wp-tb-btn,
+#appEditorScreen .wp-format-toolbar .wp-tb-select,
+#appEditorScreen .contextual-quick-bar .quick-bar-btn {
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .wp-format-toolbar .wp-tb-btn:hover,
+#appEditorScreen .contextual-quick-bar .quick-bar-btn:hover {
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen .wp-format-toolbar .wp-tb-btn.active,
+#appEditorScreen .contextual-quick-bar .quick-bar-btn.active {
+  border-color: var(--editor-accent) !important;
+  background: var(--editor-selected) !important;
+  color: var(--editor-accent) !important;
+}
+
+#appEditorScreen .edge-peek-tab {
+  border-color: var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink-muted) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .edge-peek-tab:hover {
+  border-color: var(--editor-accent) !important;
+  background: var(--editor-hover) !important;
+  box-shadow: none !important;
+}
+
+#appEditorScreen .fill-mode-banner {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--editor-panel-raised) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+#appEditorScreen .fill-hud-btn {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: #0f141a !important;
+  color: var(--ink) !important;
+}
+
+#appEditorScreen select option {
+  background: #0f141a !important;
+  color: var(--ink) !important;
+}
+
+/* Dialogs sit outside the editor shell, so they receive their own dark layer. */
+.modal {
+  background: rgba(4, 6, 9, 0.78) !important;
+  backdrop-filter: none !important;
+}
+
+.modal-content,
+.modal-card,
+.signature-modal-content,
+.command-palette,
+.export-success-toast,
+.app-tooltip {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+.modal-content h1,
+.modal-content h2,
+.modal-content h3,
+.modal-content h4,
+.modal-content p,
+.modal-content label,
+.modal-content span,
+.modal-content div,
+.command-palette,
+.export-success-toast {
+  color: var(--ink) !important;
+}
+
+.modal-content input,
+.modal-content select,
+.modal-content textarea,
+.command-palette input {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: #0f141a !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+.modal-content .btn-secondary,
+.modal-content .modal-close-btn,
+.modal-content .modal-close-icon {
+  border-color: var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--surface-raised) !important;
+  color: var(--ink) !important;
+}
+
+.modal-content .btn-primary,
+.modal-content .btn-success {
+  border-color: #b9d4ef !important;
+  border-radius: 0 !important;
+  background: var(--secondary) !important;
+  color: #0b0e12 !important;
+}
+
+.modal-content .btn-primary *,
+.modal-content .btn-success * {
+  color: #0b0e12 !important;
+}
+
+#leaveEditorModal .modal-content {
+  max-width: 350px !important;
+  padding: 28px 22px !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+
+#leaveEditorModal .modal-content > div:first-child > div:first-child {
+  border: 1px solid var(--danger-border) !important;
+  border-radius: 0 !important;
+  background: var(--danger-light) !important;
+  color: var(--danger) !important;
+}
+
+#leaveEditorModal .modal-content > div:last-child {
+  border-top-color: var(--border-subtle) !important;
+}
+
+#leaveEditorModal #saveAndLeaveEditorBtn,
+#leaveEditorModal #cancelLeaveEditorBtn,
+#leaveEditorModal #discardAndLeaveEditorBtn {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#leaveEditorModal #saveAndLeaveEditorBtn,
+#leaveEditorModal #saveAndLeaveEditorBtn * {
+  border-color: #b9d4ef !important;
+  background: var(--secondary) !important;
+  color: #0b0e12 !important;
+}
+
+#leaveEditorModal #discardAndLeaveEditorBtn,
+#leaveEditorModal #discardAndLeaveEditorBtn * {
+  border-color: var(--danger-border) !important;
+  background: var(--danger-light) !important;
+  color: var(--danger-hover) !important;
+}
+
+#leaveEditorModal #discardAndLeaveEditorBtn:hover,
+#leaveEditorModal #discardAndLeaveEditorBtn:hover * {
+  border-color: var(--danger-hover) !important;
+  background: #3a1c1f !important;
+  color: #ffffff !important;
+}
+
+#leaveEditorModal #cancelLeaveEditorBtn,
+#leaveEditorModal #cancelLeaveEditorBtn * {
+  border-color: var(--border-subtle) !important;
+  background: var(--surface-raised) !important;
+  color: var(--ink) !important;
+}
+
+#returningUserModal {
+  background: rgba(4, 6, 9, 0.82) !important;
+  backdrop-filter: none !important;
+}
+
+#returningUserModal .returning-user-popin-card {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+#returningUserModal .returning-user-dismiss-btn {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--surface-raised) !important;
+  color: var(--ink-muted) !important;
+}
+
+#returningUserModal .returning-user-dismiss-btn:hover {
+  border-color: var(--editor-accent, var(--secondary)) !important;
+  background: #202934 !important;
+  color: var(--ink) !important;
+}
+
+#returningUserModal .returning-user-badge {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: #1b2a39 !important;
+  color: var(--secondary) !important;
+}
+
+#returningUserModal .returning-user-badge i,
+#returningUserModal .returning-user-badge svg,
+#returningUserModal .returning-user-greeting {
+  color: var(--ink) !important;
+}
+
+#returningUserModal .returning-user-subtext,
+#returningUserModal .file-box-meta,
+#returningUserModal .file-box-arrow {
+  color: var(--ink-muted) !important;
+}
+
+#returningUserModal .returning-user-file-box {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--surface-raised) !important;
+  box-shadow: none !important;
+}
+
+#returningUserModal .returning-user-file-box:hover {
+  border-color: var(--secondary) !important;
+  background: #202934 !important;
+  box-shadow: none !important;
+}
+
+#returningUserModal .file-box-icon {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: #1b2a39 !important;
+  color: var(--secondary) !important;
+}
+
+#returningUserModal .file-box-name {
+  color: var(--ink) !important;
+}
+
+#returningUserModal .returning-user-btn-primary,
+#returningUserModal .returning-user-btn-primary * {
+  border: 1px solid #b9d4ef !important;
+  border-radius: 0 !important;
+  background: var(--secondary) !important;
+  color: #0b0e12 !important;
+  box-shadow: none !important;
+}
+
+#returningUserModal .returning-user-btn-secondary,
+#returningUserModal .returning-user-btn-secondary * {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  background: var(--surface-raised) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+#returningUserModal .returning-user-btn-secondary:hover,
+#returningUserModal .returning-user-btn-secondary:hover * {
+  border-color: var(--secondary) !important;
+  background: #202934 !important;
+  color: var(--ink) !important;
+}
+
+#returningUserModal .returning-user-footer-row {
+  border-top-color: var(--border) !important;
+}
+
+#returningUserModal .returning-user-footer-btn {
+  color: var(--ink-muted) !important;
+}
+
+#returningUserModal .returning-user-footer-btn.explore-link {
+  color: var(--secondary) !important;
+}
+
+#returningUserModal .returning-user-footer-btn.clear-history:hover {
+  color: var(--danger-hover) !important;
 }
