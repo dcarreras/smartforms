@@ -1,11 +1,12 @@
 // ── Formblatt Offline Service Worker (sw.js) ──────────────────────────
 // Enables 100% client-side offline execution (PWA) — works in Airplane Mode.
 
-const CACHE_NAME = "formblatt-cache-v3.20";
+const CACHE_NAME = "formblatt-cache-v3.21";
 const STATIC_ASSETS = [
     "/",
     "/index.html",
     "/favicon.svg",
+    "/assets/smartforms-logo-black-white.png",
     "/site.webmanifest",
     "/styles/base.css",
     "/styles/fonts.css",

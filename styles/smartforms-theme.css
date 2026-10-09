@@ -1464,3 +1464,15 @@ button:active,
 #returningUserModal .returning-user-footer-btn.clear-history:hover {
   color: var(--danger-hover) !important;
 }
+
+.landing-page .brand-mark.brand-mark-logo,
+#appEditorScreen .editor-brand-icon.editor-brand-logo-image {
+  background: #000 url("../assets/smartforms-logo-black-white.png") 50% 42% / 190% no-repeat !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.landing-page .brand-mark.brand-mark-logo::after {
+  display: none !important;
+}
