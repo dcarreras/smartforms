@@ -3,7 +3,7 @@ const { join } = require("node:path");
 
 const root = join(__dirname, "..");
 const output = join(root, "dist");
-const directories = [".well-known", "assets", "ffdnet", "fonts", "js", "models", "styles", "vendor"];
+const directories = [".well-known", "assets", "fonts", "js", "models", "styles", "vendor"];
 const files = ["favicon.svg", "google6c725a899ef3c23d.html", "index.html", "robots.txt", "site.webmanifest", "sitemap.xml", "sw.js"];
 
 async function exists(path) {
