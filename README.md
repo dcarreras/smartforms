@@ -91,7 +91,7 @@ Off by default. The editor probes `http://127.0.0.1:8000` and uses it if it resp
 
 ```sh
 python -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -r docs/sidecar-requirements.txt
 npm run start:sidecar
 ```
 
