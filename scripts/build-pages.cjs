@@ -3,8 +3,9 @@ const { join } = require("node:path");
 
 const root = join(__dirname, "..");
 const output = join(root, "dist");
-const directories = [".well-known", "assets", "fonts", "js", "models", "styles", "vendor"];
+const directories = [".well-known", "assets", "fonts", "js", "styles", "vendor"];
 const files = ["favicon.svg", "google6c725a899ef3c23d.html", "index.html", "robots.txt", "site.webmanifest", "sitemap.xml", "sw.js"];
+const modelFiles = ["models/FFDNet-L.quant.onnx"];
 
 async function exists(path) {
   try {
@@ -22,7 +23,7 @@ async function copy(source) {
 async function build() {
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
-  for (const path of [...directories, ...files]) {
+  for (const path of [...directories, ...files, ...modelFiles]) {
     if (await exists(join(root, path))) await copy(path);
   }
 }
