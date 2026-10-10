@@ -446,7 +446,7 @@ export function toggleGuides() {
 }
 
 export function updateDocumentTitle(customName) {
-    const defaultTitle = "Formblatt: Free Interactive PDF Form Creator & AcroForm Editor";
+    const defaultTitle = "SmartForms: Free Interactive PDF Form Creator & AcroForm Editor";
     if (typeof document === "undefined" || !document) return;
     
     const editor = typeof document.getElementById === "function" ? document.getElementById("appEditorScreen") : null;
@@ -461,7 +461,7 @@ export function updateDocumentTitle(customName) {
     
     const name = customName !== undefined ? customName : state.fileName;
     if (name && typeof name === "string" && name.trim()) {
-        document.title = `${name.trim()} – Formblatt`;
+        document.title = `${name.trim()} – SmartForms`;
     } else {
         document.title = defaultTitle;
     }

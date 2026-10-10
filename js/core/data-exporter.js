@@ -106,7 +106,7 @@ export function exportFormDataAsJson(fields = state.fields, filename = "form-dat
 
     const exportPayload = {
         _meta: {
-            app: "Formblatt",
+            app: "SmartForms",
             version: "2.8",
             exportedAt: new Date().toISOString(),
             totalFields: fields.length

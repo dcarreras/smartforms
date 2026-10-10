@@ -30,14 +30,14 @@ from PIL import Image, ImageOps, ImageFilter
 import fitz  # PyMuPDF — for server-side PDF rendering
 
 app = FastAPI(
-    title="Formblatt Local Document Understanding Sidecar",
-    description="Local FFDNet-L vision inference for Formblatt PDF form auto-detection.",
+    title="SmartForms Local Document Understanding Sidecar",
+    description="Optional local FFDNet-L vision inference for SmartForms PDF form auto-detection.",
     version="2.0.0"
 )
 
-# Allowed origins: Formblatt official production domains and local development instances.
+# Allowed origins: SmartForms production domains and local development instances.
 DEFAULT_ALLOWED_ORIGINS = [
-    "https://formblatt.dpdns.org",
+    "https://smartforms-cons.pages.dev",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
@@ -52,7 +52,7 @@ CUSTOM_ORIGINS = [
     if orig.strip()
 ]
 ALLOWED_ORIGINS = list(dict.fromkeys(DEFAULT_ALLOWED_ORIGINS + CUSTOM_ORIGINS))
-ALLOWED_ORIGIN_REGEX = r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://formblatt\.dpdns\.org|https://formblatt-[a-zA-Z0-9\-]+\.vercel\.app)$"
+ALLOWED_ORIGIN_REGEX = r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://smartforms-cons\.pages\.dev)$"
 
 app.add_middleware(
     CORSMiddleware,
@@ -75,13 +75,11 @@ except ImportError:
     torch = None
 
 # ── FFDNet-L model loading ────────────────────────────────────────────────────
-# Expected at: <project_root>/ffdnet/FFDNet-L.pt
+# Expected at: <project_root>/models/FFDNet-L.pt
 # Classes: {0: 'textbox', 1: 'choice_button', 2: 'signature'}
 _THIS_DIR = Path(__file__).parent
 candidate_paths = [
     _THIS_DIR / "models" / "FFDNet-L.pt",
-    _THIS_DIR / "ffdnet" / "FFDNet-L.pt",
-    Path("/Users/sagarshrestha/.gemini/antigravity/scratch/pdf_vision_project/ffdnet/FFDNet-L.pt")
 ]
 FFDNET_WEIGHTS = next((p for p in candidate_paths if p.exists()), candidate_paths[0])
 

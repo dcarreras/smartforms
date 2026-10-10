@@ -389,7 +389,7 @@ export function exportProjectJson(customFileName) {
     }
 
     const projectData = {
-        appName: "Formblatt",
+        appName: "SmartForms",
         version: "2.5",
         date: new Date().toISOString(),
         fileName: state.fileName || "interactive_form.pdf",

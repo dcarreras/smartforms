@@ -1,9 +1,9 @@
 # JustForms Product & Engineering Roadmap
 
 > **Target Timeline**: 2026 – 2027  
-> **Repository**: [github.com/sshrestha-design/justforms](https://github.com/sshrestha-design/justforms)  
-> **Production App**: [justforms.vercel.app](https://justforms.vercel.app)  
-> **Author & Lead Architect**: Sagar Shrestha  
+> **Repository**: [github.com/dcarreras/smartforms](https://github.com/dcarreras/smartforms)<br>
+> **Production App**: [smartforms-cons.pages.dev](https://smartforms-cons.pages.dev)<br>
+> **Project**: SmartForms
 
 ---
 

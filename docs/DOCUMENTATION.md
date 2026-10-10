@@ -1,9 +1,9 @@
 # JustForms Technical Documentation & Architecture Manual
 
 > **Version**: 1.1.0 (RC v1.1)  
-> **Repository**: [github.com/sshrestha-design/justforms](https://github.com/sshrestha-design/justforms)  
-> **Production URL**: [justforms.vercel.app](https://justforms.vercel.app)  
-> **Author & Lead Architect**: Sagar Shrestha  
+> **Repository**: [github.com/dcarreras/smartforms](https://github.com/dcarreras/smartforms)<br>
+> **Production URL**: [smartforms-cons.pages.dev](https://smartforms-cons.pages.dev)<br>
+> **Project**: SmartForms
 
 ---
 
@@ -311,7 +311,7 @@ styles/
 ### Local Development
 ```bash
 # Clone the repository
-git clone https://github.com/sshrestha-design/justforms.git
+git clone https://github.com/dcarreras/smartforms.git
 cd justforms
 
 # Start any local HTTP server (ES Modules require HTTP/HTTPS origin)
@@ -329,4 +329,4 @@ node --check js/*.js
 The project is configured for continuous zero-config deployment on Vercel:
 - **Production Branch**: `main`
 - **Output Directory**: `.` (Root)
-- **Live URL**: [https://justforms.vercel.app](https://justforms.vercel.app)
+- **Live URL**: [https://smartforms-cons.pages.dev](https://smartforms-cons.pages.dev)

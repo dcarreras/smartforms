@@ -765,7 +765,7 @@ export function initEditorSubsystems() {
 
     // ── Help Menu Actions ──────────────────────────────────────────
     document.getElementById("menuAboutBtn")?.addEventListener("click", () => {
-        showToast("Formblatt v2.0 - Private Client-Side Interactive PDF Creator", "info");
+        showToast("SmartForms - Private Client-Side Interactive PDF Creator", "info");
     });
 
     // Page Navigation Buttons

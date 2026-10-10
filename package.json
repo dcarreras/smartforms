@@ -1,7 +1,7 @@
 {
-  "name": "formblatt",
+  "name": "smartforms",
   "version": "3.0.0",
-  "description": "A 100% private, client-side visual PDF form builder and ISO 32000 AcroForm generator that runs entirely in your browser.",
+  "description": "A privacy-first, browser-based PDF form builder and ISO 32000 AcroForm generator for SmartForms.",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
@@ -19,9 +19,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sshrestha-design/formblatt.git"
+    "url": "https://github.com/dcarreras/smartforms.git"
   },
-  "homepage": "https://formblatt.dpdns.org",
+  "homepage": "https://smartforms-cons.pages.dev",
   "keywords": [
     "pdf",
     "acroform",
@@ -31,14 +31,8 @@
     "privacy-first",
     "open-source"
   ],
-  "author": "Sagar Shrestha",
+  "author": "dcarreras",
   "license": "AGPL-3.0-or-later",
-  "engines": {
-    "node": ">=20.0.0"
-  },
-  "dependencies": {
-    "@vercel/analytics": "^2.0.1"
-  },
   "devDependencies": {
     "pdf-lib": "^1.17.1",
     "playwright": "^1.63.0"

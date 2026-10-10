@@ -667,7 +667,7 @@ export const COMMANDS = [
     },
     {
         id: "help-about",
-        title: "About Formblatt",
+        title: "About SmartForms",
         category: "Help & Community",
         keywords: ["about", "info", "formblatt", "author", "license", "open source"],
         icon: "info",
@@ -689,7 +689,7 @@ export const COMMANDS = [
             if (typeof window.installPwaApp === "function") {
                 window.installPwaApp();
             } else {
-                showToast("Formblatt is ready for 100% offline use!", "success");
+                showToast("SmartForms is ready for offline use!", "success");
             }
         }
     }

@@ -336,7 +336,7 @@ const DEFAULT_EXAMPLE_REVIEWS = [
         rating: 5,
         category: "Legal Counsel",
         sender: "Sarah Jenkins",
-        message: "Formblatt made converting our corporate NDA into a fillable AcroForm effortless! Zero server uploads gives our legal team complete peace of mind.",
+        message: "SmartForms made converting our corporate NDA into a fillable AcroForm effortless. The local workflow gives our legal team peace of mind.",
         isVerified: false,
         isExample: true
     },
@@ -414,7 +414,7 @@ export function renderLandingReviews() {
     if (visibleReviews.length === 0) {
         grid.innerHTML = `
             <div class="reviews-empty-state">
-                <p>No user-submitted reviews yet. Used Formblatt? Be the first to share your experience.</p>
+                <p>No user-submitted reviews yet. Used SmartForms? Be the first to share your experience.</p>
             </div>
         `;
     } else {
@@ -495,7 +495,7 @@ function renderExampleReviewsSection() {
     const escapeHtml = str => String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
     section.innerHTML = `
-        <h3 class="example-reviews-heading">Why people use Formblatt</h3>
+        <h3 class="example-reviews-heading">Why people use SmartForms</h3>
         <div class="example-reviews-grid">
             ${DEFAULT_EXAMPLE_REVIEWS.map(r => {
                 const rating = Math.min(5, Math.max(1, parseInt(r.rating) || 5));
@@ -945,70 +945,70 @@ export function initLandingController(onLoaded) {
     // Comprehensive UI & Video Caption Localization Dictionary
     const UI_CAPTIONS = {
         en: {
-            sponsorCaption: "Formblatt is free & privacy-first",
+            sponsorCaption: "SmartForms is free & privacy-first",
             sponsorTitle: "Support Open-Source & Free Tools",
-            sponsorDesc: "Help keep Formblatt 100% private, client-side, and ad-free.",
+            sponsorDesc: "Help keep SmartForms private, client-side, and ad-free.",
             sponsorAction: "Support",
             heroEyebrow: "YOUR PDF NEVER LEAVES YOUR COMPUTER"
         },
         de: {
-            sponsorCaption: "Formblatt ist 100% kostenlos & privat",
+            sponsorCaption: "SmartForms ist 100% kostenlos & privat",
             sponsorTitle: "Open-Source & Datenschutz unterstützen",
-            sponsorDesc: "Formblatt bleibt privat, clientseitig und werbefrei.",
+            sponsorDesc: "SmartForms bleibt privat, clientseitig und werbefrei.",
             sponsorAction: "Unterstützen",
             heroEyebrow: "IHRE PDF-DATEI VERLÄSST NIEMALS IHREN COMPUTER"
         },
         fr: {
-            sponsorCaption: "Formblatt est gratuit & confidentiel",
+            sponsorCaption: "SmartForms est gratuit & confidentiel",
             sponsorTitle: "Soutenir l'Open-Source & les Outils Libres",
-            sponsorDesc: "Gardez Formblatt 100% privé, local et sans publicité.",
+            sponsorDesc: "Gardez SmartForms privé, local et sans publicité.",
             sponsorAction: "Soutenir",
             heroEyebrow: "VOTRE PDF NE QUITTE JAMAIS VOTRE ORDINATEUR"
         },
         es: {
-            sponsorCaption: "Formblatt es gratuito y privado",
+            sponsorCaption: "SmartForms es gratuito y privado",
             sponsorTitle: "Apoyar el código abierto y herramientas libres",
-            sponsorDesc: "Mantenga Formblatt 100% privado, local y sin anuncios.",
+            sponsorDesc: "Mantenga SmartForms privado, local y sin anuncios.",
             sponsorAction: "Apoyar",
             heroEyebrow: "SU PDF NUNCA SALE DE SU COMPUTADORA"
         },
         it: {
-            sponsorCaption: "Formblatt è gratuito e riservato",
+            sponsorCaption: "SmartForms è gratuito e riservato",
             sponsorTitle: "Sostieni l'Open Source & Strumenti Gratuiti",
-            sponsorDesc: "Formblatt rimane privato, eseguito in locale e senza pubblicità.",
+            sponsorDesc: "SmartForms rimane privato, eseguito in locale e senza pubblicità.",
             sponsorAction: "Sostieni",
             heroEyebrow: "IL TUO PDF NON LASCIA MAI IL TUO COMPUTER"
         },
         pt: {
-            sponsorCaption: "Formblatt é gratuito e seguro",
+            sponsorCaption: "SmartForms é gratuito e seguro",
             sponsorTitle: "Apoie o Código Aberto & Ferramentas Livres",
-            sponsorDesc: "Mantenha o Formblatt 100% privado, local e sem anúncios.",
+            sponsorDesc: "Mantenha o SmartForms privado, local e sem anúncios.",
             sponsorAction: "Apoiar",
             heroEyebrow: "O SEU PDF NUNCA SAI DO SEU COMPUTADOR"
         },
         nl: {
-            sponsorCaption: "Formblatt is gratis & privacy-vriendelijk",
+            sponsorCaption: "SmartForms is gratis & privacy-vriendelijk",
             sponsorTitle: "Steun Open-Source & Vrije Software",
-            sponsorDesc: "Houd Formblatt 100% lokaal, privé en advertentievrij.",
+            sponsorDesc: "Houd SmartForms lokaal, privé en advertentievrij.",
             sponsorAction: "Steunen",
             heroEyebrow: "UW PDF VERLAAT NOOIT UW COMPUTER"
         },
         ja: {
-            sponsorCaption: "Formblattは完全無料でプライバシー重視",
+            sponsorCaption: "SmartFormsは完全無料でプライバシー重視",
             sponsorTitle: "オープンソースと無料ツールの支援",
             sponsorDesc: "完全ブラウザ完結で安全なPDFフォーム作成を支援。",
             sponsorAction: "支援する",
             heroEyebrow: "PDFファイルはお使いの端末から送信されません"
         },
         zh: {
-            sponsorCaption: "Formblatt 完全免费且保护隐私",
+            sponsorCaption: "SmartForms 完全免费且保护隐私",
             sponsorTitle: "支持开源与免费工具",
             sponsorDesc: "纯浏览器端运行，确保您的 PDF 数据完全私密安全。",
             sponsorAction: "支持我们",
             heroEyebrow: "您的 PDF 绝不会离开您的电脑"
         },
         ne: {
-            sponsorCaption: "Formblatt पूर्ण रूपमा निःशुल्क र गोप्य छ",
+            sponsorCaption: "SmartForms पूर्ण रूपमा निःशुल्क र गोप्य छ",
             sponsorTitle: "खुला स्रोत र निःशुल्क सफ्टवेयरलाई समर्थन गर्नुहोस्",
             sponsorDesc: "तपाईंको PDF कम्प्युटरमै प्रशोधन हुन्छ, कतै अपलोड हुँदैन।",
             sponsorAction: "सहयोग",
@@ -1187,7 +1187,7 @@ export function initLandingController(onLoaded) {
             if (file && isSupportedUploadFile(file)) {
                 await loadPdfFile(file, onLoaded);
             } else if (file) {
-                showToast("Supported formats: PDF documents (.pdf), Images (.jpg, .png, .webp), or Formblatt project files (.formblatt).", "warning");
+                showToast("Supported formats: PDF documents (.pdf), images (.jpg, .png, .webp), or SmartForms project files (.formblatt).", "warning");
             }
         });
     }
@@ -1255,7 +1255,7 @@ export function initLandingController(onLoaded) {
         if (isValid) {
             await loadPdfFile(file, onLoaded);
         } else {
-            showToast("Supported formats: PDF documents (.pdf), Images (.jpg, .png, .webp), or Formblatt project files (.formblatt).", "warning");
+            showToast("Supported formats: PDF documents (.pdf), images (.jpg, .png, .webp), or SmartForms project files (.formblatt).", "warning");
         }
     });
 
@@ -1278,7 +1278,7 @@ export function initLandingController(onLoaded) {
     // Mobile Device Handoff & Web Share API Handlers
     const handleDeviceShare = async () => {
         const shareData = {
-            title: "Formblatt: Client-Side PDF Form Builder",
+            title: "SmartForms: Client-Side PDF Form Builder",
             text: "Create fillable PDF AcroForms on desktop without server uploads!",
             url: window.location.href
         };

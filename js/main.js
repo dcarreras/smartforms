@@ -1,4 +1,4 @@
-// ── Formblatt Application Bootstrap (js/main.js) ───────────────────
+// ── SmartForms Application Bootstrap (js/main.js) ───────────────────
 import { state } from "./core/state.js";
 import { initLandingController, showLandingScreen, renderLandingReviews, loadTemplate } from "./controllers/landing-controller.js";
 import { initGradientWaves } from "./ui/gradient-waves.js";
@@ -215,13 +215,13 @@ if (typeof window !== "undefined") {
             deferredPrompt.prompt();
             const choice = await deferredPrompt.userChoice;
             if (choice && choice.outcome === "accepted") {
-                showToast("Formblatt App installed successfully!", "success");
+                showToast("SmartForms installed successfully!", "success");
             }
             deferredPrompt = null;
             const installBtn = document.getElementById("menuInstallAppBtn");
             if (installBtn) installBtn.style.display = "none";
         } else {
-            showToast("Formblatt is 100% cached & ready for offline use!", "success");
+            showToast("SmartForms is cached and ready for offline use!", "success");
         }
     };
 
@@ -232,7 +232,7 @@ if (typeof window !== "undefined") {
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator && typeof window !== "undefined") {
     window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").then(reg => {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" }).then(reg => {
             reg.update();
             console.log("[PWA] Service Worker registered for offline execution:", reg.scope);
         }).catch(err => {
