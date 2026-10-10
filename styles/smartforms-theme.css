@@ -1485,6 +1485,10 @@ button:active,
   box-shadow: none !important;
 }
 
+.landing-page #heroBrowseBtn {
+  border-radius: 0 !important;
+}
+
 .landing-page #heroBrowseBtn:hover,
 .landing-page #heroBrowseBtn:hover span {
   background: #b9d4ef !important;
@@ -1826,4 +1830,234 @@ button:active,
     background: #263442;
     color: var(--secondary);
   }
+}
+
+#appEditorScreen .toolbar-panel-toggles {
+  display: inline-flex;
+  gap: 2px;
+  padding-right: 4px;
+  border-right: 1px solid var(--border-subtle);
+}
+
+#appEditorScreen .toolbar-panel-toggles .ib-btn {
+  color: var(--ink-muted) !important;
+}
+
+#appEditorScreen .toolbar-panel-toggles .ib-btn:hover {
+  color: var(--secondary) !important;
+  background: var(--editor-hover) !important;
+}
+
+#appEditorScreen .layer-page-section {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+#appEditorScreen .layer-page-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  gap: 7px;
+  padding: 0 10px;
+  border: 0;
+  border-left: 3px solid var(--secondary);
+  background: var(--editor-panel-raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+#appEditorScreen .layer-page-header:hover {
+  background: var(--editor-hover);
+}
+
+#appEditorScreen .layer-page-header svg {
+  width: 13px;
+  height: 13px;
+  color: var(--secondary);
+}
+
+#appEditorScreen .layer-page-count {
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--editor-panel);
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+#appEditorScreen .layer-page-content {
+  padding-bottom: 4px;
+}
+
+#appEditorScreen .layer-page-ungrouped-heading {
+  padding: 7px 12px 3px;
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#appEditorScreen .layer-group-header .group-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#appEditorScreen .layer-group-header svg,
+#appEditorScreen .group-action-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+@media (max-width: 767px) {
+  #appEditorScreen .toolbar-panel-toggles {
+    display: none;
+  }
+}
+
+#exportModal .modal-content {
+  background: #11161d !important;
+  border-color: var(--border-strong) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45) !important;
+}
+
+#exportModal .modal-content > div:first-child {
+  border-bottom-color: var(--border-strong) !important;
+}
+
+#exportModal h3,
+#exportModal label,
+#exportModal strong {
+  color: var(--ink) !important;
+}
+
+#exportModal label span,
+#exportModal .modal-content > div:first-child span {
+  color: var(--ink-muted) !important;
+}
+
+#exportModal .modal-content > div:first-child > div > div:first-child {
+  background: #223042 !important;
+  border-color: var(--border-strong) !important;
+  color: var(--secondary) !important;
+}
+
+#exportModal #closeExportModalBtn {
+  color: var(--ink-muted) !important;
+}
+
+#exportModal #closeExportModalBtn:hover {
+  background: var(--editor-hover) !important;
+  color: var(--ink) !important;
+}
+
+#exportModal #exportFilenameInput {
+  color: var(--ink) !important;
+}
+
+#exportModal #exportFilenameInput::placeholder {
+  color: var(--ink-muted) !important;
+}
+
+#exportModal #exportFilenameInput + span {
+  color: var(--ink-muted) !important;
+}
+
+#exportModal #exportFilenameInput {
+  background: transparent !important;
+}
+
+#exportModal #exportFilenameInput:focus {
+  box-shadow: none !important;
+}
+
+#exportModal div:has(> #exportFilenameInput) {
+  border-color: var(--border-strong) !important;
+  background: #18212b !important;
+}
+
+#exportModal div:has(> #exportFilenameInput) > span {
+  background: #223042 !important;
+  border-left-color: var(--border-strong) !important;
+  color: var(--ink-muted) !important;
+}
+
+#exportModal #labelAcroFormOption,
+#exportModal #labelFlattenOption {
+  background: #18212b !important;
+  border-color: var(--border-strong) !important;
+}
+
+#exportModal #labelAcroFormOption:has(input:checked),
+#exportModal #labelFlattenOption:has(input:checked) {
+  background: #223042 !important;
+  border-color: var(--secondary) !important;
+}
+
+#exportModal .export-sponsor-container {
+  background: #18212b !important;
+  border-color: var(--border-strong) !important;
+  box-shadow: none !important;
+}
+
+#exportModal .export-sponsor-container:hover {
+  border-color: var(--secondary) !important;
+  box-shadow: none !important;
+}
+
+#exportModal .export-sponsor-caption,
+#exportModal .export-sponsor-desc {
+  color: var(--ink-muted) !important;
+}
+
+#exportModal .export-sponsor-card {
+  background: #11161d !important;
+  border-color: var(--border-strong) !important;
+  box-shadow: none !important;
+}
+
+#exportModal .export-sponsor-title {
+  color: var(--ink) !important;
+}
+
+#exportModal .export-sponsor-icon {
+  background: #223042 !important;
+  border-color: var(--border-strong) !important;
+  color: var(--secondary) !important;
+  box-shadow: none !important;
+}
+
+#exportModal .export-sponsor-action {
+  background: #223042 !important;
+  border-color: var(--border-strong) !important;
+  color: var(--secondary) !important;
+}
+
+.landing-page .hero-video-card {
+  min-height: 0 !important;
+  border: 1px solid var(--border-strong) !important;
+  background: #11161d !important;
+}
+
+.landing-page .hero-showcase-video,
+.landing-page .hero-showcase-fallback {
+  display: block !important;
+}
+
+.landing-page .hero-video-card::before,
+.landing-page .hero-video-card::after {
+  display: none !important;
+}
+
+.landing-page .video-play-badge {
+  display: inline-flex !important;
 }

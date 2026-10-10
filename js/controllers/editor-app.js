@@ -987,7 +987,7 @@ export function initEditorSubsystems() {
             return;
         }
 
-        const rawName = (state.pdfFileName || "document.pdf").replace(/\.pdf$/i, "");
+        const rawName = (state.fileName || state.pdfFileName || "document.pdf").replace(/\.pdf$/i, "");
         const defaultName = sanitizeFilename(rawName) + "_fillable";
         if (exportFilenameInput) {
             exportFilenameInput.value = defaultName;
@@ -1026,11 +1026,11 @@ export function initEditorSubsystems() {
 
     function updateExportModeStyle() {
         if (acroformRadio && acroformRadio.checked) {
-            if (labelAcroFormOption) { labelAcroFormOption.style.border = "1.5px solid #2563eb"; labelAcroFormOption.style.background = "#eff6ff"; }
-            if (labelFlattenOption) { labelFlattenOption.style.border = "1px solid #e2e8f0"; labelFlattenOption.style.background = "#ffffff"; }
+            if (labelAcroFormOption) { labelAcroFormOption.style.border = "1.5px solid #8eb9e8"; labelAcroFormOption.style.background = "#223042"; }
+            if (labelFlattenOption) { labelFlattenOption.style.border = "1px solid #3a4654"; labelFlattenOption.style.background = "#18212b"; }
         } else if (flattenRadio && flattenRadio.checked) {
-            if (labelFlattenOption) { labelFlattenOption.style.border = "1.5px solid #2563eb"; labelFlattenOption.style.background = "#eff6ff"; }
-            if (labelAcroFormOption) { labelAcroFormOption.style.border = "1px solid #e2e8f0"; labelAcroFormOption.style.background = "#ffffff"; }
+            if (labelFlattenOption) { labelFlattenOption.style.border = "1.5px solid #8eb9e8"; labelFlattenOption.style.background = "#223042"; }
+            if (labelAcroFormOption) { labelAcroFormOption.style.border = "1px solid #3a4654"; labelAcroFormOption.style.background = "#18212b"; }
         }
     }
     acroformRadio?.addEventListener("change", updateExportModeStyle);

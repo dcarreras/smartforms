@@ -1168,7 +1168,7 @@ export function initLandingController(onLoaded) {
         heroDropzone.addEventListener("click", e => {
             e.preventDefault();
             e.stopPropagation();
-            document.getElementById("heroPdfUpload")?.click();
+            window.openHeroVideoModal?.();
         });
         ["dragenter", "dragover"].forEach(name => {
             heroDropzone.addEventListener(name, e => {

@@ -61,6 +61,7 @@ const FIELD_TYPE_STYLES = {
 };
 
 let currentDraggedFieldIds = [];
+const collapsedLayerPages = new Set();
 
 export function renderLayers(onSelect, onRerender) {
     const list = document.getElementById("layersList");
@@ -75,211 +76,52 @@ export function renderLayers(onSelect, onRerender) {
     }
 
     const groups = state.groups || [];
-    const groupedFieldIds = new Set();
+    const pageNumbers = [...new Set(state.fields.map(f => Number(f.page) || 1))].sort((a, b) => a - b);
 
-    // ── 1. Render Group Sections ──────────────────────────────────────
-    groups.forEach(g => {
-        const groupFields = state.fields.filter(f => f.groupId === g.id);
-        if (groupFields.length === 0) return;
+    pageNumbers.forEach(pageNumber => {
+        const pageFields = state.fields.filter(f => (Number(f.page) || 1) === pageNumber);
+        const pageSection = document.createElement("section");
+        pageSection.className = "layer-page-section";
+        pageSection.dataset.page = pageNumber;
 
-        groupFields.forEach(f => groupedFieldIds.add(f.id));
-
-        const isGroupAllSelected = groupFields.length > 0 && groupFields.every(f => state.selectedFieldIds.has(f.id));
-        const groupContainer = document.createElement("div");
-        groupContainer.className = "layer-group";
-        groupContainer.dataset.groupId = g.id;
-
-        const header = document.createElement("div");
-        header.className = "layer-group-header" + (isGroupAllSelected ? " selected" : "");
-
-        const isCollapsed = !!g.collapsed;
-        header.innerHTML = `
-            <button type="button" class="group-toggle-btn" title="${isCollapsed ? 'Expand Group' : 'Collapse Group'}" style="flex-shrink: 0;">
-                <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 13px; height: 13px;"></i>
-            </button>
-            <i data-lucide="${isCollapsed ? 'folder' : 'folder-open'}" class="group-folder-icon" style="width: 14px; height: 14px; color: #2563eb; flex-shrink: 0;"></i>
-            <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; overflow: hidden;">
-                <span class="group-name" title="${escapeHtml(g.name || 'Group')} (Double-click to rename)" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; cursor: pointer;">${escapeHtml(g.name || 'Group')}</span>
-                <button type="button" class="layer-rename-btn" title="Rename Group" style="flex-shrink: 0;">
-                    <i data-lucide="pencil" style="width: 11px; height: 11px;"></i>
-                </button>
-            </div>
-            <span style="font-size: 10px; color: #5b6270; background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-weight: 600; flex-shrink: 0;">${groupFields.length}</span>
-            <button type="button" class="group-action-btn" title="Ungroup (Release fields)" style="margin-left: 2px; flex-shrink: 0;">
-                <i data-lucide="folder-minus" style="width: 12px; height: 12px;"></i>
-            </button>
-            <button type="button" class="group-action-btn danger" title="Delete Group & Fields" style="flex-shrink: 0;">
-                <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
-            </button>
-        `;
-
-        // Toggle Collapse on chevron
-        header.querySelector(".group-toggle-btn")?.addEventListener("click", e => {
-            e.stopPropagation();
-            toggleGroupCollapsed(g.id);
+        const pageHeader = document.createElement("button");
+        pageHeader.type = "button";
+        pageHeader.className = "layer-page-header";
+        pageHeader.setAttribute("aria-expanded", String(!collapsedLayerPages.has(pageNumber)));
+        pageHeader.innerHTML = `<i data-lucide="${collapsedLayerPages.has(pageNumber) ? 'chevron-right' : 'chevron-down'}"></i><span>Page ${pageNumber}</span><span class="layer-page-count">${pageFields.length}</span>`;
+        pageHeader.addEventListener("click", () => {
+            if (collapsedLayerPages.has(pageNumber)) collapsedLayerPages.delete(pageNumber);
+            else collapsedLayerPages.add(pageNumber);
             renderLayers(onSelect, onRerender);
         });
 
-        // Select all fields in group on header click
-        header.addEventListener("click", e => {
-            if (e.target.closest("button") || e.target.closest("input")) return;
-            selectGroup(g.id);
-            updateLayerSelectionDOM();
-            if (onSelect) onSelect(groupFields[0]);
+        const pageContent = document.createElement("div");
+        pageContent.className = "layer-page-content";
+        if (collapsedLayerPages.has(pageNumber)) pageContent.style.display = "none";
+
+        groups.forEach(g => {
+            const groupFields = pageFields.filter(f => f.groupId === g.id);
+            if (groupFields.length === 0) return;
+            pageContent.appendChild(createLayerGroup(g, groupFields, onSelect, onRerender));
         });
 
-        // ── Drag over group header: Drop to add to group ──────────────
-        // A depth counter avoids flicker: native dragenter/dragleave fire
-        // when the cursor crosses onto/off of child elements (icons, the
-        // rename button, the name span) inside the header, not just when
-        // truly leaving it — a plain dragover/dragleave toggle strobes the
-        // highlight on/off as the cursor moves across those children.
-        let groupDragDepth = 0;
-        header.addEventListener("dragenter", e => {
-            e.preventDefault();
-            groupDragDepth++;
-            header.classList.add("drag-over-group");
-        });
-
-        header.addEventListener("dragover", e => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
-        });
-
-        header.addEventListener("dragleave", () => {
-            groupDragDepth = Math.max(0, groupDragDepth - 1);
-            if (groupDragDepth === 0) header.classList.remove("drag-over-group");
-        });
-
-        header.addEventListener("drop", e => {
-            e.preventDefault();
-            e.stopPropagation();
-            groupDragDepth = 0;
-            header.classList.remove("drag-over-group");
-
-            if (currentDraggedFieldIds.length > 0) {
-                currentDraggedFieldIds.forEach(id => {
-                    const fld = state.fields.find(f => f.id === id);
-                    if (fld) fld.groupId = g.id;
-                });
-                g.collapsed = false;
-                saveHistory();
-                renderLayers(onSelect, onRerender);
-                if (onRerender) onRerender();
+        const ungroupedFields = pageFields.filter(f => !f.groupId || !groups.some(g => g.id === f.groupId));
+        if (ungroupedFields.length > 0) {
+            if (pageFields.some(f => f.groupId)) {
+                const ungroupedHeader = document.createElement("div");
+                ungroupedHeader.className = "layer-page-ungrouped-heading";
+                ungroupedHeader.textContent = "Ungrouped";
+                pageContent.appendChild(ungroupedHeader);
             }
-        });
-
-        // Ungroup button click
-        header.querySelector(".group-action-btn[title*='Ungroup']")?.addEventListener("click", e => {
-            e.stopPropagation();
-            ungroupGroup(g.id);
-            saveHistory();
-            renderLayers(onSelect, onRerender);
-            if (onRerender) onRerender();
-        });
-
-        // Delete group click
-        header.querySelector(".group-action-btn.danger")?.addEventListener("click", e => {
-            e.stopPropagation();
-            if (confirm(`Delete group "${g.name}" and all its ${groupFields.length} fields?`)) {
-                deleteGroupAndFields(g.id);
-                saveHistory();
-                renderLayers(onSelect, onRerender);
-                if (onRerender) onRerender();
-            }
-        });
-
-        // In-place Rename for Group
-        const startGroupRename = () => {
-            const nameSpan = header.querySelector(".group-name");
-            if (!nameSpan || header.querySelector(".inline-rename-input")) return;
-
-            header.classList.add("is-renaming");
-            const input = document.createElement("input");
-            input.type = "text";
-            input.className = "inline-rename-input";
-            input.value = g.name || "Group";
-            
-            input.addEventListener("click", ev => ev.stopPropagation());
-            input.addEventListener("dblclick", ev => ev.stopPropagation());
-            input.addEventListener("mousedown", ev => ev.stopPropagation());
-
-            nameSpan.replaceWith(input);
-            input.focus();
-            input.select();
-
-            let finished = false;
-            const finishRename = () => {
-                if (finished) return;
-                finished = true;
-                header.classList.remove("is-renaming");
-                const newName = input.value.trim();
-                if (newName) g.name = newName;
-                saveHistory();
-                renderLayers(onSelect, onRerender);
-            };
-
-            input.addEventListener("blur", finishRename);
-            input.addEventListener("keydown", ev => {
-                if (ev.key === "Enter") {
-                    ev.preventDefault();
-                    finishRename();
-                }
-                if (ev.key === "Escape") {
-                    ev.preventDefault();
-                    finished = true;
-                    header.classList.remove("is-renaming");
-                    renderLayers(onSelect, onRerender);
-                }
-            });
-        };
-
-        header.querySelector(".group-name")?.addEventListener("dblclick", e => {
-            e.stopPropagation();
-            startGroupRename();
-        });
-
-        header.querySelector(".layer-rename-btn")?.addEventListener("click", e => {
-            e.stopPropagation();
-            startGroupRename();
-        });
-
-        groupContainer.appendChild(header);
-
-        // Render fields inside group if not collapsed
-        if (!isCollapsed) {
-            const itemsContainer = document.createElement("div");
-            itemsContainer.className = "layer-group-items";
-
-            groupFields.forEach(f => {
-                const item = createFieldLayerItem(f, onSelect, onRerender);
-                itemsContainer.appendChild(item);
-            });
-
-            groupContainer.appendChild(itemsContainer);
+            ungroupedFields.forEach(f => pageContent.appendChild(createFieldLayerItem(f, onSelect, onRerender)));
         }
 
-        list.appendChild(groupContainer);
+        pageSection.append(pageHeader, pageContent);
+        list.appendChild(pageSection);
     });
 
-    // ── 2. Render Ungrouped Fields ────────────────────────────────────
-    const ungroupedFields = state.fields.filter(f => !groupedFieldIds.has(f.id));
-    if (ungroupedFields.length > 0) {
-        if (groups.length > 0) {
-            const ungrHeader = document.createElement("div");
-            ungrHeader.style.cssText = "padding: 8px 12px 4px; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;";
-            ungrHeader.textContent = "Ungrouped Fields";
-            list.appendChild(ungrHeader);
-        }
-
-        ungroupedFields.forEach(f => {
-            const item = createFieldLayerItem(f, onSelect, onRerender);
-            list.appendChild(item);
-        });
-    }
-
     // ── 3. Drop Zone to Remove From Group ─────────────────────────────
-    if (groupedFieldIds.size > 0) {
+    if (state.fields.some(f => f.groupId)) {
         const dropzone = document.createElement("div");
         dropzone.className = "layer-ungroup-dropzone";
         dropzone.innerHTML = `
@@ -321,20 +163,115 @@ export function renderLayers(onSelect, onRerender) {
     applyLayerSearchFilter();
 }
 
+function createLayerGroup(g, groupFields, onSelect, onRerender) {
+    const groupContainer = document.createElement("div");
+    groupContainer.className = "layer-group";
+    groupContainer.dataset.groupId = g.id;
+    const isCollapsed = !!g.collapsed;
+    const isGroupAllSelected = groupFields.every(f => state.selectedFieldIds.has(f.id));
+    const header = document.createElement("div");
+    header.className = "layer-group-header" + (isGroupAllSelected ? " selected" : "");
+    header.innerHTML = `
+        <button type="button" class="group-toggle-btn" title="${isCollapsed ? 'Expand Group' : 'Collapse Group'}"><i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}"></i></button>
+        <i data-lucide="${isCollapsed ? 'folder' : 'folder-open'}" class="group-folder-icon"></i>
+        <span class="group-name" title="${escapeHtml(g.name || 'Group')}">${escapeHtml(g.name || 'Group')}</span>
+        <span class="layer-page-count">${groupFields.length}</span>
+        <button type="button" class="group-action-btn" title="Ungroup"><i data-lucide="folder-minus"></i></button>
+        <button type="button" class="group-action-btn danger" title="Delete Group & Fields"><i data-lucide="trash-2"></i></button>`;
+
+    header.querySelector(".group-toggle-btn")?.addEventListener("click", event => {
+        event.stopPropagation();
+        toggleGroupCollapsed(g.id);
+        renderLayers(onSelect, onRerender);
+    });
+    header.addEventListener("click", event => {
+        if (event.target.closest("button")) return;
+        selectGroup(g.id);
+        updateLayerSelectionDOM();
+        onSelect?.(groupFields[0]);
+    });
+    header.addEventListener("dragover", event => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        header.classList.add("drag-over-group");
+    });
+    header.addEventListener("dragleave", () => header.classList.remove("drag-over-group"));
+    header.addEventListener("drop", event => {
+        event.preventDefault();
+        header.classList.remove("drag-over-group");
+        currentDraggedFieldIds.forEach(id => {
+            const field = state.fields.find(f => f.id === id);
+            if (field) field.groupId = g.id;
+        });
+        if (currentDraggedFieldIds.length) {
+            g.collapsed = false;
+            saveHistory();
+            renderLayers(onSelect, onRerender);
+            onRerender?.();
+        }
+    });
+    header.querySelector(".group-action-btn[title='Ungroup']")?.addEventListener("click", event => {
+        event.stopPropagation();
+        ungroupGroup(g.id);
+        saveHistory();
+        renderLayers(onSelect, onRerender);
+        onRerender?.();
+    });
+    header.querySelector(".group-action-btn.danger")?.addEventListener("click", event => {
+        event.stopPropagation();
+        if (confirm(`Delete group "${g.name}" and all its fields?`)) {
+            deleteGroupAndFields(g.id);
+            saveHistory();
+            renderLayers(onSelect, onRerender);
+            onRerender?.();
+        }
+    });
+
+    groupContainer.appendChild(header);
+    if (!isCollapsed) {
+        const items = document.createElement("div");
+        items.className = "layer-group-items";
+        groupFields.forEach(f => items.appendChild(createFieldLayerItem(f, onSelect, onRerender)));
+        groupContainer.appendChild(items);
+    }
+    return groupContainer;
+}
+
 export function applyLayerSearchFilter() {
     if (typeof document === "undefined") return;
     const input = document.getElementById("layerSearchInput");
     const query = input ? (input.value || "").trim().toLowerCase() : "";
     const items = document.querySelectorAll("#layersList .layer-item");
     items.forEach(item => {
-        const nameEl = item.querySelector(".layer-name");
-        const text = (nameEl ? nameEl.textContent : "").toLowerCase();
-        if (!query || text.includes(query)) {
-            item.style.display = "flex";
-        } else {
-            item.style.display = "none";
-        }
+        const text = (item.dataset.searchText || item.textContent || "").toLowerCase();
+        item.style.display = !query || text.includes(query) ? "flex" : "none";
     });
+
+    let hasMatches = false;
+    document.querySelectorAll("#layersList .layer-page-section").forEach(section => {
+        const visibleItems = [...section.querySelectorAll(".layer-item")].some(item => item.style.display !== "none");
+        const content = section.querySelector(".layer-page-content");
+        const header = section.querySelector(".layer-page-header");
+        section.querySelectorAll(".layer-group").forEach(group => {
+            group.style.display = [...group.querySelectorAll(".layer-item")].some(item => item.style.display !== "none") ? "" : "none";
+        });
+        const ungroupedHeading = section.querySelector(".layer-page-ungrouped-heading");
+        if (ungroupedHeading) ungroupedHeading.style.display = [...section.querySelectorAll(":scope > .layer-item")].some(item => item.style.display !== "none") ? "" : "none";
+        section.style.display = !query || visibleItems ? "" : "none";
+        if (content) content.style.display = query ? (visibleItems ? "" : "none") : (collapsedLayerPages.has(Number(section.dataset.page)) ? "none" : "");
+        if (header) header.setAttribute("aria-expanded", String(query ? visibleItems : !collapsedLayerPages.has(Number(section.dataset.page))));
+        hasMatches ||= visibleItems;
+    });
+
+    const empty = document.getElementById("layerSearchEmpty");
+    if (empty) empty.remove();
+    if (query && !hasMatches) {
+        const message = document.createElement("p");
+        message.id = "layerSearchEmpty";
+        message.className = "empty-msg";
+        message.textContent = "No matching layers.";
+        document.getElementById("layersList")?.appendChild(message);
+    }
 }
 
 function createFieldLayerItem(f, onSelect, onRerender) {
@@ -345,6 +282,7 @@ function createFieldLayerItem(f, onSelect, onRerender) {
     item.draggable = true;
 
     const style = FIELD_TYPE_STYLES[f.type] || FIELD_TYPE_STYLES.textField;
+    item.dataset.searchText = `${formatFieldDisplayName(f)} ${style.label}`.toLowerCase();
     const globalIdx = state.fields.findIndex(item => item.id === f.id) + 1;
 
     const eyeIconSvg = f.hidden

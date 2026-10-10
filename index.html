@@ -157,7 +157,7 @@
 
     <link rel="preload" href="styles/fonts.css?v=21.0" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="styles/fonts.css?v=21.0"></noscript>
-    <link rel="stylesheet" href="styles/smartforms-theme.css?v=2.1">
+    <link rel="stylesheet" href="styles/smartforms-theme.css?v=2.5">
 
     <!-- Module Preloads to eliminate JS waterfalls and Critical Request Chains -->
     <link rel="modulepreload" href="/js/main.js?v=22.0">
@@ -272,12 +272,11 @@
                     </div>
 
                     <div class="rig">
-                        <div class="hero-video-card" id="heroDropzone" title="Open or drop a PDF form">
+                        <div class="hero-video-card" id="heroDropzone" title="Watch the SmartForms demo">
                             <!-- Clean Video Showcase Frame -->
                             <div class="video-card-inner">
-                                <video class="hero-showcase-video" muted playsinline preload="none" poster="assets/hero-poster-smartforms.png" aria-label="SmartForms interactive visual editor demo" width="634" height="499" fetchpriority="high" style="aspect-ratio: 2740 / 2160;">
-                                    <source src="assets/hero-demo.webm?v=9.0" type="video/webm">
-                                    <source src="assets/hero-demo.mp4?v=9.0" type="video/mp4">
+                                <video class="hero-showcase-video" muted playsinline preload="metadata" poster="assets/smartforms-video-poster.jpg" aria-label="SmartForms interactive visual editor demo" width="1280" height="650" fetchpriority="high" style="aspect-ratio: 1280 / 650;">
+                                    <source src="assets/smartformsvideos.mp4?v=1.0" type="video/mp4">
                                     <track kind="captions" src="assets/captions.vtt" srclang="en" label="English" default>
                                     <track kind="captions" src="assets/captions-de.vtt" srclang="de" label="Deutsch">
                                     <track kind="captions" src="assets/captions-fr.vtt" srclang="fr" label="Français">
@@ -288,7 +287,7 @@
                                     <track kind="captions" src="assets/captions-ja.vtt" srclang="ja" label="日本語">
                                     <track kind="captions" src="assets/captions-zh.vtt" srclang="zh" label="简体中文">
                                     <track kind="captions" src="assets/captions-ne.vtt" srclang="ne" label="नेपाली">
-                                    <img class="hero-showcase-fallback" src="assets/hero-poster-smartforms.png" width="634" height="499" alt="SmartForms editor preview" fetchpriority="high">
+                                    <img class="hero-showcase-fallback" src="assets/smartforms-video-poster.jpg" width="1280" height="650" alt="SmartForms editor preview" fetchpriority="high">
                                 </video>
                                 <div class="video-card-glass"></div>
 
@@ -1724,6 +1723,14 @@
                 <button id="toggleGuidesBtn" class="ib-btn" data-tooltip="Smart Alignment Guides" data-kbd="⌘;" aria-label="Toggle Smart Alignment Guides" style="display: none;">
                     <i data-lucide="grid" style="width: 15px; height: 15px;"></i>
                 </button>
+                <div class="toolbar-panel-toggles" aria-label="Panel visibility">
+                    <button id="toggleSidebarBtn" type="button" class="ib-btn" data-tooltip="Hide Layers" aria-label="Hide Layers">
+                        <i data-lucide="panel-left-close"></i>
+                    </button>
+                    <button id="toggleRightSidebarBtn" type="button" class="ib-btn" data-tooltip="Hide Properties" aria-label="Hide Properties">
+                        <i data-lucide="panel-right-close"></i>
+                    </button>
+                </div>
                 <button id="autoDetectBtn" class="btn-outline-pill" data-tooltip="Smart Field Auto-Detector" aria-label="Auto-Detect Form Fields &amp; Signatures">
                     <svg class="ico-svg" viewBox="0 0 24 24"><path d="m12 3 1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"></path></svg>
                     <span>Auto-detect</span>
@@ -3124,9 +3131,8 @@
                 </select>
             </div>
             <button type="button" class="video-modal-close-btn" id="closeVideoModalBtn" aria-label="Close demo video" title="Close video">&times;</button>
-            <video id="expandedDemoVideo" playsinline preload="none" poster="assets/hero-poster-smartforms.png" controls style="aspect-ratio: 2740 / 2160; width: 100%; height: 100%;">
-                <source src="assets/hero-demo.webm?v=9.0" type="video/webm">
-                <source src="assets/hero-demo.mp4?v=9.0" type="video/mp4">
+            <video id="expandedDemoVideo" playsinline preload="metadata" poster="assets/smartforms-video-poster.jpg" controls style="aspect-ratio: 1280 / 650; width: 100%; height: 100%;">
+                <source src="assets/smartformsvideos.mp4?v=1.0" type="video/mp4">
                 <track kind="captions" src="assets/captions.vtt" srclang="en" label="English" default>
                 <track kind="captions" src="assets/captions-de.vtt" srclang="de" label="Deutsch">
                 <track kind="captions" src="assets/captions-fr.vtt" srclang="fr" label="Français">
@@ -3720,7 +3726,7 @@
                         <div class="export-sponsor-tag-wrap">
                             <span class="export-sponsor-tag"><span class="export-sponsor-pulse"></span>SPONSORED</span>
                         </div>
-                        <span class="export-sponsor-caption" id="exportSponsorCaption">Formblatt is free &amp; privacy-first</span>
+                        <span class="export-sponsor-caption" id="exportSponsorCaption">SmartForms is free &amp; privacy-first</span>
                     </div>
                     <div class="export-sponsor-card" id="exportSponsorSlot">
                         <a href="https://github.com/dcarreras/smartforms" target="_blank" rel="noopener noreferrer" class="export-sponsor-link" title="Support SmartForms on GitHub">
@@ -3729,7 +3735,7 @@
                             </div>
                             <div class="export-sponsor-details">
                                 <div class="export-sponsor-title" id="exportSponsorTitle">Support Open-Source &amp; Free Tools</div>
-                                <div class="export-sponsor-desc" id="exportSponsorDesc">Help keep Formblatt 100% private, client-side, and ad-free.</div>
+                                <div class="export-sponsor-desc" id="exportSponsorDesc">Help keep SmartForms private, client-side, and ad-free.</div>
                             </div>
                             <span class="export-sponsor-action">
                                 <span id="exportSponsorActionText">Support</span>
