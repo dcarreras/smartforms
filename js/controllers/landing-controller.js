@@ -872,7 +872,7 @@ export function initLandingController(onLoaded) {
     bindModal("footerTermsBtn", "termsModal", ["closeTermsModalBtn", "dismissTermsModalBtn"]);
     bindModal("footerCookieBtn", "cookieModal", ["closeCookieModalBtn", "dismissCookieModalBtn"]);
     bindModal(["footerComplianceBtn", "complianceNoticeBtn"], "complianceModal", ["closeComplianceModalBtn", "dismissComplianceModalBtn"]);
-    bindModal("footerAboutBtn", "aboutModal", ["closeAboutModalBtn", "dismissAboutModalBtn"]);
+    bindModal(["navAboutBtn", "footerAboutBtn"], "aboutModal", ["closeAboutModalBtn", "dismissAboutModalBtn"]);
     bindModal(["landingShortcutsBtn", "footerShortcutsBtn", "shortcutsMenuBtn", "shortcutsHelpBtn", "shortcutsBtn"], "shortcutsModal", ["closeShortcutsBtn", "shortcutsDoneBtn", "closeShortcutsModalBtn"]);
     bindModal(["landingFeedbackBtn", "footerFeedbackBtn", "feedbackMenuBtn", "feedbackBtn"], "feedbackModal", ["closeFeedbackModalBtn", "dismissFeedbackModalBtn", "closeFeedbackBtn"]);
 

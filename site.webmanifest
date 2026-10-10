@@ -1,7 +1,7 @@
 {
-  "name": "Formblatt — Free Interactive PDF Form Creator",
-  "short_name": "Formblatt",
-  "description": "Zero-cloud, privacy-first interactive PDF form builder & AcroForm editor.",
+  "name": "SmartForms — Construction PDF Form Builder",
+  "short_name": "SmartForms",
+  "description": "Local-first PDF form builder for construction documents and fillable AcroForms.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

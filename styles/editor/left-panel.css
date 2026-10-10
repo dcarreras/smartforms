@@ -524,8 +524,9 @@
     box-sizing: border-box !important;
 }
 .vertical-tool-rail .tool-btn {
-    width: 32px !important;
-    height: 32px !important;
+    width: 34px !important;
+    height: 38px !important;
+    min-height: 38px !important;
     border: 0 !important;
     background: transparent !important;
     border-radius: 8px !important;
@@ -546,8 +547,8 @@
     color: #2f5bea !important;
 }
 .vertical-tool-rail .tool-btn svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px !important;
+    height: 20px !important;
     fill: none !important;
     stroke: currentColor !important;
     stroke-width: 1.7 !important;

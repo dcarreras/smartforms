@@ -406,6 +406,34 @@ export function initEditorSubsystems() {
         });
     }
 
+    const toolMoreBtn = document.getElementById("toolMoreBtn");
+    const toolMoreWrapper = document.getElementById("toolMoreWrapper");
+    const toolMorePopover = document.getElementById("toolMorePopover");
+    if (toolMoreBtn && toolMoreWrapper && toolMorePopover) {
+        const closeToolMore = () => {
+            toolMoreWrapper.classList.remove("open");
+            toolMoreBtn.setAttribute("aria-expanded", "false");
+        };
+
+        toolMoreBtn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const isOpen = toolMoreWrapper.classList.toggle("open");
+            toolMoreBtn.setAttribute("aria-expanded", String(isOpen));
+        });
+
+        toolMorePopover.querySelectorAll("[data-tool-shortcut]").forEach((item) => {
+            item.addEventListener("click", () => {
+                const tool = item.dataset.toolShortcut;
+                safeQuerySelector(`.tool-btn[data-tool="${tool}"]`)?.click();
+                closeToolMore();
+            });
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!toolMoreWrapper.contains(event.target)) closeToolMore();
+        });
+    }
+
     const insertTableGridWithConfig = (configOrPreset, title = "Table") => {
         const startX = 54;
         let startY = 120;

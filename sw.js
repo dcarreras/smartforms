@@ -1,7 +1,7 @@
 // ── SmartForms Offline Service Worker (sw.js) ─────────────────────────
 // Enables 100% client-side offline execution (PWA) — works in Airplane Mode.
 
-const CACHE_NAME = "smartforms-cache-v4.0";
+const CACHE_NAME = "smartforms-cache-v5.0";
 const STATIC_ASSETS = [
     "/",
     "/index.html",

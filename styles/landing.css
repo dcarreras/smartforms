@@ -147,6 +147,33 @@ nav.landing-nav-bar{
   transform:translateY(-2px) !important;
   box-shadow:0 12px 22px -8px rgba(14,17,22,0.4) !important;
 }
+.nav-actions{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+}
+.nav-about-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:44px;
+  padding:11px 16px;
+  border:1px solid var(--border-subtle);
+  border-radius:100px;
+  background:transparent;
+  color:var(--ink);
+  font:600 14px/1 inherit;
+  cursor:pointer;
+}
+.nav-about-btn:hover{
+  background:#f1f5f9;
+  border-color:#94a3b8;
+}
+.nav-about-btn svg{
+  width:16px;
+  height:16px;
+}
 @media (max-width:980px){.nav-links{display:none}}
 .hero-section{
   position:relative;
