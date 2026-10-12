@@ -2,7 +2,7 @@
 
 > **Version**: 1.1.0 (RC v1.1)  
 > **Repository**: [github.com/dcarreras/smartforms](https://github.com/dcarreras/smartforms)<br>
-> **Production URL**: [smartforms.app](https://smartforms.app)<br>
+> **Production URL**: [smartforms-cons.app](https://smartforms-cons.app)<br>
 > **Project**: SmartForms
 
 ---
@@ -326,7 +326,7 @@ node --check js/*.js
 ```
 
 ### Deployment (Vercel)
-The project is configured for continuous zero-config deployment on Vercel:
+The project is configured for automatic deployment on Cloudflare Pages:
 - **Production Branch**: `main`
 - **Output Directory**: `.` (Root)
-- **Live URL**: [https://smartforms.app](https://smartforms.app)
+- **Live URL**: [https://smartforms-cons.app](https://smartforms-cons.app)
