@@ -106,8 +106,10 @@ body.mode-fill .edge-peek-trigger,body.mode-fill .edge-peek-tab{display:none !im
 
 .floating-tool-island .tool-btn.active svg,
 .segmented-toolbar .tool-btn.active svg,
-.floating-tool-island .tool-btn.active [data-lucide],
-.segmented-toolbar .tool-btn.active [data-lucide] {
+.floating-tool-island .tool-btn.active [data-pixel-icon],
+.segmented-toolbar .tool-btn.active [data-pixel-icon],
+.floating-tool-island .tool-btn.active .pixel-icon,
+.segmented-toolbar .tool-btn.active .pixel-icon {
     stroke: #ffffff !important;
     color: #ffffff !important;
 }

@@ -18,7 +18,7 @@ const STATIC_ASSETS = [
     "/vendor/pdf.min.js",
     "/vendor/pdf.worker.min.js",
     "/vendor/pdf-lib.min.js",
-    "/vendor/lucide.min.js",
+    "/vendor/pixelarticons.min.js",
     "/vendor/fontkit.umd.min.js",
     "/vendor/ort.all.min.js",
     "/assets/templates/blank.pdf",

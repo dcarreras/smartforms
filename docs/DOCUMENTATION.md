@@ -2,7 +2,7 @@
 
 > **Version**: 1.1.0 (RC v1.1)  
 > **Repository**: [github.com/dcarreras/smartforms](https://github.com/dcarreras/smartforms)<br>
-> **Production URL**: [smartforms-cons.pages.dev](https://smartforms-cons.pages.dev)<br>
+> **Production URL**: [smartforms.app](https://smartforms.app)<br>
 > **Project**: SmartForms
 
 ---
@@ -329,4 +329,4 @@ node --check js/*.js
 The project is configured for continuous zero-config deployment on Vercel:
 - **Production Branch**: `main`
 - **Output Directory**: `.` (Root)
-- **Live URL**: [https://smartforms-cons.pages.dev](https://smartforms-cons.pages.dev)
+- **Live URL**: [https://smartforms.app](https://smartforms.app)

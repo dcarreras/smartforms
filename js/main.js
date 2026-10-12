@@ -30,7 +30,7 @@ export function openShortcutsModal() {
     if (!modal) return;
     modal.style.display = "flex";
     modal.classList.add("active");
-    if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
+    window.renderPixelIcons?.();
 }
 
 export function closeShortcutsModal() {
@@ -71,7 +71,7 @@ function bootstrapApp() {
         const openModal = () => {
             modal.style.display = "flex";
             modal.classList.add("active");
-            if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
+            window.renderPixelIcons?.();
         };
         const closeModal = () => {
             modal.style.display = "none";
@@ -207,7 +207,7 @@ if (typeof window !== "undefined") {
         const installDivider = document.getElementById("menuInstallDivider");
         if (installBtn) installBtn.style.display = "flex";
         if (installDivider) installDivider.style.display = "block";
-        if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
+        window.renderPixelIcons?.();
     });
 
     window.installPwaApp = async function() {

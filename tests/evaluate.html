@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formblatt - Form Detection Benchmark & Evaluation Studio</title>
+    <title>SmartForms - Form Detection Benchmark & Evaluation Studio</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/styles/variables.css">
     <script src="/vendor/pdf.min.js"></script>
     <script src="/vendor/pdf-lib.min.js"></script>
-    <script src="/vendor/lucide.min.js"></script>
+    <script src="/vendor/pixelarticons.min.js"></script>
     <style>
         :root {
             --bg-canvas: #0f172a;
@@ -443,7 +443,7 @@
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <path d="m9 15 2 2 4-4"></path>
             </svg>
-            <span>Formblatt Detection Benchmark</span>
+            <span>SmartForms Detection Benchmark</span>
             <span class="badge-pill">Evaluation Studio</span>
         </div>
 
@@ -458,12 +458,12 @@
             <input type="file" id="customPdfUpload" accept=".pdf" style="display: none;">
 
             <button id="runDetectionBtn" class="btn btn-primary">
-                <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+                <i data-pixel-icon="zap" style="width: 14px; height: 14px;"></i>
                 Run Auto-Detect
             </button>
 
             <button id="addMissedBtn" class="btn">
-                <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i>
+                <i data-pixel-icon="plus-circle" style="width: 14px; height: 14px;"></i>
                 + Mark Missed Field
             </button>
         </div>
@@ -503,11 +503,11 @@
                 ✅ Mark All Right
             </button>
             <button id="exportReportBtn" class="btn btn-success">
-                <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                <i data-pixel-icon="download" style="width: 14px; height: 14px;"></i>
                 Export Ground Truth JSON
             </button>
             <a href="/" class="btn" style="text-decoration: none;" title="Back to main editor">
-                Open Formblatt Editor
+                Open SmartForms Editor
             </a>
         </div>
     </div>
@@ -547,9 +547,7 @@
         import { generateEmployeeOnboardingPdf, generateMedicalIntakePdf, generateCommercialInvoicePdf } from "/tests/generate_test_pdfs.js";
         import { state } from "/js/core/state.js";
 
-        if (window.lucide) {
-            lucide.createIcons();
-        }
+        window.renderPixelIcons?.();
 
         // Configure PDF.js worker
         if (window.pdfjsLib) {
@@ -831,9 +829,9 @@
             } else {
                 addMissedBtn.style.background = "";
                 addMissedBtn.style.color = "";
-                addMissedBtn.innerHTML = `<i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> + Mark Missed Field`;
+                addMissedBtn.innerHTML = `<i data-pixel-icon="plus-circle" style="width: 14px; height: 14px;"></i> + Mark Missed Field`;
                 canvasContainer.style.cursor = "default";
-                if (window.lucide) lucide.createIcons();
+                window.renderPixelIcons?.();
             }
         });
 
@@ -864,9 +862,9 @@
             isAddingMissed = false;
             addMissedBtn.style.background = "";
             addMissedBtn.style.color = "";
-            addMissedBtn.innerHTML = `<i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> + Mark Missed Field`;
+            addMissedBtn.innerHTML = `<i data-pixel-icon="plus-circle" style="width: 14px; height: 14px;"></i> + Mark Missed Field`;
             canvasContainer.style.cursor = "default";
-            if (window.lucide) lucide.createIcons();
+            window.renderPixelIcons?.();
         });
 
         // Event listeners
@@ -933,7 +931,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `formblatt_benchmark_${report.document}_${Date.now()}.json`;
+            a.download = `smartforms_benchmark_${report.document}_${Date.now()}.json`;
             a.click();
             URL.revokeObjectURL(url);
         });

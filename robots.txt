@@ -2,8 +2,8 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://smartforms-cons.pages.dev/sitemap.xml
+Sitemap: https://smartforms.app/sitemap.xml
 
 # LLMs.txt specification (https://llmstxt.org/)
-# LLM Context: https://smartforms-cons.pages.dev/llms.txt
-# Full LLM Documentation: https://smartforms-cons.pages.dev/llms-full.txt
+# LLM Context: https://smartforms.app/llms.txt
+# Full LLM Documentation: https://smartforms.app/llms-full.txt

@@ -408,9 +408,9 @@ export function exportProjectJson(customFileName) {
     if (!baseName) {
         baseName = (state.fileName || "interactive_form").replace(/\.pdf$/i, "");
     }
-    baseName = baseName.replace(/\.formblatt$/i, "").replace(/\.fblatt$/i, "").replace(/\.jform$/i, "").replace(/\.justforms$/i, "");
+    baseName = baseName.replace(/\.smartform\.json$/i, "").replace(/\.formblatt$/i, "").replace(/\.fblatt$/i, "").replace(/\.jform$/i, "").replace(/\.justforms$/i, "");
 
-    a.download = `${baseName}.formblatt`;
+    a.download = `${baseName}.smartform.json`;
     a.click();
     URL.revokeObjectURL(url);
 }
@@ -436,7 +436,7 @@ export async function importProjectJson(file, onLoaded) {
                 state.originalPdfBytes = pdfBytes;
                 state.pdfDoc = loadedDoc;
                 state.totalPages = state.pdfDoc.numPages;
-                state.fileName = data.fileName || file.name.replace(/\.(formblatt|justforms\.json|json)$/i, ".pdf");
+                state.fileName = data.fileName || file.name.replace(/\.(smartform\.json|formblatt|fblatt|jform|justforms\.json|justforms|json)$/i, ".pdf");
 
                 const fileNameInput = document.getElementById("fileNameInput");
                 if (fileNameInput) fileNameInput.value = state.fileName;

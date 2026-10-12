@@ -3,7 +3,7 @@
 ## Guidelines
 
 1. **Client-side only**: PDF parsing and form operations run in the browser. Do not add remote network dependencies.
-2. **Native ES modules**: There is no build or bundle step. Core dependencies (`pdf.js`, `pdf-lib`, `fontkit`, `lucide`) are in `/vendor/` and precached in `sw.js`.
+2. **Native ES modules**: There is no build or bundle step. Core dependencies (`pdf.js`, `pdf-lib`, `fontkit`, `Pixelarticons`) are in `/vendor/` and precached in `sw.js`.
 3. **Standards compliance**: Exported PDFs must follow the ISO 32000 AcroForm specification.
 
 ## Development Setup

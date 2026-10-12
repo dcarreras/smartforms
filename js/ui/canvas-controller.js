@@ -2022,7 +2022,7 @@ export function initContextMenu(handlers) {
                 const selFields = state.fields.filter(f => state.selectedFieldIds.has(f.id));
                 const isAllInGroup = selFields.length > 0 && selFields.every(f => f.groupId);
                 groupLabel.textContent = isAllInGroup ? "Ungroup Selection" : "Group Selection";
-                groupIcon.setAttribute("data-lucide", isAllInGroup ? "folder-minus" : "folder-plus");
+                groupIcon.setAttribute("data-pixel-icon", isAllInGroup ? "folder-minus" : "folder-plus");
             }
         } else {
             if (emptyGroup) emptyGroup.style.display = "block";
@@ -2035,7 +2035,7 @@ export function initContextMenu(handlers) {
         }
 
         menuEl.style.display = "block";
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        window.renderPixelIcons?.();
 
         const menuW = menuEl.offsetWidth || 210;
         const menuH = menuEl.offsetHeight || 280;

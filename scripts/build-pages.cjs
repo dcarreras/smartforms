@@ -1,5 +1,6 @@
 const { cp, mkdir, rm, stat } = require("node:fs/promises");
 const { join } = require("node:path");
+const { buildPixelIcons } = require("./build-pixel-icons.cjs");
 
 const root = join(__dirname, "..");
 const output = join(root, "dist");
@@ -21,11 +22,13 @@ async function copy(source) {
 }
 
 async function build() {
+  await buildPixelIcons();
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   for (const path of [...directories, ...files, ...modelFiles]) {
     if (await exists(join(root, path))) await copy(path);
   }
+  await rm(join(output, "vendor", "lucide.min.js"), { force: true });
 }
 
 build().catch(error => {

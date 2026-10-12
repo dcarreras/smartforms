@@ -62,7 +62,7 @@ export function refreshUI() {
     updateToolIndicator();
     updateModeIndicator();
     updateHistoryAndActionButtons();
-    if (typeof lucide !== "undefined") lucide.createIcons();
+    window.renderPixelIcons?.();
 }
 
 export function updateHistoryAndActionButtons() {
@@ -88,7 +88,7 @@ export function updateHistoryAndActionButtons() {
         menuUndo.setAttribute("aria-disabled", !canUndo ? "true" : "false");
         const label = menuUndo.querySelector(".menu-item-left");
         if (label) {
-            label.innerHTML = `<i data-lucide="undo-2" class="menu-item-icon"></i> Undo ${undoName ? undoName : ""}`.trim();
+            label.innerHTML = `<i data-pixel-icon="undo-2" class="menu-item-icon"></i> Undo ${undoName ? undoName : ""}`.trim();
         }
     }
 
@@ -107,7 +107,7 @@ export function updateHistoryAndActionButtons() {
         menuRedo.setAttribute("aria-disabled", !canRedo ? "true" : "false");
         const label = menuRedo.querySelector(".menu-item-left");
         if (label) {
-            label.innerHTML = `<i data-lucide="redo-2" class="menu-item-icon"></i> Redo ${redoName ? redoName : ""}`.trim();
+            label.innerHTML = `<i data-pixel-icon="redo-2" class="menu-item-icon"></i> Redo ${redoName ? redoName : ""}`.trim();
         }
     }
 
@@ -865,8 +865,8 @@ export function initEditorSubsystems() {
 
         const originalHtml = autoDetectBtn.innerHTML;
         autoDetectBtn.disabled = true;
-        autoDetectBtn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width: 13px; height: 13px;"></i> Scanning...`;
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        autoDetectBtn.innerHTML = `<i data-pixel-icon="loader-2" class="spin" style="width: 13px; height: 13px;"></i> Scanning...`;
+        window.renderPixelIcons?.();
 
         const canvasContainer = document.getElementById("canvasContainer");
         let scanHud = null;
@@ -879,12 +879,12 @@ export function initEditorSubsystems() {
                 <div class="scan-overlay"></div>
                 <div class="scan-line"></div>
                 <div class="scan-status-pill">
-                    <i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px; color: #38bdf8;"></i>
+                    <i data-pixel-icon="loader-2" class="spin" style="width: 14px; height: 14px; color: #38bdf8;"></i>
                     <span id="scanStatusText">Detecting form fields with FFDNet-L...</span>
                 </div>
             `;
             canvasContainer.appendChild(scanHud);
-            if (typeof lucide !== "undefined") lucide.createIcons();
+            window.renderPixelIcons?.();
             statusPill = document.getElementById("scanStatusText");
         }
 
@@ -954,7 +954,7 @@ export function initEditorSubsystems() {
         } finally {
             autoDetectBtn.disabled = false;
             autoDetectBtn.innerHTML = originalHtml;
-            if (typeof lucide !== "undefined") lucide.createIcons();
+            window.renderPixelIcons?.();
         }
     });
 
@@ -995,7 +995,7 @@ export function initEditorSubsystems() {
 
         if (exportModal) {
             exportModal.style.display = "flex";
-            if (typeof lucide !== "undefined") lucide.createIcons();
+            window.renderPixelIcons?.();
             setTimeout(() => {
                 exportFilenameInput?.focus();
                 exportFilenameInput?.select();
@@ -1049,8 +1049,8 @@ export function initEditorSubsystems() {
 
         if (confirmExportBtn) confirmExportBtn.disabled = true;
         if (confirmExportBtn) {
-            confirmExportBtn.innerHTML = `<i data-lucide="loader-2" class="export-spinner" style="width: 14px; height: 14px;"></i> <span>Generating AcroForm...</span>`;
-            if (typeof lucide !== "undefined") lucide.createIcons();
+            confirmExportBtn.innerHTML = `<i data-pixel-icon="loader-2" class="export-spinner" style="width: 14px; height: 14px;"></i> <span>Generating AcroForm...</span>`;
+            window.renderPixelIcons?.();
         }
 
         try {
@@ -1069,8 +1069,8 @@ export function initEditorSubsystems() {
 
             confirmExportBtn.style.background = "#16a34a";
             confirmExportBtn.style.borderColor = "#15803d";
-            confirmExportBtn.innerHTML = `<i data-lucide="check" class="export-check-bounce" style="width: 15px; height: 15px; color: #ffffff;"></i> <span>Exported!</span>`;
-            if (typeof lucide !== "undefined") lucide.createIcons();
+            confirmExportBtn.innerHTML = `<i data-pixel-icon="check" class="export-check-bounce" style="width: 15px; height: 15px; color: #ffffff;"></i> <span>Exported!</span>`;
+            window.renderPixelIcons?.();
             triggerHaptic(20);
 
             setTimeout(() => {
@@ -1081,8 +1081,8 @@ export function initEditorSubsystems() {
                         confirmExportBtn.style.background = "";
                         confirmExportBtn.style.borderColor = "";
                         confirmExportBtn.disabled = false;
-                        confirmExportBtn.innerHTML = `<i data-lucide="download" style="width: 14px; height: 14px;"></i> <span id="confirmExportBtnText">Download PDF</span>`;
-                        if (typeof lucide !== "undefined") lucide.createIcons();
+                        confirmExportBtn.innerHTML = `<i data-pixel-icon="download" style="width: 14px; height: 14px;"></i> <span id="confirmExportBtnText">Download PDF</span>`;
+                        window.renderPixelIcons?.();
                     }
                 }, 400);
             }, 750);
@@ -1093,8 +1093,8 @@ export function initEditorSubsystems() {
                 confirmExportBtn.disabled = false;
                 confirmExportBtn.style.background = "";
                 confirmExportBtn.style.borderColor = "";
-                confirmExportBtn.innerHTML = `<i data-lucide="download" style="width: 14px; height: 14px;"></i> <span id="confirmExportBtnText">Download PDF</span>`;
-                if (typeof lucide !== "undefined") lucide.createIcons();
+                confirmExportBtn.innerHTML = `<i data-pixel-icon="download" style="width: 14px; height: 14px;"></i> <span id="confirmExportBtnText">Download PDF</span>`;
+                window.renderPixelIcons?.();
             }
         }
     });
@@ -1105,7 +1105,7 @@ export function initEditorSubsystems() {
             toastFilenameDesc.textContent = `Saved as ${filename}.pdf to your Downloads folder.`;
         }
         exportSuccessToast.style.display = "flex";
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        window.renderPixelIcons?.();
 
         if (toastTimeout) clearTimeout(toastTimeout);
         toastTimeout = setTimeout(() => {
@@ -1118,7 +1118,7 @@ export function initEditorSubsystems() {
         if (toastTimeout) clearTimeout(toastTimeout);
     });
 
-    // ── Save Project (.formblatt) Modal Controller ──────────────────
+    // ── Save SmartForms project modal controller ────────────────────
     const saveProjectModal = document.getElementById("saveProjectModal");
     const closeSaveProjectModalBtn = document.getElementById("closeSaveProjectModalBtn");
     const cancelSaveProjectBtn = document.getElementById("cancelSaveProjectBtn");
@@ -1132,10 +1132,10 @@ export function initEditorSubsystems() {
 
     function openSaveProjectModal() {
         if (!saveProjectModal) return;
-        const currentBase = (state.fileName || "interactive_form").replace(/\.pdf$/i, "").replace(/\.formblatt$/i, "").replace(/\.fblatt$/i, "").replace(/\.jform$/i, "").replace(/\.justforms$/i, "");
+        const currentBase = (state.fileName || "interactive_form").replace(/\.pdf$/i, "").replace(/\.smartform\.json$/i, "").replace(/\.formblatt$/i, "").replace(/\.fblatt$/i, "").replace(/\.jform$/i, "").replace(/\.justforms$/i, "");
         
         if (saveReplaceNameDisplay) {
-            saveReplaceNameDisplay.textContent = `${currentBase}.formblatt`;
+            saveReplaceNameDisplay.textContent = `${currentBase}.smartform.json`;
         }
         if (saveNewCopyFilenameInput) {
             saveNewCopyFilenameInput.value = `${currentBase}_copy`;
@@ -1145,7 +1145,7 @@ export function initEditorSubsystems() {
         updateSaveActionStyle();
 
         saveProjectModal.style.display = "flex";
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        window.renderPixelIcons?.();
     }
 
     function closeSaveProjectModal() {
@@ -1187,7 +1187,7 @@ export function initEditorSubsystems() {
 
         exportProjectJson(targetName);
         closeSaveProjectModal();
-        showExportToast(`${targetName}.jform`);
+        showExportToast(`${targetName}.smartform.json`);
     });
 
     // Close Modals on ESC Key or Save Shortcut ⌘S
@@ -1364,7 +1364,7 @@ export function initEditorSubsystems() {
             state.currentPreviewUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
             if (previewModal) previewModal.style.display = "flex";
             if (previewIframe) previewIframe.src = state.currentPreviewUrl;
-            if (typeof lucide !== "undefined") lucide.createIcons();
+            window.renderPixelIcons?.();
         } catch(e) {
             console.error("Preview failed:", e);
             showToast("Preview failed: " + e.message, "error");
@@ -1460,7 +1460,7 @@ export function initEditorSubsystems() {
                 else {
                     modal.style.display = "flex";
                     modal.classList.add("active");
-                    if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
+                    window.renderPixelIcons?.();
                 }
             }
             return;
@@ -2042,12 +2042,10 @@ export function toggleLeftSidebar() {
         toggleBtn.setAttribute("aria-label", isCollapsed ? "Expand Layers" : "Collapse Layers");
         toggleBtn.title = isCollapsed ? "Expand Layers (⌘\\)" : "Collapse Layers (⌘\\)";
         toggleBtn.innerHTML = isCollapsed
-            ? `<i data-lucide="panel-left-open" style="width: 14px; height: 14px; color: #2563eb;"></i>`
-            : `<i data-lucide="panel-left-close" style="width: 14px; height: 14px; color: #4a505c;"></i>`;
+            ? `<i data-pixel-icon="panel-left-open" style="width: 14px; height: 14px; color: #2563eb;"></i>`
+            : `<i data-pixel-icon="panel-left-close" style="width: 14px; height: 14px; color: #4a505c;"></i>`;
     }
-    if (typeof lucide !== "undefined") {
-        setTimeout(() => lucide.createIcons(), 10);
-    }
+    setTimeout(() => window.renderPixelIcons?.(), 10);
 }
 if (typeof window !== "undefined") {
     window.toggleLeftSidebar = toggleLeftSidebar;
@@ -2069,12 +2067,10 @@ export function toggleRightSidebar() {
         toggleBtn.setAttribute("aria-label", isCollapsed ? "Expand Properties" : "Collapse Properties");
         toggleBtn.title = isCollapsed ? "Expand Properties (⌘/)" : "Collapse Properties (⌘/)";
         toggleBtn.innerHTML = isCollapsed
-            ? `<i data-lucide="panel-right-open" style="width: 14px; height: 14px; color: #2563eb;"></i>`
-            : `<i data-lucide="panel-right-close" style="width: 14px; height: 14px; color: #4a505c;"></i>`;
+            ? `<i data-pixel-icon="panel-right-open" style="width: 14px; height: 14px; color: #2563eb;"></i>`
+            : `<i data-pixel-icon="panel-right-close" style="width: 14px; height: 14px; color: #4a505c;"></i>`;
     }
-    if (typeof lucide !== "undefined") {
-        setTimeout(() => lucide.createIcons(), 10);
-    }
+    setTimeout(() => window.renderPixelIcons?.(), 10);
 }
 if (typeof window !== "undefined") {
     window.toggleRightSidebar = toggleRightSidebar;

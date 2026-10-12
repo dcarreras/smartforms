@@ -943,22 +943,51 @@ async function runAllTests() {
 
         state.fileName = "invoice_2026.pdf";
         updateDocumentTitle();
-        assert.equal(global.document.title, "invoice_2026.pdf – Formblatt");
+        assert.equal(global.document.title, "invoice_2026.pdf – SmartForms");
 
         updateDocumentTitle("w9_tax_form.pdf");
-        assert.equal(global.document.title, "w9_tax_form.pdf – Formblatt");
+        assert.equal(global.document.title, "w9_tax_form.pdf – SmartForms");
 
         // When editor is hidden (landing mode)
         global.document.getElementById = () => ({ style: { display: "none" } });
         updateDocumentTitle();
-        assert.equal(global.document.title, "Formblatt: Free Interactive PDF Form Creator & AcroForm Editor");
+        assert.equal(global.document.title, "SmartForms: Construction PDF Form Builder");
     });
 
-    it("Cohesive post-export sponsor card & toast container exist in index.html", () => {
+    it("Ko-fi support links are optional, secure, and present in all three support surfaces", () => {
         const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
         assert.ok(indexHtml.includes('id="exportSponsorContainer"'), 'Must contain exportSponsorContainer in index.html');
         assert.ok(indexHtml.includes('id="exportSponsorSlot"'), 'Must contain exportSponsorSlot in index.html');
         assert.ok(indexHtml.includes('class="toast-sponsor-bar"'), 'Must contain toast-sponsor-bar in index.html');
+        assert.equal((indexHtml.match(/https:\/\/ko-fi\.com\/davidcarrerasalbacete/g) || []).length, 3);
+        assert.ok(indexHtml.includes('Buy me a coffee'));
+        assert.ok(indexHtml.includes('No features are locked.'));
+
+        const funding = fs.readFileSync(path.join(WEB_DIR, '.github', 'FUNDING.yml'), 'utf8');
+        assert.equal(funding.trim(), 'ko_fi: davidcarrerasalbacete');
+    });
+
+    it("Pixelarticons are local, complete, and replace Lucide in production sources", () => {
+        const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        const evaluator = fs.readFileSync(path.join(WEB_DIR, 'tests', 'evaluate.html'), 'utf8');
+        const builder = fs.readFileSync(path.join(WEB_DIR, 'scripts', 'build-pixel-icons.cjs'), 'utf8');
+        const bundle = fs.readFileSync(path.join(WEB_DIR, 'vendor', 'pixelarticons.min.js'), 'utf8');
+        assert.ok(indexHtml.includes('/vendor/pixelarticons.min.js'));
+        assert.ok(evaluator.includes('/vendor/pixelarticons.min.js'));
+        assert.ok(!indexHtml.includes('data-lucide'));
+        assert.ok(!evaluator.includes('lucide'));
+        assert.ok(bundle.includes('window.renderPixelIcons'));
+        assert.ok(builder.includes('Missing Pixelarticons mappings'));
+    });
+
+    it("uses an open SmartForms project format without exposing legacy extensions", () => {
+        const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        const storageManager = fs.readFileSync(path.join(WEB_DIR, 'js', 'core', 'storage-manager.js'), 'utf8');
+        assert.ok(indexHtml.includes('Open SmartForms Project (.smartform.json)'));
+        assert.ok(indexHtml.includes('Save SmartForms Project (.smartform.json)'));
+        assert.ok(!indexHtml.includes('Project (.formblatt)'));
+        assert.ok(storageManager.includes('a.download = `${baseName}.smartform.json`;'));
+        assert.ok(storageManager.includes('smartform\\.json|formblatt'));
     });
 
     it("autoSelectCaptions selects caption track matching user locale", () => {
@@ -1719,7 +1748,7 @@ async function runAllTests() {
 
     it("evaluate.html and tests/evaluate.html exist and contain interactive precision/recall/F1 scorecard", () => {
         const evalHtml = fs.readFileSync(path.join(WEB_DIR, 'tests', 'evaluate.html'), 'utf8');
-        assert.ok(evalHtml.includes("Formblatt Detection Benchmark"));
+        assert.ok(evalHtml.includes("SmartForms Detection Benchmark"));
         assert.ok(evalHtml.includes("metricF1"));
         assert.ok(evalHtml.includes("metricPrecision"));
         assert.ok(evalHtml.includes("metricRecall"));
@@ -2203,14 +2232,14 @@ async function runAllTests() {
     console.log("\n📦 Suite 30: Offline Service Worker (PWA) & Manifest");
     it("sw.js defines complete static assets manifest for offline PWA execution", () => {
         const swContent = fs.readFileSync(path.join(WEB_DIR, 'sw.js'), 'utf8');
-        assert.ok(/CACHE_NAME\s*=\s*"formblatt-cache-v3\.[0-9]+"/.test(swContent));
+        assert.ok(/CACHE_NAME\s*=\s*"smartforms-cache-v[0-9]+\.[0-9]+"/.test(swContent));
         assert.ok(swContent.includes('"/js/core/data-exporter.js"'));
         assert.ok(swContent.includes('"/js/engines/ocr-engine.js"'));
         assert.ok(swContent.includes('"/js/engines/detection/index.js"'));
         assert.ok(swContent.includes('"/js/utils/geometry.js"'));
         assert.ok(swContent.includes('"/vendor/pdf.min.js"'));
         assert.ok(swContent.includes('"/vendor/pdf-lib.min.js"'));
-        assert.ok(swContent.includes('"/vendor/lucide.min.js"'));
+        assert.ok(swContent.includes('"/vendor/pixelarticons.min.js"'));
     });
 
     it("OCR and ONNX engines reject cleanly and do not make CDN requests in Airplane Mode", async () => {
@@ -2255,8 +2284,8 @@ async function runAllTests() {
     it("site.webmanifest contains valid PWA specification metadata", () => {
         const manifestRaw = fs.readFileSync(path.join(WEB_DIR, 'site.webmanifest'), 'utf8');
         const manifest = JSON.parse(manifestRaw);
-        assert.equal(manifest.name, "Formblatt — Free Interactive PDF Form Creator");
-        assert.equal(manifest.short_name, "Formblatt");
+        assert.equal(manifest.name, "SmartForms — Construction PDF Form Builder");
+        assert.equal(manifest.short_name, "SmartForms");
         assert.equal(manifest.display, "standalone");
         assert.equal(manifest.start_url, "/");
         assert.ok(Array.isArray(manifest.icons) && manifest.icons.length > 0);
@@ -3482,7 +3511,7 @@ async function runAllTests() {
 
         // Alignment guides button preserves the classic grid icon
         const guideBtnSnippet = indexHtml.slice(indexHtml.indexOf('id="toggleGuidesBtn"'), indexHtml.indexOf('id="toggleGuidesBtn"') + 400);
-        assert.ok(guideBtnSnippet.includes('data-lucide="grid"'), "Guides button must use grid icon");
+        assert.ok(guideBtnSnippet.includes('data-pixel-icon="grid"'), "Guides button must use grid icon");
     });
 
     it("index.html defines complete table structure controls (+Row, -Row, +Col, -Col, Delete Table)", () => {

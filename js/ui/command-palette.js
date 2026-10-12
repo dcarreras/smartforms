@@ -581,9 +581,9 @@ export const COMMANDS = [
     },
     {
         id: "project-save",
-        title: "Save Project (.formblatt)",
+        title: "Save SmartForms Project (.smartform.json)",
         category: "Project & Export",
-        keywords: ["save", "project", "export", "json", "backup", "formblatt"],
+        keywords: ["save", "smartforms", "project", "export", "json", "backup"],
         icon: "save",
         action: () => {
             document.getElementById("saveProjectMenuBtn")?.click();
@@ -591,9 +591,9 @@ export const COMMANDS = [
     },
     {
         id: "project-load",
-        title: "Load Project (.formblatt)",
+        title: "Load SmartForms Project (.smartform.json)",
         category: "Project & Export",
-        keywords: ["load", "open", "import", "project", "formblatt", "restore"],
+        keywords: ["load", "open", "import", "smartforms", "project", "restore"],
         icon: "folder-open",
         action: () => {
             document.getElementById("loadProjectDropdownBtn")?.click();
@@ -646,7 +646,7 @@ export const COMMANDS = [
                 if (modal) {
                     modal.style.display = "flex";
                     modal.classList.add("active");
-                    if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
+                    window.renderPixelIcons?.();
                 }
             }
         }
@@ -661,7 +661,7 @@ export const COMMANDS = [
             const modal = document.getElementById("feedbackModal");
             if (modal) {
                 modal.style.display = "flex";
-                if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
+                window.renderPixelIcons?.();
             }
         }
     },
@@ -669,13 +669,13 @@ export const COMMANDS = [
         id: "help-about",
         title: "About SmartForms",
         category: "Help & Community",
-        keywords: ["about", "info", "formblatt", "author", "license", "open source"],
+        keywords: ["about", "info", "smartforms", "author", "license", "open source"],
         icon: "info",
         action: () => {
             const modal = document.getElementById("aboutModal");
             if (modal) {
                 modal.style.display = "flex";
-                if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
+                window.renderPixelIcons?.();
             }
         }
     },
@@ -741,12 +741,12 @@ export function renderCommandPaletteList(query = "") {
     if (filteredList.length === 0) {
         listEl.innerHTML = `
             <div class="command-palette-empty">
-                <i data-lucide="search-x" style="width: 28px; height: 28px; color: #94a3b8; margin-bottom: 8px;"></i>
+                <i data-pixel-icon="search-x" style="width: 28px; height: 28px; color: #94a3b8; margin-bottom: 8px;"></i>
                 <div style="font-weight: 600; color: #1c1f26; font-size: 13.5px;">No commands found</div>
                 <div style="font-size: 12px; color: #5b6270; margin-top: 2px;">No matching action for "${escapeHtml(query)}"</div>
             </div>
         `;
-        if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
+        window.renderPixelIcons?.();
         return;
     }
 
@@ -780,7 +780,7 @@ export function renderCommandPaletteList(query = "") {
                      role="option" 
                      aria-selected="${isSelected}">
                     <div class="command-item-icon">
-                        <i data-lucide="${cmd.icon}" style="width: 14px; height: 14px;"></i>
+                        <i data-pixel-icon="${cmd.icon}" style="width: 14px; height: 14px;"></i>
                     </div>
                     <div class="command-item-content">
                         <div class="command-item-title">${escapeHtml(displayTitle)}</div>
@@ -792,7 +792,7 @@ export function renderCommandPaletteList(query = "") {
     });
 
     listEl.innerHTML = html;
-    if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
+    window.renderPixelIcons?.();
 
     // Scroll active item into view smoothly
     const activeEl = listEl.querySelector(`.command-palette-item[data-index="${selectedIndex}"]`);

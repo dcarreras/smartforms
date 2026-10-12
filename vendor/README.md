@@ -12,7 +12,7 @@ These assets are committed to the repository and cached by the service worker (`
 | `pdf.worker.min.js` | Background worker for PDF parsing | Mozilla PDF.js v3.4.120 |
 | `pdf-lib.min.js` | Client-side AcroForm compilation & PDF export | PDF-Lib v1.17.1 |
 | `fontkit.umd.min.js` | TrueType/OpenType font embedding & glyph subsetting | Fontkit |
-| `lucide.min.js` | UI icons for editor toolbars and panels | Lucide Icons |
+| `pixelarticons.min.js` | Local UI icon renderer for editor toolbars and panels | Pixelarticons (MIT) |
 
 ---
 

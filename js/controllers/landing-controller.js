@@ -8,7 +8,7 @@ export function openLeaveEditorModal() {
     if (leaveModal) {
         leaveModal.style.display = "flex";
         leaveModal.classList.add("active");
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        window.renderPixelIcons?.();
     }
 }
 
@@ -147,7 +147,7 @@ export function showLandingScreen(force = false, skipPush = false) {
     renderReturningUserHeroCard();
     renderLandingReviews();
     updateDocumentTitle();
-    if (typeof lucide !== "undefined") lucide.createIcons();
+    window.renderPixelIcons?.();
     if (!skipPush && landing) {
         landing.scrollTop = 0;
     }
@@ -202,19 +202,19 @@ export function renderReturningUserHeroCard() {
         <div class="returning-user-popin-card">
             <button type="button" class="returning-user-dismiss-btn" id="returningUserDismissBtn" title="Dismiss dialog" aria-label="Dismiss welcome modal">&times;</button>
             <div class="returning-user-badge">
-                <i data-lucide="menu"></i>
+                <i data-pixel-icon="menu"></i>
                 <span>Recent workspace</span>
             </div>
             <div class="returning-user-greeting">Welcome back</div>
             <div class="returning-user-subtext">You left off editing a document ${formattedTime.toLowerCase()}. Pick up where you stopped, or start something new.</div>
             <div class="returning-user-file-box" id="returningUserFileBox" role="button" tabindex="0" title="Click to continue editing ${escapeHtml(meta.fileName)}">
                 <div class="file-box-icon">
-                    <i data-lucide="file-text"></i>
+                    <i data-pixel-icon="file-text"></i>
                 </div>
                 <div class="file-box-details">
                     <div class="file-box-name">${escapeHtml(meta.fileName)}</div>
                     <div class="file-box-meta">
-                        <span><i data-lucide="clock"></i> ${formattedTime}</span>
+                        <span><i data-pixel-icon="clock"></i> ${formattedTime}</span>
                         <span class="meta-dot">&bull;</span>
                         <span>${fieldText}</span>
                         <span class="meta-dot">&bull;</span>
@@ -222,22 +222,22 @@ export function renderReturningUserHeroCard() {
                     </div>
                 </div>
                 <div class="file-box-arrow">
-                    <i data-lucide="chevron-right"></i>
+                    <i data-pixel-icon="chevron-right"></i>
                 </div>
             </div>
             <div class="returning-user-actions">
                 <button type="button" class="btn-primary returning-user-btn-primary" id="returningUserResumeBtn">
-                    <i data-lucide="folder-open"></i>
+                    <i data-pixel-icon="folder-open"></i>
                     <span>Continue recent document</span>
                 </button>
                 <div class="returning-user-secondary-row">
                     <label for="heroPdfUpload" class="btn-secondary returning-user-btn-secondary" style="cursor: pointer;" id="returningUserNewPdfLabel">
-                        <i data-lucide="plus"></i>
+                        <i data-pixel-icon="plus"></i>
                         <span>New PDF or image</span>
                     </label>
                     <label for="heroOpenProjectUpload" class="btn-secondary returning-user-btn-secondary" style="cursor: pointer;" id="returningUserOpenProjLabel">
-                        <i data-lucide="file"></i>
-                        <span>Open .formblatt</span>
+                        <i data-pixel-icon="file"></i>
+                        <span>Open SmartForms Project</span>
                     </label>
                 </div>
             </div>
@@ -258,9 +258,7 @@ export function renderReturningUserHeroCard() {
         container.style.display = "block";
     }
 
-    if (typeof lucide !== "undefined" && lucide.createIcons) {
-        lucide.createIcons();
-    }
+    window.renderPixelIcons?.();
 
     const dismiss = () => {
         closeReturningUserModal();
@@ -586,7 +584,7 @@ export async function showEditorScreen(onReady, skipPush = false) {
 
     closeLeaveEditorModal();
 
-    if (typeof lucide !== "undefined") lucide.createIcons();
+    window.renderPixelIcons?.();
 
     if (onReady) {
         try {
@@ -847,7 +845,7 @@ export function initLandingController(onLoaded) {
 
         const openModal = () => {
             modal.style.display = "flex";
-            if (typeof lucide !== "undefined") lucide.createIcons();
+            window.renderPixelIcons?.();
         };
         const closeModal = () => {
             modal.style.display = "none";
@@ -945,73 +943,73 @@ export function initLandingController(onLoaded) {
     // Comprehensive UI & Video Caption Localization Dictionary
     const UI_CAPTIONS = {
         en: {
-            sponsorCaption: "SmartForms is free & privacy-first",
-            sponsorTitle: "Support Open-Source & Free Tools",
-            sponsorDesc: "Help keep SmartForms private, client-side, and ad-free.",
-            sponsorAction: "Support",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "YOUR PDF NEVER LEAVES YOUR COMPUTER"
         },
         de: {
-            sponsorCaption: "SmartForms ist 100% kostenlos & privat",
-            sponsorTitle: "Open-Source & Datenschutz unterstützen",
-            sponsorDesc: "SmartForms bleibt privat, clientseitig und werbefrei.",
-            sponsorAction: "Unterstützen",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "IHRE PDF-DATEI VERLÄSST NIEMALS IHREN COMPUTER"
         },
         fr: {
-            sponsorCaption: "SmartForms est gratuit & confidentiel",
-            sponsorTitle: "Soutenir l'Open-Source & les Outils Libres",
-            sponsorDesc: "Gardez SmartForms privé, local et sans publicité.",
-            sponsorAction: "Soutenir",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "VOTRE PDF NE QUITTE JAMAIS VOTRE ORDINATEUR"
         },
         es: {
-            sponsorCaption: "SmartForms es gratuito y privado",
-            sponsorTitle: "Apoyar el código abierto y herramientas libres",
-            sponsorDesc: "Mantenga SmartForms privado, local y sin anuncios.",
-            sponsorAction: "Apoyar",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "SU PDF NUNCA SALE DE SU COMPUTADORA"
         },
         it: {
-            sponsorCaption: "SmartForms è gratuito e riservato",
-            sponsorTitle: "Sostieni l'Open Source & Strumenti Gratuiti",
-            sponsorDesc: "SmartForms rimane privato, eseguito in locale e senza pubblicità.",
-            sponsorAction: "Sostieni",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "IL TUO PDF NON LASCIA MAI IL TUO COMPUTER"
         },
         pt: {
-            sponsorCaption: "SmartForms é gratuito e seguro",
-            sponsorTitle: "Apoie o Código Aberto & Ferramentas Livres",
-            sponsorDesc: "Mantenha o SmartForms privado, local e sem anúncios.",
-            sponsorAction: "Apoiar",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "O SEU PDF NUNCA SAI DO SEU COMPUTADOR"
         },
         nl: {
-            sponsorCaption: "SmartForms is gratis & privacy-vriendelijk",
-            sponsorTitle: "Steun Open-Source & Vrije Software",
-            sponsorDesc: "Houd SmartForms lokaal, privé en advertentievrij.",
-            sponsorAction: "Steunen",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "UW PDF VERLAAT NOOIT UW COMPUTER"
         },
         ja: {
-            sponsorCaption: "SmartFormsは完全無料でプライバシー重視",
-            sponsorTitle: "オープンソースと無料ツールの支援",
-            sponsorDesc: "完全ブラウザ完結で安全なPDFフォーム作成を支援。",
-            sponsorAction: "支援する",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "PDFファイルはお使いの端末から送信されません"
         },
         zh: {
-            sponsorCaption: "SmartForms 完全免费且保护隐私",
-            sponsorTitle: "支持开源与免费工具",
-            sponsorDesc: "纯浏览器端运行，确保您的 PDF 数据完全私密安全。",
-            sponsorAction: "支持我们",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "您的 PDF 绝不会离开您的电脑"
         },
         ne: {
-            sponsorCaption: "SmartForms पूर्ण रूपमा निःशुल्क र गोप्य छ",
-            sponsorTitle: "खुला स्रोत र निःशुल्क सफ्टवेयरलाई समर्थन गर्नुहोस्",
-            sponsorDesc: "तपाईंको PDF कम्प्युटरमै प्रशोधन हुन्छ, कतै अपलोड हुँदैन।",
-            sponsorAction: "सहयोग",
+            sponsorCaption: "Optional support for domain and maintenance",
+            sponsorTitle: "Buy me a coffee",
+            sponsorDesc: "Optional support helps cover the domain and maintenance. No features are locked.",
+            sponsorAction: "Buy me a coffee",
             heroEyebrow: "तपाईंको PDF फाइल तपाईंको कम्प्युटरबाट बाहिर जाँदैन"
         }
     };
@@ -1187,7 +1185,7 @@ export function initLandingController(onLoaded) {
             if (file && isSupportedUploadFile(file)) {
                 await loadPdfFile(file, onLoaded);
             } else if (file) {
-                showToast("Supported formats: PDF documents (.pdf), images (.jpg, .png, .webp), or SmartForms project files (.formblatt).", "warning");
+                showToast("Supported formats: PDF documents (.pdf), images (.jpg, .png, .webp), or SmartForms project files (.smartform.json).", "warning");
             }
         });
     }
@@ -1255,7 +1253,7 @@ export function initLandingController(onLoaded) {
         if (isValid) {
             await loadPdfFile(file, onLoaded);
         } else {
-            showToast("Supported formats: PDF documents (.pdf), images (.jpg, .png, .webp), or SmartForms project files (.formblatt).", "warning");
+            showToast("Supported formats: PDF documents (.pdf), images (.jpg, .png, .webp), or SmartForms project files (.smartform.json).", "warning");
         }
     });
 
@@ -1358,7 +1356,7 @@ export function initLandingController(onLoaded) {
 
                 if (sampleModal) {
                     sampleModal.style.display = "flex";
-                    if (typeof lucide !== "undefined") lucide.createIcons();
+                    window.renderPixelIcons?.();
                 }
             });
         });

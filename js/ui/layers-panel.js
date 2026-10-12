@@ -88,7 +88,7 @@ export function renderLayers(onSelect, onRerender) {
         pageHeader.type = "button";
         pageHeader.className = "layer-page-header";
         pageHeader.setAttribute("aria-expanded", String(!collapsedLayerPages.has(pageNumber)));
-        pageHeader.innerHTML = `<i data-lucide="${collapsedLayerPages.has(pageNumber) ? 'chevron-right' : 'chevron-down'}"></i><span>Page ${pageNumber}</span><span class="layer-page-count">${pageFields.length}</span>`;
+        pageHeader.innerHTML = `<i data-pixel-icon="${collapsedLayerPages.has(pageNumber) ? 'chevron-right' : 'chevron-down'}"></i><span>Page ${pageNumber}</span><span class="layer-page-count">${pageFields.length}</span>`;
         pageHeader.addEventListener("click", () => {
             if (collapsedLayerPages.has(pageNumber)) collapsedLayerPages.delete(pageNumber);
             else collapsedLayerPages.add(pageNumber);
@@ -125,7 +125,7 @@ export function renderLayers(onSelect, onRerender) {
         const dropzone = document.createElement("div");
         dropzone.className = "layer-ungroup-dropzone";
         dropzone.innerHTML = `
-            <i data-lucide="folder-minus" style="width: 12px; height: 12px;"></i>
+            <i data-pixel-icon="folder-minus" style="width: 12px; height: 12px;"></i>
             <span>Drag here to remove from group</span>
         `;
 
@@ -159,7 +159,7 @@ export function renderLayers(onSelect, onRerender) {
         list.appendChild(dropzone);
     }
 
-    if (typeof lucide !== "undefined") lucide.createIcons();
+    window.renderPixelIcons?.();
     applyLayerSearchFilter();
 }
 
@@ -172,12 +172,12 @@ function createLayerGroup(g, groupFields, onSelect, onRerender) {
     const header = document.createElement("div");
     header.className = "layer-group-header" + (isGroupAllSelected ? " selected" : "");
     header.innerHTML = `
-        <button type="button" class="group-toggle-btn" title="${isCollapsed ? 'Expand Group' : 'Collapse Group'}"><i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}"></i></button>
-        <i data-lucide="${isCollapsed ? 'folder' : 'folder-open'}" class="group-folder-icon"></i>
+        <button type="button" class="group-toggle-btn" title="${isCollapsed ? 'Expand Group' : 'Collapse Group'}"><i data-pixel-icon="${isCollapsed ? 'chevron-right' : 'chevron-down'}"></i></button>
+        <i data-pixel-icon="${isCollapsed ? 'folder' : 'folder-open'}" class="group-folder-icon"></i>
         <span class="group-name" title="${escapeHtml(g.name || 'Group')}">${escapeHtml(g.name || 'Group')}</span>
         <span class="layer-page-count">${groupFields.length}</span>
-        <button type="button" class="group-action-btn" title="Ungroup"><i data-lucide="folder-minus"></i></button>
-        <button type="button" class="group-action-btn danger" title="Delete Group & Fields"><i data-lucide="trash-2"></i></button>`;
+        <button type="button" class="group-action-btn" title="Ungroup"><i data-pixel-icon="folder-minus"></i></button>
+        <button type="button" class="group-action-btn danger" title="Delete Group & Fields"><i data-pixel-icon="trash-2"></i></button>`;
 
     header.querySelector(".group-toggle-btn")?.addEventListener("click", event => {
         event.stopPropagation();
@@ -294,13 +294,13 @@ function createFieldLayerItem(f, onSelect, onRerender) {
         : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><circle cx="12" cy="16" r="1"></circle><path d="M8 11V7a4 4 0 0 1 8 0"></path></svg>`;
 
     item.innerHTML = `
-        <span class="layer-grip-handle" title="Drag to reorder" style="display: none;"><i data-lucide="grip-vertical" style="width: 12px; height: 12px;"></i></span>
+        <span class="layer-grip-handle" title="Drag to reorder" style="display: none;"><i data-pixel-icon="grip-vertical" style="width: 12px; height: 12px;"></i></span>
         <span class="layer-index" style="display: none;">${globalIdx}</span>
         <span class="layer-type-tag" title="${escapeHtml(style.label)}">${style.symbol}</span>
         <div style="flex: 1; min-width: 0; display: flex; align-items: center; overflow: hidden;">
             <span class="layer-name" title="${escapeHtml(f.name || style.label)} (Double-click to rename)" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: ${isSelected ? '600' : '400'}; color: #1c1f26; cursor: pointer;">${escapeHtml(formatFieldDisplayName(f))}</span>
             <button type="button" class="layer-rename-btn" title="Rename Field" style="display: none;">
-                <i data-lucide="pencil" style="width: 11px; height: 11px;"></i>
+                <i data-pixel-icon="pencil" style="width: 11px; height: 11px;"></i>
             </button>
         </div>
         <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
@@ -625,7 +625,7 @@ export function renderPagesList(onPageSelect) {
         item.setAttribute("aria-label", `Page ${pageNum}, ${badgeTitle}`);
 
         item.innerHTML = `
-            <i data-lucide="file-text" class="page-tree-icon" style="width: 14px; height: 14px; flex-shrink: 0; color: ${isCurrent ? '#2563eb' : '#5b6270'};"></i>
+            <i data-pixel-icon="file-text" class="page-tree-icon" style="width: 14px; height: 14px; flex-shrink: 0; color: ${isCurrent ? '#2563eb' : '#5b6270'};"></i>
             <span class="page-tree-name" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: ${isCurrent ? '600' : '500'}; color: #1c1f26;">Page ${pageNum}</span>
             <span class="page-tree-badge" title="${badgeTitle}" style="font-size: 10px; color: ${badgeColor}; background: ${badgeBg}; padding: 1px 6px; border-radius: 9999px; font-weight: 600; flex-shrink: 0;">${badgeText}</span>
         `;
@@ -650,9 +650,7 @@ export function renderPagesList(onPageSelect) {
         list.appendChild(item);
     }
 
-    if (typeof lucide !== "undefined") {
-        lucide.createIcons();
-    }
+    window.renderPixelIcons?.();
 }
 
 export function updatePagesListSelectionDOM() {

@@ -1709,7 +1709,7 @@ export function initPropertiesPanel(onFieldUpdated, onFieldDeleted) {
             dropdownOptions.value = opts.join("\n");
         }
 
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        window.renderPixelIcons?.();
     }
 
     function addDropdownChoiceFromInput() {
@@ -2205,7 +2205,7 @@ export function populateProperties(field) {
                 }
             }
         }
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        window.renderPixelIcons?.();
         return;
     }
 
@@ -2639,7 +2639,7 @@ export function populateProperties(field) {
 
     populateFillTools(fallbackField);
 
-    if (typeof lucide !== "undefined") lucide.createIcons();
+    window.renderPixelIcons?.();
 }
 
 function initMultiSelectTools(onUpdated) {
@@ -3720,9 +3720,7 @@ export function renderFillPanel() {
         listEl.appendChild(item);
     });
 
-    if (typeof lucide !== "undefined") {
-        lucide.createIcons();
-    }
+    window.renderPixelIcons?.();
 }
 
 function focusFieldOnCanvas(fieldId) {

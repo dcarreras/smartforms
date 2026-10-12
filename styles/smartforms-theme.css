@@ -563,7 +563,7 @@ button:active,
 #appEditorScreen .toolbar-doc-status,
 #appEditorScreen .toolbar-smart-btn svg,
 #appEditorScreen .toolbar-smart-btn i,
-#appEditorScreen .toolbar-smart-btn [data-lucide] {
+#appEditorScreen .toolbar-smart-btn [data-pixel-icon] {
   color: var(--editor-accent) !important;
 }
 
@@ -1022,7 +1022,7 @@ button:active,
 
 #appEditorScreen .mode-toggle-btn.active svg,
 #appEditorScreen .mode-toggle-btn.active i,
-#appEditorScreen .mode-toggle-btn.active [data-lucide] {
+#appEditorScreen .mode-toggle-btn.active [data-pixel-icon] {
   color: var(--editor-accent) !important;
 }
 

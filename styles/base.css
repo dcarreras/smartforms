@@ -145,8 +145,8 @@ button:active{transform:scale(0.965)}
 hr{border:none;border-top:1px solid var(--border-color);margin:var(--space-4) 0}
 input:focus-visible,select:not(.video-caption-select):focus-visible,textarea:focus-visible,button:focus-visible,[tabindex]:focus-visible,.field-overlay:focus-visible{outline:2px solid var(--brand-hover) !important;outline-offset:2px !important}
 ::placeholder{color:var(--text-placeholder,#8a909c) !important;opacity:1 !important}
-i[data-lucide]{display:inline-flex;align-items:center;justify-content:center;width:1em;height:1em;min-width:14px;min-height:14px;vertical-align:middle;box-sizing:border-box}
-svg[data-lucide],.lucide{display:inline-block;vertical-align:middle;flex-shrink:0}
+i[data-pixel-icon]{display:inline-flex;align-items:center;justify-content:center;width:1em;height:1em;min-width:14px;min-height:14px;vertical-align:middle;box-sizing:border-box}
+.pixel-icon{display:inline-block;vertical-align:middle;flex-shrink:0}
 @keyframes sharedAxisHomeOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0.98)}}
 @keyframes sharedAxisEditorIn{0%{opacity:0;transform:scale(1.02)}100%{opacity:1;transform:scale(1)}}
 @keyframes sharedAxisEditorOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.02)}}

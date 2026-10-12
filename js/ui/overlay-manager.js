@@ -553,7 +553,7 @@ export function renderOverlays(handlers) {
             const lockBadge = document.createElement("span");
             lockBadge.className = "field-locked-badge";
             lockBadge.style.cssText = "position: absolute; top: -14px; right: 0; background: #fffbeb; border: 1px solid #fde68a; border-radius: 3px; padding: 1px 4px; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 60;";
-            lockBadge.innerHTML = `<i data-lucide="lock" style="width: 10px; height: 10px; color: #d97706;"></i>`;
+            lockBadge.innerHTML = `<i data-pixel-icon="lock" style="width: 10px; height: 10px; color: #d97706;"></i>`;
             div.appendChild(lockBadge);
         }
 

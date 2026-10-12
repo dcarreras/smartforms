@@ -32,6 +32,7 @@ yarn-error.log*
 
 # Test and temp browser files
 .chrome-test-profile/
+.playwright-cli/
 assets/frame-*.jpg
 dataset_*/
 scratch/

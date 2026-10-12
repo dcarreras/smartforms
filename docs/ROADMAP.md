@@ -2,7 +2,7 @@
 
 > **Target Timeline**: 2026 – 2027  
 > **Repository**: [github.com/dcarreras/smartforms](https://github.com/dcarreras/smartforms)<br>
-> **Production App**: [smartforms-cons.pages.dev](https://smartforms-cons.pages.dev)<br>
+> **Production App**: [smartforms.app](https://smartforms.app)<br>
 > **Project**: SmartForms
 
 ---
@@ -79,7 +79,7 @@ gantt
 
 #### 2. Full Offline PWA & Web App Manifest
 - [ ] **Service Worker Caching**:
-  - Cache core assets (`index.html`, stylesheets, JS modules, Lucide icons, Google Fonts).
+  - Cache core assets (`index.html`, stylesheets, JS modules, local Pixelarticons, Google Fonts).
   - Cache Mozilla PDF.js and PDF-Lib CDN bundles locally via CacheStorage API.
   - Offline mode badge with instant load times ($< 100\text{ms}$ on repeat visits).
 
