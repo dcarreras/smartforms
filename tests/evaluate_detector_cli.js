@@ -1,4 +1,4 @@
-// ── Formblatt CLI Form Detection Benchmark & Evaluation Runner ────────
+// ── SmartForms CLI Form Detection Benchmark & Evaluation Runner ────────
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -41,7 +41,7 @@ import zlib from 'zlib';
 
 async function runCliEvaluation() {
     console.log("=================================================");
-    console.log("📊 FORMBLATT FORM FIELD DETECTION BENCHMARK SUITE");
+    console.log("📊 SMARTFORMS FORM FIELD DETECTION BENCHMARK SUITE");
     console.log("=================================================\n");
 
     const { state } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));

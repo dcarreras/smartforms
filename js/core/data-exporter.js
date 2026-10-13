@@ -1,4 +1,4 @@
-// ── Formblatt Form Data Export / Import Engine (js/core/data-exporter.js) ──
+// ── SmartForms Form Data Export / Import Engine (js/core/data-exporter.js) ──
 // 100% Client-side zero-telemetry JSON & CSV Form Data Exporter/Importer.
 
 import { state } from "./state.js";

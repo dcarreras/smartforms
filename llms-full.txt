@@ -1,16 +1,16 @@
-# Formblatt: Technical Reference and Architecture
+# SmartForms: Technical Reference and Architecture
 
-Formblatt is a client-side PDF editor and ISO 32000-1 AcroForm compiler. It runs in browser memory using native ES Modules, Mozilla PDF.js, and PDF-Lib.
+SmartForms is a client-side PDF editor and ISO 32000-1 AcroForm compiler. It runs in browser memory using native ES Modules, Mozilla PDF.js, and PDF-Lib.
 
-- Production: https://formblatt.dpdns.org
-- Source Code: https://github.com/sshrestha-design/formblatt
+- Production: https://smartforms-cons.app
+- Source Code: https://github.com/dcarreras/smartforms
 - License: GNU AGPLv3
 
 ---
 
 ## 1. System Architecture
 
-Formblatt operates without backend server dependencies. Document parsing, canvas rendering, field auto-detection, calculation evaluation, and binary PDF assembly run directly in the browser.
+SmartForms operates without backend server dependencies. Document parsing, canvas rendering, field auto-detection, calculation evaluation, and binary PDF assembly run directly in the browser.
 
 ### Key Dependencies
 
@@ -96,14 +96,14 @@ pdf_form_builder_web/
 
 ---
 
-## 3. Project File Format (`.formblatt` / `.jform`)
+## 3. Project File Format (`.smartform.json`)
 
 Form sessions serialize to JSON:
 
 ```json
 {
   "version": "1.1.0",
-  "appName": "Formblatt",
+  "appName": "SmartForms",
   "timestamp": "2026-09-21T09:30:00.000Z",
   "fileName": "sample_form.pdf",
   "originalPdfBytes": "<Base64 Encoded PDF Bytes>",

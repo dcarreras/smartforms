@@ -1,5 +1,5 @@
-// ── CommonForms Benchmark Evaluator for Formblatt Field Detector ───────
-// Evaluates Formblatt's detector against the CommonForms Hugging Face Dataset (jbarrow/CommonForms)
+// ── CommonForms Benchmark Evaluator for SmartForms Field Detector ───────
+// Evaluates SmartForms's detector against the CommonForms Hugging Face Dataset (jbarrow/CommonForms)
 // Schema: COCO Object Detection format [x, y, width, height] for Text (0), CheckBox (1), Signature (2)
 
 import fs from 'fs';

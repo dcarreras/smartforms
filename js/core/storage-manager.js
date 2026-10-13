@@ -126,7 +126,7 @@ function commitHistorySnapshot(actionName = null) {
     saveRecentProjectMetadata();
 }
 
-const DB_NAME = "FormblattRecentDB";
+const DB_NAME = "SmartFormsRecentDB";
 const DB_VERSION = 1;
 const STORE_NAME = "recent_project_store";
 
@@ -159,7 +159,7 @@ export async function saveRecentProjectMetadata() {
             fieldCount: (state.fields || []).length,
             pageCount: state.totalPages || 1
         };
-        localStorage.setItem("formblatt_recent_project", JSON.stringify(meta));
+        localStorage.setItem("smartforms_recent_project", JSON.stringify(meta));
 
         if (typeof indexedDB !== "undefined") {
             try {
@@ -284,7 +284,7 @@ export async function loadRecentProjectSnapshot() {
 export function getRecentProjectMetadata() {
     if (typeof localStorage === "undefined") return null;
     try {
-        const raw = localStorage.getItem("formblatt_recent_project");
+        const raw = localStorage.getItem("smartforms_recent_project");
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (typeof parsed === "object" && parsed !== null && parsed.fileName) {
@@ -299,7 +299,7 @@ export function getRecentProjectMetadata() {
 export async function clearRecentProjectMetadata() {
     if (typeof localStorage !== "undefined") {
         try {
-            localStorage.removeItem("formblatt_recent_project");
+            localStorage.removeItem("smartforms_recent_project");
         } catch (e) {}
     }
     if (typeof indexedDB !== "undefined") {
@@ -408,7 +408,7 @@ export function exportProjectJson(customFileName) {
     if (!baseName) {
         baseName = (state.fileName || "interactive_form").replace(/\.pdf$/i, "");
     }
-    baseName = baseName.replace(/\.smartform\.json$/i, "").replace(/\.formblatt$/i, "").replace(/\.fblatt$/i, "").replace(/\.jform$/i, "").replace(/\.justforms$/i, "");
+    baseName = baseName.replace(/\.smartform\.json$/i, "");
 
     a.download = `${baseName}.smartform.json`;
     a.click();
@@ -436,7 +436,7 @@ export async function importProjectJson(file, onLoaded) {
                 state.originalPdfBytes = pdfBytes;
                 state.pdfDoc = loadedDoc;
                 state.totalPages = state.pdfDoc.numPages;
-                state.fileName = data.fileName || file.name.replace(/\.(smartform\.json|formblatt|fblatt|jform|justforms\.json|justforms|json)$/i, ".pdf");
+                state.fileName = data.fileName || file.name.replace(/\.(smartform\.json|json)$/i, ".pdf");
 
                 const fileNameInput = document.getElementById("fileNameInput");
                 if (fileNameInput) fileNameInput.value = state.fileName;

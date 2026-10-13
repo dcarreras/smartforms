@@ -1,4 +1,4 @@
-// ── Formblatt Document Authoring: Text, Lists & Table Engine ──────────────
+// ── SmartForms Document Authoring: Text, Lists & Table Engine ──────────────
 // Pure native ES Module: Zero dependencies, 100% in-browser, ISO 32000 compliant
 
 import { generateFieldId } from "../core/state.js";

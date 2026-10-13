@@ -1,4 +1,4 @@
-# JustForms Technical Documentation & Architecture Manual
+# SmartForms Technical Documentation & Architecture Manual
 
 > **Version**: 1.1.0 (RC v1.1)  
 > **Repository**: [github.com/dcarreras/smartforms](https://github.com/dcarreras/smartforms)<br>
@@ -13,7 +13,7 @@
 2. [System Architecture & Data Flow](#2-system-architecture--data-flow)
 3. [Module & Subsystem Reference (`js/`)](#3-module--subsystem-reference-js)
 4. [Field Types & Attributes Specification](#4-field-types--attributes-specification)
-5. [Project File Schema (`.jform`)](#5-project-file-schema-jform)
+5. [Project File Schema (`.smartform.json`)](#5-project-file-schemasmartformjson)
 6. [ISO 32000 AcroForm Compilation Pipeline](#6-iso-32000-acroform-compilation-pipeline)
 7. [Universal Auto-Detection Engine](#7-universal-auto-detection-engine)
 8. [Canvas Snapping & Guidelines Mathematics](#8-canvas-snapping--guidelines-mathematics)
@@ -24,7 +24,7 @@
 
 ## 1. Executive Summary & Core Philosophy
 
-**JustForms** is a high-performance, client-side web application for designing, editing, and compiling interactive PDF AcroForms. 
+**SmartForms** is a high-performance, client-side web application for designing, editing, and compiling interactive PDF AcroForms.
 
 ### Core Architectural Guarantees
 
@@ -67,7 +67,7 @@ graph TB
             PDFEngine[js/engines/pdf-engine.js Mozilla PDF.js Canvas Renderer]
             AutoDetect[js/engines/auto-detector.js Lattice & Geometric Engine]
             Templates[js/engines/templates-engine.js Vector Background Presets]
-            Storage[js/core/storage-manager.js History Snapshot & .jform I/O]
+            Storage[js/core/storage-manager.js History Snapshot & .smartform.json I/O]
             AcroForm[js/engines/acroform-builder.js PDF-Lib ISO Compiler]
         end
     end
@@ -149,7 +149,7 @@ Pre-built starter document builder:
 ### 10. `js/core/storage-manager.js`
 Local backup and history engine:
 - Undo/Redo history stack manager (`saveHistory`, `undo`, `redo`).
-- Project file serialization and schema validation (`.jform` JSON format).
+- Project file serialization and schema validation (`.smartform.json` format).
 
 ### 11. `js/engines/acroform-builder.js`
 ISO 32000 PDF compilation engine:
@@ -171,14 +171,14 @@ ISO 32000 PDF compilation engine:
 
 ---
 
-## 5. Project File Schema (`.jform`)
+## 5. Project File Schema (`.smartform.json`)
 
-JustForms saves projects as portable JSON files (`.jform` / `.justforms`):
+SmartForms saves projects as portable `.smartform.json` files:
 
 ```json
 {
   "version": "1.1.0",
-  "generator": "JustForms Form Builder",
+  "generator": "SmartForms Form Builder",
   "timestamp": "2026-08-22T10:00:00.000Z",
   "fileName": "commercial_invoice_form.pdf",
   "pdfBase64": "<base64_encoded_original_pdf_bytes>",
@@ -247,7 +247,7 @@ sequenceDiagram
 
 ## 7. Universal Auto-Detection Engine
 
-JustForms employs a dual-strategy auto-detector:
+SmartForms employs a dual-strategy auto-detector:
 
 ### 1. Lattice Ruling-Line Table Detector
 - Renders page to an offscreen canvas at $2\times$ resolution.
@@ -263,7 +263,7 @@ JustForms employs a dual-strategy auto-detector:
 
 ### 3. Neural Model In-Browser Extension (Roadmap: ONNX WebAssembly)
 - **Zero-Cloud Vision Pipeline**: When visual AI models (e.g. FFDNet / FFDetr) are introduced, they run entirely client-side via `onnxruntime-web` over WebAssembly/WebGPU.
-- **Local Fusion**: Neural bounding boxes are fused client-side with Formblatt's local multilingual semantic engine (`resolveSemanticProps`) to generate rich field labels, autofill attributes, and format types without sending any document data over the network.
+- **Local Fusion**: Neural bounding boxes are fused client-side with SmartForms's local multilingual semantic engine (`resolveSemanticProps`) to generate rich field labels, autofill attributes, and format types without sending any document data over the network.
 
 ---
 
@@ -312,7 +312,7 @@ styles/
 ```bash
 # Clone the repository
 git clone https://github.com/dcarreras/smartforms.git
-cd justforms
+cd .
 
 # Start any local HTTP server (ES Modules require HTTP/HTTPS origin)
 npx serve .

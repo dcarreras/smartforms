@@ -99,7 +99,7 @@ function createServerOnPort(port) {
     });
 
     server.listen(port, "0.0.0.0", () => {
-        console.log(`🚀 JustForms server running at: http://localhost:${port}`);
+        console.log(`🚀 SmartForms server running at: http://localhost:${port}`);
     });
 }
 

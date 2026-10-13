@@ -1,10 +1,10 @@
 services:
-  formblatt:
+  smartforms:
     build:
       context: .
       dockerfile: Dockerfile
-    image: formblatt:latest
-    container_name: formblatt-web
+    image: smartforms:latest
+    container_name: smartforms-web
     restart: unless-stopped
     ports:
       - "3000:80"

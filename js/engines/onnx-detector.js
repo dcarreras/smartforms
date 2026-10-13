@@ -31,7 +31,7 @@ async function getCachedModelBuffer(modelUrl) {
     if (typeof window === "undefined" || !window.indexedDB) return null;
     return new Promise(resolve => {
         try {
-            const req = indexedDB.open("formblatt_model_cache", 1);
+            const req = indexedDB.open("smartforms_model_cache", 1);
             req.onupgradeneeded = (e) => {
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains("models")) {
@@ -59,7 +59,7 @@ async function getCachedModelBuffer(modelUrl) {
 async function cacheModelBuffer(modelUrl, buffer) {
     if (typeof window === "undefined" || !window.indexedDB || !buffer) return;
     try {
-        const req = indexedDB.open("formblatt_model_cache", 1);
+        const req = indexedDB.open("smartforms_model_cache", 1);
         req.onsuccess = (e) => {
             const db = e.target.result;
             const tx = db.transaction("models", "readwrite");

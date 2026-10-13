@@ -1,5 +1,5 @@
 """
-Formblatt Local Vision Inference Sidecar
+SmartForms Local Vision Inference Sidecar
 =========================================
 100% Local Python server for high-precision form field detection.
 Zero data or documents leave your machine (localhost only).
@@ -48,7 +48,7 @@ DEFAULT_ALLOWED_ORIGINS = [
 
 CUSTOM_ORIGINS = [
     orig.strip()
-    for orig in os.getenv("FORMOBLATT_ALLOWED_ORIGINS", "").split(",")
+    for orig in os.getenv("SMARTFORMS_ALLOWED_ORIGINS", "").split(",")
     if orig.strip()
 ]
 ALLOWED_ORIGINS = list(dict.fromkeys(DEFAULT_ALLOWED_ORIGINS + CUSTOM_ORIGINS))
@@ -156,7 +156,7 @@ def decode_base64_image(image_data: str) -> Optional[Image.Image]:
 
 
 def _ffdnet_class_to_field_type(cls_name: str, label: str = "") -> str:
-    """Map FFDNet-L class names to Formblatt internal field types."""
+    """Map FFDNet-L class names to SmartForms internal field types."""
     DATE_RE = re.compile(r"\b(date|dated|dt|datum|fecha)\b", re.I)
     if cls_name == "textbox":
         if DATE_RE.search(label):
@@ -512,7 +512,7 @@ def health_check():
     """Health status and capabilities check."""
     return {
         "status": "healthy",
-        "service": "formblatt-ffdnet-sidecar",
+        "service": "smartforms-ffdnet-sidecar",
         "device": DEVICE,
         "torch_available": torch is not None,
         "model": "FFDNet-L",
@@ -526,7 +526,7 @@ def health_check():
 @app.post("/api/detect-fields")
 async def detect_fields(request: DetectRequest):
     """
-    Main detection endpoint called by Formblatt editor.
+    Main detection endpoint called by SmartForms editor.
     Priority:
       1. FFDNet-L vision model  (if image provided and model loaded)
       2. Heuristic token engine (fallback)
@@ -693,7 +693,7 @@ async def detect_pdf(request: DetectPdfRequest):
 if __name__ == "__main__":
     import uvicorn
     print("\n" + "=" * 60)
-    print("Formblatt Document Understanding Local Sidecar v2")
+    print("SmartForms Document Understanding Local Sidecar v2")
     print(f"Engine: {'FFDNet-L (vision)' if FFDNET_MODEL else 'Heuristic (token-only)'}")
     print(f"Device: {DEVICE}")
     print("Running 100% locally at http://localhost:8000")

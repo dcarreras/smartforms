@@ -2,7 +2,7 @@
 FROM nginx:1.27-alpine-slim
 
 LABEL maintainer="Sagar Shrestha"
-LABEL description="Formblatt — 100% Client-Side Privacy-First PDF Form Creator"
+LABEL description="SmartForms — 100% Client-Side Privacy-First PDF Form Creator"
 
 # Remove default nginx welcome page
 RUN rm -rf /usr/share/nginx/html/*

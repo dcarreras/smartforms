@@ -1,12 +1,20 @@
-// ── Formblatt Complete Automated Test Suite (v3.0.0) ──────────
+// ── SmartForms Complete Automated Test Suite (v3.0.0) ──────────
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'node:url';
 import * as PDFLib from 'pdf-lib';
 
 globalThis.PDFLib = PDFLib;
 
 const WEB_DIR = path.resolve(import.meta.dirname, '..');
+
+function importModule(specifier) {
+    if (path.isAbsolute(specifier)) return import(pathToFileURL(specifier).href);
+    if (specifier.startsWith('.')) return import(new URL(specifier, import.meta.url).href);
+    return import(specifier);
+}
 
 function readEditorCss() {
     let css = fs.readFileSync(path.join(WEB_DIR, 'styles', 'editor.css'), 'utf8');
@@ -20,7 +28,18 @@ function readEditorCss() {
             imported += '\n' + fs.readFileSync(fullPath, 'utf8');
         }
     }
-    return imported ? css + '\n' + imported : css;
+    return (imported ? css + '\n' + imported : css).replace(/\r\n/g, '\n');
+}
+
+async function withoutWindow(run) {
+    const hadWindow = Object.hasOwn(globalThis, 'window');
+    const previousWindow = globalThis.window;
+    delete globalThis.window;
+    try {
+        return await run();
+    } finally {
+        if (hadWindow) globalThis.window = previousWindow;
+    }
 }
 
 // Mock localStorage and window for node environment
@@ -61,7 +80,7 @@ async function asyncIt(name, fn) {
 
 async function runAllTests() {
     console.log("=================================================");
-    console.log("🧪 RUNNING FORMBLATT AUTOMATED TEST SUITE (v2.0.0-alpha)");
+    console.log("🧪 RUNNING SMARTFORMS AUTOMATED TEST SUITE (v2.0.0-alpha)");
     console.log("=================================================\n");
 
     // ── SUITE 1: Module Integrity & ES Module Imports ──
@@ -83,10 +102,10 @@ async function runAllTests() {
     for (const fullPath of allJsFiles) {
         const relPath = path.relative(WEB_DIR, fullPath);
         it(`Should have valid JavaScript syntax in ${relPath}`, () => {
-            const code = fs.readFileSync(fullPath, 'utf8');
             assert.doesNotThrow(() => {
-                new Function(`import("${fullPath}");`);
+                execFileSync(process.execPath, ['--check', fullPath], { stdio: 'pipe' });
             });
+            const code = fs.readFileSync(fullPath, 'utf8');
             // Ensure no malformed escaped template literals
             assert.ok(!code.includes('\\`'), `Found invalid escaped backtick in ${relPath}`);
             assert.ok(!code.includes('\\${'), `Found invalid escaped interpolation in ${relPath}`);
@@ -157,8 +176,8 @@ async function runAllTests() {
         setGuidesEnabled,
         toggleGuides,
         sortFieldsByReadingOrder
-    } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
-    const { populateProperties } = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+    } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+    const { populateProperties } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
 
     it("generateFieldId should return unique formatted string", () => {
         const id1 = generateFieldId("fld");
@@ -225,6 +244,7 @@ async function runAllTests() {
             querySelector() { return null; },
             querySelectorAll() { return []; }
         };
+        global.window = { renderPixelIcons() {} };
 
         state.fields = [{ id: "f1", type: "textField", name: "First Name", defaultValue: "Jane", fontSize: 14, textAlignment: "left", required: true, readOnly: true }];
         state.selectedFieldIds = new Set();
@@ -299,11 +319,11 @@ async function runAllTests() {
     it("Smart guides toggling and persistence", () => {
         setGuidesEnabled(true);
         assert.equal(state.guidesEnabled, true);
-        assert.equal(global.localStorage.getItem("justforms_guides_enabled"), "true");
+        assert.equal(global.localStorage.getItem("smartforms_guides_enabled"), "true");
 
         toggleGuides();
         assert.equal(state.guidesEnabled, false);
-        assert.equal(global.localStorage.getItem("justforms_guides_enabled"), "false");
+        assert.equal(global.localStorage.getItem("smartforms_guides_enabled"), "false");
     });
 
     it("Dropdown choices management: add, reorder, delete, and default value tracking", () => {
@@ -367,7 +387,7 @@ async function runAllTests() {
 
     // ── SUITE 3: Constants & Tool Definitions ──
     console.log("\n⚙️ Suite 3: Constants & Default Definitions");
-    const { DEFAULT_FIELD_SIZES, AUTOFILL_TYPES } = await import(path.join(WEB_DIR, 'js', 'core', 'constants.js'));
+    const { DEFAULT_FIELD_SIZES, AUTOFILL_TYPES } = await importModule(path.join(WEB_DIR, 'js', 'core', 'constants.js'));
 
     it("DEFAULT_FIELD_SIZES has required dimensions for all tool types", () => {
         const requiredTools = ['textField', 'checkBox', 'radioGroup', 'dropdown', 'signature', 'dateField'];
@@ -380,7 +400,7 @@ async function runAllTests() {
 
     // ── SUITE 4: Templates Engine ──
     console.log("\n📑 Suite 4: Vector Document Templates Engine");
-    const { STARTER_TEMPLATES } = await import(path.join(WEB_DIR, 'js', 'engines', 'templates-engine.js'));
+    const { STARTER_TEMPLATES } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'templates-engine.js'));
 
     it("STARTER_TEMPLATES defines all core templates with valid schema", () => {
         const keys = Object.keys(STARTER_TEMPLATES);
@@ -393,7 +413,7 @@ async function runAllTests() {
             assert.ok(template.title, `Template ${key} must have a title`);
             assert.ok(template.description, `Template ${key} must have a description`);
             assert.ok(template.fields && Array.isArray(template.fields), `Template ${key} must have fields array`);
-            
+
             // Check field attributes if fields exist
             for (const f of template.fields) {
                 assert.ok(f.id, "Field must have id");
@@ -408,7 +428,7 @@ async function runAllTests() {
 
     // ── SUITE 5: Base64 & Project Serialization ──
     console.log("\n💾 Suite 5: Serialization & Base64 Utilities");
-    const { uint8ArrayToBase64, base64ToUint8Array, safeJsonStringify } = await import(path.join(WEB_DIR, 'js', 'core', 'storage-manager.js'));
+    const { uint8ArrayToBase64, base64ToUint8Array, safeJsonStringify } = await importModule(path.join(WEB_DIR, 'js', 'core', 'storage-manager.js'));
 
     it("uint8ArrayToBase64 and base64ToUint8Array roundtrip lossless binary data", () => {
         const sample = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]); // "%PDF-1.7"
@@ -437,7 +457,7 @@ async function runAllTests() {
 
     // ── SUITE 6: Semantic Resolver & Multilingual Auto-Detection ──
     console.log("\n🔍 Suite 6: Semantic Field Heuristics & Auto-Detection");
-    const { resolveSemanticProps, GENERIC_PATTERNS } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    const { resolveSemanticProps, GENERIC_PATTERNS } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
     it("Correctly categorizes English form labels", () => {
         assert.equal(resolveSemanticProps("First Name:").name, "first_name");
@@ -535,9 +555,9 @@ async function runAllTests() {
         assert.equal(AUTOFILL_ROLE_TITLES["tel"], "Phone Number");
     });
 
-    const { getExistingWidgetFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    const { getExistingWidgetFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
-    it("imports existing AcroForm widgets without losing their names or positions", async () => {
+    await asyncIt("imports existing AcroForm widgets without losing their names or positions", async () => {
         const page = {
             async getAnnotations() {
                 return [
@@ -561,7 +581,7 @@ async function runAllTests() {
     });
 
     await asyncIt("buildPdf compiles fields with chosen font in AcroForm DA and DR dictionaries", async () => {
-        const { buildPdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+        const { buildPdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
         const { PDFDocument } = PDFLib;
         const testDoc = await PDFDocument.create();
         testDoc.addPage([600, 800]);
@@ -593,7 +613,7 @@ async function runAllTests() {
 
     // ── SUITE 8: Overlay DOM Rendering & Visual Hierarchy ──
     console.log("\n🖼️ Suite 8: Overlay DOM Rendering & Hierarchy");
-    const { renderOverlays } = await import(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
+    const { renderOverlays } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
 
     it("renderOverlays correctly formats unselected, single-selected, and multi-selected elements", () => {
         const appendedChildren = [];
@@ -712,7 +732,7 @@ async function runAllTests() {
 
     // ── SUITE 9: Text-Aware Dynamic Adaptive Sizing ──
     console.log("\n📏 Suite 9: Text-Aware Dynamic Adaptive Sizing");
-    const { getAdaptiveFieldDimensions } = await import(path.join(WEB_DIR, 'js', 'ui', 'canvas-controller.js'));
+    const { getAdaptiveFieldDimensions } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'canvas-controller.js'));
 
     it("getAdaptiveFieldDimensions scales field height and font size based on adjacent PDF text", () => {
         const sampleBlocks = [
@@ -930,8 +950,8 @@ async function runAllTests() {
         assert.equal(clampPanelWidth(256, 100, 180, 600), 356);
     });
 
-    it("updateDocumentTitle reflects current filename in editor and default on landing", async () => {
-        const { updateDocumentTitle, state } = await import("../js/core/state.js");
+    await asyncIt("updateDocumentTitle reflects current filename in editor and default on landing", async () => {
+        const { updateDocumentTitle, state } = await importModule("../js/core/state.js");
         
         global.document = {
             title: "",
@@ -951,15 +971,15 @@ async function runAllTests() {
         // When editor is hidden (landing mode)
         global.document.getElementById = () => ({ style: { display: "none" } });
         updateDocumentTitle();
-        assert.equal(global.document.title, "SmartForms: Construction PDF Form Builder");
+        assert.equal(global.document.title, "SmartForms: Free Interactive PDF Form Creator & AcroForm Editor");
     });
 
-    it("Ko-fi support links are optional, secure, and present in all three support surfaces", () => {
+    it("Ko-fi support links are optional, secure, and present in all support surfaces", () => {
         const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
         assert.ok(indexHtml.includes('id="exportSponsorContainer"'), 'Must contain exportSponsorContainer in index.html');
         assert.ok(indexHtml.includes('id="exportSponsorSlot"'), 'Must contain exportSponsorSlot in index.html');
         assert.ok(indexHtml.includes('class="toast-sponsor-bar"'), 'Must contain toast-sponsor-bar in index.html');
-        assert.equal((indexHtml.match(/https:\/\/ko-fi\.com\/davidcarrerasalbacete/g) || []).length, 3);
+        assert.equal((indexHtml.match(/https:\/\/ko-fi\.com\/davidcarrerasalbacete/g) || []).length, 4);
         assert.ok(indexHtml.includes('Buy me a coffee'));
         assert.ok(indexHtml.includes('No features are locked.'));
 
@@ -987,7 +1007,10 @@ async function runAllTests() {
         assert.ok(indexHtml.includes('Save SmartForms Project (.smartform.json)'));
         assert.ok(!indexHtml.includes('Project (.formblatt)'));
         assert.ok(storageManager.includes('a.download = `${baseName}.smartform.json`;'));
-        assert.ok(storageManager.includes('smartform\\.json|formblatt'));
+        assert.ok(storageManager.includes('smartform\\.json|json'));
+        assert.ok(!storageManager.includes('formblatt'));
+        assert.ok(!storageManager.includes('fblatt'));
+        assert.ok(!storageManager.includes('jform'));
     });
 
     it("autoSelectCaptions selects caption track matching user locale", () => {
@@ -1038,8 +1061,8 @@ async function runAllTests() {
     // ── SUITE 13: Command Palette (⌘K / Ctrl+K) & Quick Actions ──
     console.log("\n⌨️ Suite 13: Command Palette (⌘K / Ctrl+K) & Quick Actions");
     
-    it("COMMANDS catalog defines core productivity and navigation actions", async () => {
-        const { COMMANDS, filterCommands } = await import(path.join(WEB_DIR, 'js', 'ui', 'command-palette.js'));
+    await asyncIt("COMMANDS catalog defines core productivity and navigation actions", async () => {
+        const { COMMANDS, filterCommands } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'command-palette.js'));
         assert.ok(Array.isArray(COMMANDS), 'COMMANDS must be an array');
         assert.ok(COMMANDS.length >= 25, `Expected at least 25 commands, found ${COMMANDS.length}`);
 
@@ -1085,8 +1108,8 @@ async function runAllTests() {
         assert.ok(modalsCss.includes('.command-palette-item'), 'modals.css must include .command-palette-item');
     });
 
-    it("isEditorActive accurately restricts command palette when on landing page", async () => {
-        const { isEditorActive } = await import(path.join(WEB_DIR, 'js', 'ui', 'command-palette.js'));
+    await asyncIt("isEditorActive accurately restricts command palette when on landing page", async () => {
+        const { isEditorActive } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'command-palette.js'));
         assert.equal(typeof isEditorActive, 'function', 'isEditorActive must be an exported function');
     });
 
@@ -1149,8 +1172,9 @@ async function runAllTests() {
         assert.ok(indexHtml.includes('id="footerShortcutsBtn"'), 'index.html must include #footerShortcutsBtn');
     });
 
-    it("main.js exports openShortcutsModal and closeShortcutsModal helpers", async () => {
-        const mainModule = await import(path.join(WEB_DIR, 'js', 'main.js'));
+    await asyncIt("main.js exports openShortcutsModal and closeShortcutsModal helpers", async () => {
+        global.window = { addEventListener() {} };
+        const mainModule = await importModule(path.join(WEB_DIR, 'js', 'main.js'));
         assert.equal(typeof mainModule.openShortcutsModal, 'function', 'main.js must export openShortcutsModal');
         assert.equal(typeof mainModule.closeShortcutsModal, 'function', 'main.js must export closeShortcutsModal');
     });
@@ -1166,12 +1190,12 @@ async function runAllTests() {
     console.log("\n🖼️ Suite 16: OpenGraph & Social Sharing Image Metadata");
     it("index.html defines standard OpenGraph and Twitter card image metadata", () => {
         const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
-        assert.ok(indexHtml.includes('property="og:image" content="https://justforms.vercel.app/assets/og-image.png"'), 'index.html must define og:image pointing to high-res PNG');
+        assert.ok(indexHtml.includes('property="og:image" content="https://smartforms-cons.app/assets/og-image.png"'), 'index.html must define og:image pointing to high-res PNG');
         assert.ok(indexHtml.includes('name="twitter:card" content="summary_large_image"'), 'index.html must define summary_large_image twitter card');
-        assert.ok(indexHtml.includes('name="twitter:image" content="https://justforms.vercel.app/assets/og-image.png"'), 'index.html must define twitter:image');
+        assert.ok(indexHtml.includes('name="twitter:image" content="https://smartforms-cons.app/assets/og-image.png"'), 'index.html must define twitter:image');
         assert.ok(indexHtml.includes('property="og:image:width" content="1024"'), 'index.html must define 1024 width');
         assert.ok(indexHtml.includes('property="og:image:height" content="742"'), 'index.html must define 742 height');
-        assert.ok(!indexHtml.includes('property="og:image" content="https://justforms.vercel.app/favicon.svg"'), 'og:image must not point to favicon.svg');
+        assert.ok(!indexHtml.includes('property="og:image" content="https://smartforms-cons.app/favicon.svg"'), 'og:image must not point to favicon.svg');
     });
 
     it("assets/og-image.png exists and conforms to 1200x630 OpenGraph dimensions", () => {
@@ -1212,46 +1236,50 @@ async function runAllTests() {
     });
 
     await asyncIt("createTemplatePdf accurately builds vector PDFs for all starter templates", async () => {
-        const { STARTER_TEMPLATES, createTemplatePdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'templates-engine.js'));
-        for (const [key, template] of Object.entries(STARTER_TEMPLATES)) {
-            assert.ok(template.title, `Template '${key}' must have a title`);
-            assert.ok(Array.isArray(template.fields), `Template '${key}' must have fields array`);
-            const pdfBytes = await createTemplatePdf(key);
-            assert.ok(pdfBytes && pdfBytes.length > 0, `Template '${key}' must generate non-empty PDF bytes`);
-            const magic = Buffer.from(pdfBytes.subarray(0, 4)).toString('ascii');
-            assert.equal(magic, "%PDF", `Template '${key}' output must start with %PDF magic bytes`);
-        }
+        await withoutWindow(async () => {
+            const { STARTER_TEMPLATES, createTemplatePdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'templates-engine.js'));
+            for (const [key, template] of Object.entries(STARTER_TEMPLATES)) {
+                assert.ok(template.title, `Template '${key}' must have a title`);
+                assert.ok(Array.isArray(template.fields), `Template '${key}' must have fields array`);
+                const pdfBytes = await createTemplatePdf(key);
+                assert.ok(pdfBytes && pdfBytes.length > 0, `Template '${key}' must generate non-empty PDF bytes`);
+                const magic = Buffer.from(pdfBytes.subarray(0, 4)).toString('ascii');
+                assert.equal(magic, "%PDF", `Template '${key}' output must start with %PDF magic bytes`);
+            }
+        });
     });
 
     await asyncIt("weeklySchedule starter template conforms to 5-day 14-column schedule grid and generates landscape PDF", async () => {
-        const { STARTER_TEMPLATES, createTemplatePdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'templates-engine.js'));
-        const schedule = STARTER_TEMPLATES.weeklySchedule;
-        assert.ok(schedule, "weeklySchedule must exist in STARTER_TEMPLATES");
-        assert.equal(schedule.fields.length, 282, "weeklySchedule must define 282 structured fields");
-        assert.ok(schedule.fields.some(f => f.name === "department"), "weeklySchedule must have department field");
-        assert.ok(schedule.fields.some(f => f.name === "week_of"), "weeklySchedule must have week_of field");
-        
-        // Validate Monday through Friday fields exist
-        for (const day of ["mon", "tue", "wed", "thu", "fri"]) {
-            assert.ok(schedule.fields.some(f => f.name === `${day}_name_1`), `Must have ${day}_name_1`);
-            assert.ok(schedule.fields.some(f => f.name === `${day}_sick_1` && f.type === "checkBox"), `Must have ${day}_sick_1 as checkBox`);
-            assert.ok(schedule.fields.some(f => f.name === `${day}_total_1`), `Must have ${day}_total_1`);
-        }
+        await withoutWindow(async () => {
+            const { STARTER_TEMPLATES, createTemplatePdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'templates-engine.js'));
+            const schedule = STARTER_TEMPLATES.weeklySchedule;
+            assert.ok(schedule, "weeklySchedule must exist in STARTER_TEMPLATES");
+            assert.equal(schedule.fields.length, 282, "weeklySchedule must define 282 structured fields");
+            assert.ok(schedule.fields.some(f => f.name === "department"), "weeklySchedule must have department field");
+            assert.ok(schedule.fields.some(f => f.name === "week_of"), "weeklySchedule must have week_of field");
 
-        const pdfBytes = await createTemplatePdf("weeklySchedule");
-        const doc = await PDFLib.PDFDocument.load(pdfBytes);
-        assert.equal(doc.getPageCount(), 1, "Must generate 1-page PDF");
-        const page = doc.getPage(0);
-        const { width, height } = page.getSize();
-        assert.equal(Math.round(width), 792, "Page width must be 792 (landscape)");
-        assert.equal(Math.round(height), 612, "Page height must be 612 (landscape)");
+            // Validate Monday through Friday fields exist
+            for (const day of ["mon", "tue", "wed", "thu", "fri"]) {
+                assert.ok(schedule.fields.some(f => f.name === `${day}_name_1`), `Must have ${day}_name_1`);
+                assert.ok(schedule.fields.some(f => f.name === `${day}_sick_1` && f.type === "checkBox"), `Must have ${day}_sick_1 as checkBox`);
+                assert.ok(schedule.fields.some(f => f.name === `${day}_total_1`), `Must have ${day}_total_1`);
+            }
+
+            const pdfBytes = await createTemplatePdf("weeklySchedule");
+            const doc = await PDFLib.PDFDocument.load(pdfBytes);
+            assert.equal(doc.getPageCount(), 1, "Must generate 1-page PDF");
+            const page = doc.getPage(0);
+            const { width, height } = page.getSize();
+            assert.equal(Math.round(width), 792, "Page width must be 792 (landscape)");
+            assert.equal(Math.round(height), 612, "Page height must be 612 (landscape)");
+        });
     });
 
     // ── SUITE 18: End-to-End AcroForm PDF Pipeline Verification ──
     console.log("\n📄 Suite 18: End-to-End AcroForm PDF Pipeline Verification");
     await asyncIt("buildPdf successfully compiles and embeds all interactive AcroForm field types", async () => {
-        const { PDFDocument } = await import('pdf-lib');
-        const { buildPdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+        const { PDFDocument } = await importModule('pdf-lib');
+        const { buildPdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
 
         const testDoc = await PDFDocument.create();
         testDoc.addPage([612, 792]);
@@ -1319,9 +1347,9 @@ async function runAllTests() {
         assert.ok(multiPageFlattened && multiPageFlattened.length > 0, "Multi-page form must flatten with zero stack overflow");
     });
 
-    it("Storage manager serializes snapshots and manages undo/redo stack accurately", async () => {
-        const { state } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
-        const { saveHistory, undo, redo } = await import(path.join(WEB_DIR, 'js', 'core', 'storage-manager.js'));
+    await asyncIt("Storage manager serializes snapshots and manages undo/redo stack accurately", async () => {
+        const { state } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+        const { saveHistory, undo, redo } = await importModule(path.join(WEB_DIR, 'js', 'core', 'storage-manager.js'));
 
         state.fields = [{ id: "f1", name: "PartyA", type: "textField", page: 1, x: 10, y: 10, width: 100, height: 20 }];
         state.groups = [];
@@ -1346,8 +1374,8 @@ async function runAllTests() {
 
     // ── SUITE 19: Security, Privacy & Sanitization Auditing ──
     console.log("\n🔒 Suite 19: Security, Privacy & Sanitization Auditing");
-    it("getSafeImageSrc strictly enforces base64 image data URLs and rejects dangerous schemes", async () => {
-        const { getSafeImageSrc } = await import(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
+    await asyncIt("getSafeImageSrc strictly enforces base64 image data URLs and rejects dangerous schemes", async () => {
+        const { getSafeImageSrc } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
         
         // Allowed
         const validPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
@@ -1488,8 +1516,8 @@ async function runAllTests() {
         assert.ok(indexHtml.includes('data-tool="staticText"'), "staticText tool button must exist in toolbar");
     });
 
-    it("Constants define staticText defaults and labels", async () => {
-        const { DEFAULT_FIELD_SIZES, FIELD_TYPE_LABELS } = await import(path.join(WEB_DIR, 'js', 'core', 'constants.js'));
+    await asyncIt("Constants define staticText defaults and labels", async () => {
+        const { DEFAULT_FIELD_SIZES, FIELD_TYPE_LABELS } = await importModule(path.join(WEB_DIR, 'js', 'core', 'constants.js'));
         assert.ok(DEFAULT_FIELD_SIZES.staticText, "DEFAULT_FIELD_SIZES.staticText must exist");
         assert.equal(DEFAULT_FIELD_SIZES.staticText.width, 220);
         assert.equal(DEFAULT_FIELD_SIZES.staticText.height, 32);
@@ -1497,7 +1525,7 @@ async function runAllTests() {
     });
 
     await asyncIt("buildPdf draws vector text for staticText labels onto PDF pages", async () => {
-        const { buildPdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+        const { buildPdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
         const { PDFDocument } = PDFLib;
         const testDoc = await PDFDocument.create();
         testDoc.addPage([600, 800]);
@@ -1518,9 +1546,9 @@ async function runAllTests() {
     // ── SUITE 22: About Face Interaction Design Enhancements ──
     console.log("\n🎨 Suite 22: About Face Interaction Design Enhancements");
 
-    it("Named history actions record action descriptors and support undo/redo queries", async () => {
-        const { state } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
-        const { saveHistory, undo, redo, getUndoActionName, getRedoActionName } = await import(path.join(WEB_DIR, 'js', 'core', 'storage-manager.js'));
+    await asyncIt("Named history actions record action descriptors and support undo/redo queries", async () => {
+        const { state } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+        const { saveHistory, undo, redo, getUndoActionName, getRedoActionName } = await importModule(path.join(WEB_DIR, 'js', 'core', 'storage-manager.js'));
         
         state.history = [];
         state.historyIndex = -1;
@@ -1562,8 +1590,8 @@ async function runAllTests() {
     // ── SUITE 23: Smart Inference, Forgiving Sanitization & Contextual Quick Actions ──
     console.log("\n⚡ Suite 23: Smart Inference, Forgiving Sanitization & Contextual Quick Actions");
 
-    it("sanitizePdfFieldName safely auto-normalizes field names without alerts", async () => {
-        const { sanitizePdfFieldName } = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+    await asyncIt("sanitizePdfFieldName safely auto-normalizes field names without alerts", async () => {
+        const { sanitizePdfFieldName } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
         assert.equal(sanitizePdfFieldName("First Name (#1)"), "first_name_1");
         assert.equal(sanitizePdfFieldName("Company - Address (Line 2)"), "company_address_line_2");
         assert.equal(sanitizePdfFieldName("123 Tax ID"), "f_123_tax_id");
@@ -1572,9 +1600,9 @@ async function runAllTests() {
         assert.equal(sanitizePdfFieldName("   ___Email Address___   "), "email_address");
     });
 
-    it("distributeSelectedFields uniformly spaces 3+ fields horizontally and vertically", async () => {
-        const { state } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
-        const { distributeSelectedFields } = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+    await asyncIt("distributeSelectedFields uniformly spaces 3+ fields horizontally and vertically", async () => {
+        const { state } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+        const { distributeSelectedFields } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
 
         state.fields = [
             { id: "f1", x: 10, y: 0, width: 100, height: 20 },
@@ -1601,8 +1629,8 @@ async function runAllTests() {
         assert.equal(state.fields[2].x, 140);
     });
 
-    it("renderContextualQuickBar creates floating action buttons for selection", async () => {
-        const { renderContextualQuickBar } = await import(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
+    await asyncIt("renderContextualQuickBar creates floating action buttons for selection", async () => {
+        const { renderContextualQuickBar } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
         assert.equal(typeof renderContextualQuickBar, "function");
 
         const mockContainer = {
@@ -1655,8 +1683,8 @@ async function runAllTests() {
 
     // ── SUITE 24: Hybrid Neural Vision & Client-Side ONNX Pipeline Verification ──
     console.log("\n🧠 Suite 24: Hybrid Neural Vision & Client-Side ONNX Pipeline");
-    const { calculateBoxIoU, nonMaximumSuppression } = await import(path.join(WEB_DIR, 'js', 'engines', 'onnx-detector.js'));
-    const { enrichNeuralFieldsWithText } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    const { calculateBoxIoU, nonMaximumSuppression } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'onnx-detector.js'));
+    const { enrichNeuralFieldsWithText } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
     it("calculateBoxIoU accurately calculates bounding box overlap ratio", () => {
         const box1 = { x: 0, y: 0, width: 100, height: 100 };
@@ -1705,7 +1733,7 @@ async function runAllTests() {
         assert.equal(enriched[1].name, "agree_to_terms");
     });
 
-    const { calculateDocumentColumnBoundaries, SEMANTIC_DIMENSIONS } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    const { calculateDocumentColumnBoundaries, SEMANTIC_DIMENSIONS } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
     it("calculateDocumentColumnBoundaries accurately computes page margins and multi-column layout boundaries", () => {
         const sampleBlocks = [
@@ -1726,7 +1754,7 @@ async function runAllTests() {
 
     // ── SUITE 25: Form Detection Benchmark & Evaluation Studio Verification ──
     console.log("\n📊 Suite 25: Form Detection Benchmark & Evaluation Studio");
-    const { generateEmployeeOnboardingPdf, generateMedicalIntakePdf, generateCommercialInvoicePdf } = await import(path.join(WEB_DIR, 'tests', 'generate_test_pdfs.js'));
+    const { generateEmployeeOnboardingPdf, generateMedicalIntakePdf, generateCommercialInvoicePdf } = await importModule(path.join(WEB_DIR, 'tests', 'generate_test_pdfs.js'));
 
     await asyncIt("generate_test_pdfs correctly builds valid vector PDFs for all sample fixtures", async () => {
         const onboardingBytes = await generateEmployeeOnboardingPdf();
@@ -1758,8 +1786,8 @@ async function runAllTests() {
         assert.ok(evalHtml.includes("exportReportBtn"));
     });
 
-    it("detectVectorDrawnFields correctly detects drawn checkboxes and input boxes with exact vector dimensions", async () => {
-        const { detectVectorDrawnFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVectorDrawnFields correctly detects drawn checkboxes and input boxes with exact vector dimensions", async () => {
+        const { detectVectorDrawnFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         const mockVectorShapes = {
             checkboxRects: [
@@ -1805,8 +1833,8 @@ async function runAllTests() {
         assert.equal(detected[3].width, 395);
     });
 
-    it("detectVisualAffordances does not convert questions or informational sentences into form fields", async () => {
-        const { detectVisualAffordances } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVisualAffordances does not convert questions or informational sentences into form fields", async () => {
+        const { detectVisualAffordances } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         const mockRawBlocks = [
             { str: "1. Are you sick today?", x: 45, y: 150, width: 200, height: 12 },
@@ -1820,8 +1848,8 @@ async function runAllTests() {
         assert.equal(detected.length, 0, "Zero form fields should be created from questions or text sentences");
     });
 
-    it("detectVectorDrawnFields suppresses line number badges, section headings, divider bars, and seals", async () => {
-        const { detectVectorDrawnFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVectorDrawnFields suppresses line number badges, section headings, divider bars, and seals", async () => {
+        const { detectVectorDrawnFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         const mockVectorShapes = {
             checkboxRects: [
@@ -1859,8 +1887,8 @@ async function runAllTests() {
         assert.equal(detected[1].name, "applicant_name");
     });
 
-    it("reconstructTableGridBoxes accurately reconstructs orthogonal grid cells and detects question headers as checkboxes", async () => {
-        const { reconstructTableGridBoxes, detectVectorDrawnFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("reconstructTableGridBoxes accurately reconstructs orthogonal grid cells and detects question headers as checkboxes", async () => {
+        const { reconstructTableGridBoxes, detectVectorDrawnFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         // Define a 2-row x 3-col grid (horizontal lines at y=100, 120, 140; vertical lines at x=50, 150, 200, 250)
         const hLines = [
@@ -1921,8 +1949,8 @@ async function runAllTests() {
         assert.equal(row2[2].name, "mon_total_2");
     });
 
-    it("detectVisualAffordances ignores instructional headers with colons and contact modes", async () => {
-        const { detectVisualAffordances } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVisualAffordances ignores instructional headers with colons and contact modes", async () => {
+        const { detectVisualAffordances } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         const mockRawBlocks = [
             { str: "Directions for Sections IV-IX:", x: 45, y: 100, width: 220, height: 12 },
@@ -1939,7 +1967,7 @@ async function runAllTests() {
 
     // ── SUITE 26: Comb / Boxed Character Recognition Verification ──
     console.log("\n📦 Suite 26: Comb / Boxed Character Recognition");
-    const { clusterCombBoxes } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    const { clusterCombBoxes } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
     it("clusterCombBoxes clusters contiguous horizontal character boxes into comb groups", () => {
         // Mock SSN 9 character boxes [ ][ ][ ] [ ][ ] [ ][ ][ ][ ]
@@ -1960,8 +1988,8 @@ async function runAllTests() {
         assert.equal(clusters[0].length, 9);
     });
 
-    it("detectVectorDrawnFields creates comb text field with isComb and maxLength", async () => {
-        const { detectVectorDrawnFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVectorDrawnFields creates comb text field with isComb and maxLength", async () => {
+        const { detectVectorDrawnFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
         const dateBoxes = [
             { x: 100, y: 150, width: 14, height: 18 },
             { x: 115, y: 150, width: 14, height: 18 },
@@ -1984,7 +2012,7 @@ async function runAllTests() {
     });
 
     await asyncIt("buildPdf sets Comb flag (bit 25 = 16777216) and maxLen in exported PDF", async () => {
-        const { buildPdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+        const { buildPdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
 
         const blankDoc = await PDFLib.PDFDocument.create();
         blankDoc.addPage([600, 800]);
@@ -2016,7 +2044,7 @@ async function runAllTests() {
 
     // ── SUITE 27: PDF Flattening & Split Export Verification ──
     console.log("\n🔒 Suite 27: PDF Flattening & Split Export");
-    const { downloadFlattenedPdf, downloadAcroForm } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+    const { downloadFlattenedPdf, downloadAcroForm } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
 
     it("acroform-builder exports downloadFlattenedPdf and downloadAcroForm functions", () => {
         assert.equal(typeof downloadFlattenedPdf, "function");
@@ -2024,7 +2052,7 @@ async function runAllTests() {
     });
 
     await asyncIt("buildPdf with flatten: true strips all interactive widget annotations and burns in vector contents", async () => {
-        const { buildPdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+        const { buildPdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
         const blankDoc = await PDFLib.PDFDocument.create();
         blankDoc.addPage([600, 800]);
         const baseBytes = await blankDoc.save();
@@ -2057,8 +2085,8 @@ async function runAllTests() {
 
     // ── SUITE 28: Formula & Calculation Engine (/JS + /CO) Verification ──
     console.log("\n🧮 Suite 28: Formula & Calculation Engine (/JS + /CO)");
-    const { evaluateCalculations } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
-    const { compileFormulaToAcroJs } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+    const { evaluateCalculations } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+    const { compileFormulaToAcroJs } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
 
     it("evaluateCalculations computes reactive sums, products, and custom math formulas in real time", () => {
         const mockFields = [
@@ -2110,7 +2138,7 @@ async function runAllTests() {
     });
 
     await asyncIt("buildPdf attaches /AA Calculate actions and /CO Calculation Order Array to AcroForm catalog", async () => {
-        const { buildPdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+        const { buildPdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
         const blankDoc = await PDFLib.PDFDocument.create();
         blankDoc.addPage([600, 800]);
         const baseBytes = await blankDoc.save();
@@ -2152,7 +2180,7 @@ async function runAllTests() {
 
     // ── SUITE 29: Form Data Export / Import (CSV & JSON) ──
     console.log("\n📊 Suite 29: Form Data Export / Import (CSV & JSON)");
-    const { exportFormDataAsJson, exportFormDataAsCsv, parseCsv, importFormData, escapeCsvValue } = await import(path.join(WEB_DIR, 'js', 'core', 'data-exporter.js'));
+    const { exportFormDataAsJson, exportFormDataAsCsv, parseCsv, importFormData, escapeCsvValue } = await importModule(path.join(WEB_DIR, 'js', 'core', 'data-exporter.js'));
 
     it("escapeCsvValue handles special characters, commas, and quotes", () => {
         assert.equal(escapeCsvValue("SimpleText"), "SimpleText");
@@ -2242,9 +2270,9 @@ async function runAllTests() {
         assert.ok(swContent.includes('"/vendor/pixelarticons.min.js"'));
     });
 
-    it("OCR and ONNX engines reject cleanly and do not make CDN requests in Airplane Mode", async () => {
-        const { getTesseractWorker } = await import(path.join(WEB_DIR, 'js', 'engines', 'ocr-engine.js'));
-        const { loadOnnxRuntime } = await import(path.join(WEB_DIR, 'js', 'engines', 'onnx-detector.js'));
+    await asyncIt("OCR and ONNX engines reject cleanly and do not make CDN requests in Airplane Mode", async () => {
+        const { getTesseractWorker } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'ocr-engine.js'));
+        const { loadOnnxRuntime } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'onnx-detector.js'));
 
         // Mock offline navigator in Node.js
         if (!global.navigator) {
@@ -2293,7 +2321,7 @@ async function runAllTests() {
 
     it("index.html contains PWA manifest link and Install App menu elements", () => {
         const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
-        assert.ok(indexHtml.includes('rel="manifest" href="/site.webmanifest"'));
+        assert.match(indexHtml, /rel="manifest" href="\/site\.webmanifest(?:\?[^\"]*)?"/);
         assert.ok(indexHtml.includes('id="menuInstallAppBtn"'));
         assert.ok(indexHtml.includes('id="menuExportDataJsonBtn"'));
         assert.ok(indexHtml.includes('id="menuExportDataCsvBtn"'));
@@ -2303,7 +2331,7 @@ async function runAllTests() {
 
     // ── SUITE 31: Client-Side OCR & Scanned Form Detection ──
     console.log("\n🔍 Suite 31: Client-Side OCR & Scanned Form Detection");
-    const { isPageScannedOrFlattened, binarizeImageData, detectScannedBoxContours, detectScannedHorizontalLines, extractScannedTextLines } = await import(path.join(WEB_DIR, 'js', 'engines', 'ocr-engine.js'));
+    const { isPageScannedOrFlattened, binarizeImageData, detectScannedBoxContours, detectScannedHorizontalLines, extractScannedTextLines } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'ocr-engine.js'));
 
     it("isPageScannedOrFlattened accurately detects scanned bitmap pages", () => {
         assert.equal(isPageScannedOrFlattened([], { allRects: [], paths: [] }), true);
@@ -2384,8 +2412,8 @@ async function runAllTests() {
     // ── SUITE 25: Inspector Number Input Scroll Safety ──
     console.log("\n🎛️ Suite 25: Inspector Number Input Wheel & Scroll Safety");
 
-    it("makeScrubbableAndScrollable ignores wheel events when input is unfocused", async () => {
-        const { makeScrubbableAndScrollable } = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+    await asyncIt("makeScrubbableAndScrollable ignores wheel events when input is unfocused", async () => {
+        const { makeScrubbableAndScrollable } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
         const listeners = {};
         const mockInput = {
             value: "100",
@@ -2429,7 +2457,7 @@ async function runAllTests() {
     console.log("\n🧮 Suite 32: Visual Formula & Calculation Builder (Presets, Chips, Preview)");
 
     await asyncIt("evaluateCalculations in state.js computes tax and discount calculation recipes", async () => {
-        const { state, evaluateCalculations } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+        const { state, evaluateCalculations } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
         state.fields = [
             { id: "subtotal", name: "subtotal", type: "textField", value: "200" },
             { id: "tax_amt", name: "tax_amt", type: "textField", calculationType: "tax", calculationTaxBaseField: "subtotal", calculationTaxRate: 19 },
@@ -2442,7 +2470,7 @@ async function runAllTests() {
     });
 
     await asyncIt("compileFormulaToAcroJs compiles tax and discount recipes to ISO AcroForm JavaScript", async () => {
-        const { compileFormulaToAcroJs } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+        const { compileFormulaToAcroJs } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
         const taxJs = compileFormulaToAcroJs({
             calculationType: "tax",
             calculationTaxBaseField: "subtotal",
@@ -2471,7 +2499,7 @@ async function runAllTests() {
     });
 
     await asyncIt("updateFormulaLivePreview evaluates calculations and reports validation status", async () => {
-        const { updateFormulaLivePreview } = await import(path.join(WEB_DIR, 'js/ui/properties-panel.js'));
+        const { updateFormulaLivePreview } = await importModule(path.join(WEB_DIR, 'js/ui/properties-panel.js'));
         const mockDom = {
             calcPreviewCard: { style: {} },
             calcPreviewStatus: { className: "", textContent: "" },
@@ -2507,8 +2535,8 @@ async function runAllTests() {
     });
 
     await asyncIt("handleFieldChipClicked correctly toggles target fields and updates formula", async () => {
-        const { state, setSelectedField } = await import(path.join(WEB_DIR, 'js/core/state.js'));
-        const { handleFieldChipClicked } = await import(path.join(WEB_DIR, 'js/ui/properties-panel.js'));
+        const { state, setSelectedField } = await importModule(path.join(WEB_DIR, 'js/core/state.js'));
+        const { handleFieldChipClicked } = await importModule(path.join(WEB_DIR, 'js/ui/properties-panel.js'));
 
         const totalField = { id: "f_total", name: "total", calculationType: "sum", calculationFields: ["item1"] };
         const otherField = { id: "f_item2", name: "item2" };
@@ -2525,8 +2553,8 @@ async function runAllTests() {
     });
 
     await asyncIt("updateCanvasPickModeUI assigns correct candidate, picked, and target classes to overlays", async () => {
-        const { state, setSelectedField } = await import(path.join(WEB_DIR, 'js/core/state.js'));
-        const { updateCanvasPickModeUI, setCanvasPickMode } = await import(path.join(WEB_DIR, 'js/ui/properties-panel.js'));
+        const { state, setSelectedField } = await importModule(path.join(WEB_DIR, 'js/core/state.js'));
+        const { updateCanvasPickModeUI, setCanvasPickMode } = await importModule(path.join(WEB_DIR, 'js/ui/properties-panel.js'));
 
         const targetField = { id: "f_res", name: "total", calculationType: "sum", calculationFields: ["item1"] };
         const pickedField = { id: "f_item1", name: "item1", type: "textField" };
@@ -2577,8 +2605,8 @@ async function runAllTests() {
     // ── SUITE 33: Viewport Safety Constraint & Pan Clamping ──
     console.log("\n🖼️ Suite 33: Viewport Safety Constraint & Pan Clamping");
     await asyncIt("clampPanOffset constrains extreme panOffset drift within visible bounds", async () => {
-        const { state } = await import(path.join(WEB_DIR, 'js/core/state.js'));
-        const { clampPanOffset, updateCanvasTransform } = await import(path.join(WEB_DIR, 'js/engines/pdf-engine.js'));
+        const { state } = await importModule(path.join(WEB_DIR, 'js/core/state.js'));
+        const { clampPanOffset, updateCanvasTransform } = await importModule(path.join(WEB_DIR, 'js/engines/pdf-engine.js'));
 
         const mockWrapper = { clientWidth: 1000, clientHeight: 800, style: {} };
         const mockContainer = { offsetWidth: 600, offsetHeight: 800, style: {} };
@@ -2619,8 +2647,8 @@ async function runAllTests() {
     // ── SUITE 34: Returning User Experience & Recent Project Metadata ──
     console.log("\n🏠 Suite 34: Returning User Experience & Recent Project Metadata Persistence");
     await asyncIt("storage-manager saves, retrieves, and clears recent project metadata in localStorage", async () => {
-        const { state } = await import(path.join(WEB_DIR, 'js/core/state.js'));
-        const { saveRecentProjectMetadata, getRecentProjectMetadata, clearRecentProjectMetadata } = await import(path.join(WEB_DIR, 'js/core/storage-manager.js'));
+        const { state } = await importModule(path.join(WEB_DIR, 'js/core/state.js'));
+        const { saveRecentProjectMetadata, getRecentProjectMetadata, clearRecentProjectMetadata } = await importModule(path.join(WEB_DIR, 'js/core/storage-manager.js'));
 
         const storage = {};
         global.localStorage = {
@@ -2647,11 +2675,11 @@ async function runAllTests() {
         const cleared = getRecentProjectMetadata();
         assert.equal(cleared, null, "Metadata must be null after clearRecentProjectMetadata()");
 
-        const { loadRecentProjectSnapshot } = await import(path.join(WEB_DIR, 'js/core/storage-manager.js'));
+        const { loadRecentProjectSnapshot } = await importModule(path.join(WEB_DIR, 'js/core/storage-manager.js'));
         assert.equal(typeof loadRecentProjectSnapshot, "function", "loadRecentProjectSnapshot must be exported function");
 
         // Verify fallback restore creates blank canvas document when metadata exists
-        storage["formblatt_recent_project"] = JSON.stringify({ fileName: "Recent_Test.pdf", fieldCount: 1, pageCount: 1 });
+        storage["smartforms_recent_project"] = JSON.stringify({ fileName: "Recent_Test.pdf", fieldCount: 1, pageCount: 1 });
         const restored = await loadRecentProjectSnapshot();
         assert.ok(restored, "loadRecentProjectSnapshot must return true when metadata or snapshot exists");
         assert.equal(state.fileName, "Recent_Test.pdf");
@@ -2666,7 +2694,7 @@ async function runAllTests() {
     console.log("\n📋 Suite 35: Smart Formula Copy, Column Mapping & Fill Down Propagation");
 
     await asyncIt("getVerticallyAlignedColumnSiblings accurately identifies siblings below in the same column", async () => {
-        const { getVerticallyAlignedColumnSiblings } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+        const { getVerticallyAlignedColumnSiblings } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
         const mockFields = [
             { id: "col1_row1", name: "qty_1", page: 1, x: 50, y: 100, width: 80, height: 20 },
             { id: "col1_row2", name: "qty_2", page: 1, x: 50, y: 130, width: 80, height: 20 },
@@ -2682,7 +2710,7 @@ async function runAllTests() {
     });
 
     await asyncIt("propagateFormulaToField smartly translates relative numerical field references", async () => {
-        const { propagateFormulaToField, fillFormulaDownColumn } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+        const { propagateFormulaToField, fillFormulaDownColumn } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
 
         const mockFields = [
             // Row 1
@@ -2715,7 +2743,7 @@ async function runAllTests() {
     });
 
     await asyncIt("copyFormulaRecipe and pasteFormulaRecipeToFields transfers calculation recipes across selections", async () => {
-        const { state, copyFormulaRecipe, pasteFormulaRecipeToFields } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+        const { state, copyFormulaRecipe, pasteFormulaRecipeToFields } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
 
         const source = {
             id: "src_fld",
@@ -2783,7 +2811,7 @@ async function runAllTests() {
     });
 
     await asyncIt("buildPdf attaches /AA format actions and formats currency fields in PDF", async () => {
-        const { buildPdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+        const { buildPdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
         const pdfDoc = await PDFLib.PDFDocument.create();
         pdfDoc.addPage([600, 800]);
         const pdfBytes = await pdfDoc.save();
@@ -2867,14 +2895,14 @@ async function runAllTests() {
         assert.ok(baseCss.includes('@keyframes studioSpin'), "base.css must define @keyframes studioSpin");
     });
 
-    it("landing-controller.js exports activateStudioCurtain function with auto-dismiss orchestration", async () => {
-        const { activateStudioCurtain } = await import(path.join(WEB_DIR, 'js', 'controllers', 'landing-controller.js'));
+    await asyncIt("landing-controller.js exports activateStudioCurtain function with auto-dismiss orchestration", async () => {
+        const { activateStudioCurtain } = await importModule(path.join(WEB_DIR, 'js', 'controllers', 'landing-controller.js'));
         assert.equal(typeof activateStudioCurtain, "function", "activateStudioCurtain must be an exported function");
     });
 
     // ── SUITE 38: Radio Groups, Signatures, Multiline & Currency Detection ──
     console.log("\n🔘 Suite 38: Radio Groups, Signatures, Multiline & Currency Detection");
-    const { clusterRadioGroups } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    const { clusterRadioGroups } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
     it("clusterRadioGroups groups horizontal Yes/No checkboxes into unified radioGroup with export values", () => {
         const mockFields = [
@@ -2929,8 +2957,8 @@ async function runAllTests() {
         assert.equal(clustered[2].exportValue, "s_corp");
     });
 
-    it("detectVectorDrawnFields detects signature boxes and underlines as signature type", async () => {
-        const { detectVectorDrawnFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVectorDrawnFields detects signature boxes and underlines as signature type", async () => {
+        const { detectVectorDrawnFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         const shapes = {
             checkboxRects: [],
@@ -2952,8 +2980,8 @@ async function runAllTests() {
         assert.equal(fields[1].type, "signature", "Underline with Signature of Applicant must be typed as signature");
     });
 
-    it("detectVectorDrawnFields assigns multiline: true to narrative text areas", async () => {
-        const { detectVectorDrawnFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVectorDrawnFields assigns multiline: true to narrative text areas", async () => {
+        const { detectVectorDrawnFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         const shapes = {
             checkboxRects: [],
@@ -2972,8 +3000,8 @@ async function runAllTests() {
         assert.equal(fields[0].multiline, true, "Box with height >= 36 must have multiline: true");
     });
 
-    it("detectVectorDrawnFields assigns dataFormat: 'currency' when currency symbol is prepended", async () => {
-        const { detectVectorDrawnFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVectorDrawnFields assigns dataFormat: 'currency' when currency symbol is prepended", async () => {
+        const { detectVectorDrawnFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         const shapes = {
             checkboxRects: [],
@@ -2993,8 +3021,8 @@ async function runAllTests() {
         assert.equal(fields[0].dataFormat, "currency", "Field preceded by $ must have dataFormat: currency");
     });
 
-    it("detectVectorDrawnFields extracts label from top-anchored in-box prompt and places field in fillable lower region", async () => {
-        const { detectVectorDrawnFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVectorDrawnFields extracts label from top-anchored in-box prompt and places field in fillable lower region", async () => {
+        const { detectVectorDrawnFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         const shapes = {
             checkboxRects: [],
@@ -3015,8 +3043,8 @@ async function runAllTests() {
         assert.ok(fields[0].height < 26, "Field height should be adjusted to fit below prompt text");
     });
 
-    it("detectVisualAffordances detects long form labels with parentheticals followed by underscore blanks", async () => {
-        const { detectVisualAffordances } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("detectVisualAffordances detects long form labels with parentheticals followed by underscore blanks", async () => {
+        const { detectVisualAffordances } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
 
         const rawBlocks = [
             { str: "Print Name of Legal Representative (If applicable):", x: 40, y: 220, width: 180, height: 12 },
@@ -3040,8 +3068,8 @@ async function runAllTests() {
         formatAsList,
         toggleListFormat,
         calculateWrappedLines
-    } = await import(path.join(WEB_DIR, 'js', 'engines', 'text-engine.js'));
-    const { buildPdf } = await import(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
+    } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'text-engine.js'));
+    const { buildPdf } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'acroform-builder.js'));
 
     it("TEXT_STYLES defines all required typographic styles with font sizes and line heights", () => {
         assert.ok(TEXT_STYLES.title && TEXT_STYLES.title.fontSize >= 20);
@@ -3095,7 +3123,7 @@ async function runAllTests() {
         assert.ok(wrapped[1].startsWith("   "), "Subsequent wrapped line should have hanging indent");
     });
 
-    it("buildPdf compiles multiline staticText with custom colors, line heights, and alignments", async () => {
+    await asyncIt("buildPdf compiles multiline staticText with custom colors, line heights, and alignments", async () => {
         const { PDFDocument } = PDFLib;
         const origDoc = await PDFDocument.create();
         origDoc.addPage([600, 800]);
@@ -3134,7 +3162,7 @@ async function runAllTests() {
         assert.equal(loaded.getPageCount(), 1);
     });
 
-    it("buildPdf compiles long wrapping bullet text into PDF without errors", async () => {
+    await asyncIt("buildPdf compiles long wrapping bullet text into PDF without errors", async () => {
         const { PDFDocument } = PDFLib;
         const origDoc = await PDFDocument.create();
         origDoc.addPage([600, 800]);
@@ -3176,7 +3204,7 @@ async function runAllTests() {
         createTableGrid,
         addRowToTable,
         removeRowFromTable
-    } = await import(path.join(WEB_DIR, 'js', 'engines', 'text-engine.js'));
+    } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'text-engine.js'));
 
     it("TABLE_PRESETS defines all standard business presets with correct column schemas", () => {
         const expectedPresets = ["invoice", "timesheet", "signoff", "checklist", "custom"];
@@ -3237,7 +3265,7 @@ async function runAllTests() {
         assert.equal(maxRowNow, 2, "Last row should now be index 2 after deletion");
     });
 
-    it("buildPdf compiles table grid fields into PDF with vector borders and AcroForm inputs", async () => {
+    await asyncIt("buildPdf compiles table grid fields into PDF with vector borders and AcroForm inputs", async () => {
         const { PDFDocument } = PDFLib;
         const origDoc = await PDFDocument.create();
         origDoc.addPage([600, 800]);
@@ -3258,12 +3286,12 @@ async function runAllTests() {
         assert.ok(acroFields.length > 0, "AcroForm should contain interactive checkbox & text fields from table");
     });
 
-    it("createTableGrid creates dynamic dimensions and addColumnToTable/removeColumnFromTable manage columns", async () => {
+    await asyncIt("createTableGrid creates dynamic dimensions and addColumnToTable/removeColumnFromTable manage columns", async () => {
         const {
             addColumnToTable,
             removeColumnFromTable,
             deleteTable
-        } = await import(path.join(WEB_DIR, 'js', 'engines', 'text-engine.js'));
+        } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'text-engine.js'));
 
         // Dynamic 4 cols x 3 rows grid
         const grid = createTableGrid({ cols: 4, rows: 3 }, 50, 100);
@@ -3293,8 +3321,8 @@ async function runAllTests() {
     });
 
     // ── SUITE: Device & Local System Fonts ──
-    it("getFieldCssFont formats CSS font family stacks and styles for device and local fonts", async () => {
-        const { getFieldCssFont } = await import(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
+    await asyncIt("getFieldCssFont formats CSS font family stacks and styles for device and local fonts", async () => {
+        const { getFieldCssFont } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
 
         // System UI
         const sysFont = getFieldCssFont({ fontFamily: "device:system-ui" });
@@ -3396,8 +3424,8 @@ async function runAllTests() {
     });
 
     // ── SUITE: Font Styles (Regular, Bold, Italic, Bold Italic) ──
-    it("getFieldCssFont correctly applies bold, italic, and regular font styles", async () => {
-        const { getFieldCssFont } = await import(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
+    await asyncIt("getFieldCssFont correctly applies bold, italic, and regular font styles", async () => {
+        const { getFieldCssFont } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
 
         const regularFont = getFieldCssFont({ fontFamily: "helvetica", fontWeight: "normal", fontStyle: "normal" });
         assert.ok(regularFont.weight === "400" || regularFont.weight === "normal", `Regular weight should be 400 or normal, got ${regularFont.weight}`);
@@ -3554,7 +3582,7 @@ async function runAllTests() {
 
     // ── SUITE 42: Confidence Scoring, Accessible Tooltips & Client-Side OCR Pipeline ──
     console.log("\n🎯 Suite 42: Confidence Scoring, Accessible Tooltips & Client-Side OCR Pipeline");
-    const { inferScannedLabelHeuristic } = await import(path.join(WEB_DIR, 'js', 'engines', 'ocr-engine.js'));
+    const { inferScannedLabelHeuristic } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'ocr-engine.js'));
 
     it("inferScannedLabelHeuristic supports multilingual localized fallback labels", () => {
         assert.equal(inferScannedLabelHeuristic(100, 10, "de"), "Informationen / Details:");
@@ -3564,8 +3592,8 @@ async function runAllTests() {
         assert.equal(inferScannedLabelHeuristic(100, 10, "en"), "Information / Details:");
     });
 
-    it("auto-detector propagates confidence scores and accessible tooltips on detected fields", async () => {
-        const { detectVectorDrawnFields } = await import(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
+    await asyncIt("auto-detector propagates confidence scores and accessible tooltips on detected fields", async () => {
+        const { detectVectorDrawnFields } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'auto-detector.js'));
         const mockVectorShapes = {
             checkboxRects: [{ x: 50, y: 100, width: 14, height: 14 }],
             inputBoxRects: [{ x: 120, y: 100, width: 180, height: 20 }],
@@ -3598,10 +3626,10 @@ async function runAllTests() {
     // =========================================================================
     console.log("\n☑️ Suite 43: Checkbox Group Semantics (yes_no & enum) & OCR Token Sanitization (DullyPDF rules)");
 
-    const { toggleCheckboxField, getCheckboxGroupKey, getCheckboxGroupFields, setCheckboxGroup } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
-    const { clusterCheckboxGroups } = await import(path.join(WEB_DIR, 'js', 'engines', 'detection', 'radio-clustering.js'));
-    const { cleanOcrWordToken, isOcrCheckboxArtifact, clusterIntoLines } = await import(path.join(WEB_DIR, 'js', 'engines', 'detection', 'visual-affordances', 'line-clustering.js'));
-    const { detectColonPrompts } = await import(path.join(WEB_DIR, 'js', 'engines', 'detection', 'visual-affordances', 'colon-prompts.js'));
+    const { toggleCheckboxField, getCheckboxGroupKey, getCheckboxGroupFields, setCheckboxGroup } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+    const { clusterCheckboxGroups } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'detection', 'radio-clustering.js'));
+    const { cleanOcrWordToken, isOcrCheckboxArtifact, clusterIntoLines } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'detection', 'visual-affordances', 'line-clustering.js'));
+    const { detectColonPrompts } = await importModule(path.join(WEB_DIR, 'js', 'engines', 'detection', 'visual-affordances', 'colon-prompts.js'));
 
     it("toggleCheckboxField auto-unchecks paired partner in a mutually-exclusive Yes/No checkbox group", () => {
         const yesBox = { id: "cb_yes", type: "checkBox", groupKey: "grp_consent", groupType: "yes_no", defaultChecked: false, checked: false, page: 1 };
@@ -3702,8 +3730,8 @@ async function runAllTests() {
         assert.ok(css.includes('.layer-item.selected') || css.includes('.page-tree-item.selected'), "Defines subtle rounded selection states");
     });
 
-    it("layers-panel.js exports renderPagesList, updatePagesListSelectionDOM, and initLeftPanelTabs", async () => {
-        const layersMod = await import(path.join(WEB_DIR, 'js', 'ui', 'layers-panel.js'));
+    await asyncIt("layers-panel.js exports renderPagesList, updatePagesListSelectionDOM, and initLeftPanelTabs", async () => {
+        const layersMod = await importModule(path.join(WEB_DIR, 'js', 'ui', 'layers-panel.js'));
         assert.equal(typeof layersMod.renderLayers, 'function', "Exports renderLayers");
         assert.equal(typeof layersMod.updateLayerSelectionDOM, 'function', "Exports updateLayerSelectionDOM");
         assert.equal(typeof layersMod.renderPagesList, 'function', "Exports renderPagesList");
@@ -3736,14 +3764,14 @@ async function runAllTests() {
         assert.ok(css.includes('.fill-action-pill-btn'), "Defines .fill-action-pill-btn");
     });
 
-    it("properties-panel.js exports initRightPanelTabs and renderFillPanel", async () => {
-        const propsMod = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+    await asyncIt("properties-panel.js exports initRightPanelTabs and renderFillPanel", async () => {
+        const propsMod = await importModule(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
         assert.equal(typeof propsMod.initRightPanelTabs, 'function', "Exports initRightPanelTabs");
         assert.equal(typeof propsMod.renderFillPanel, 'function', "Exports renderFillPanel");
     });
 
-    it("fillSampleTestValues populates test data and clearAllTestValues resets it", async () => {
-        const { state, fillSampleTestValues, clearAllTestValues } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+    await asyncIt("fillSampleTestValues populates test data and clearAllTestValues resets it", async () => {
+        const { state, fillSampleTestValues, clearAllTestValues } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
         state.fields = [
             { id: "test_text", type: "textField", name: "full_name", label: "Full Name", value: "" },
             { id: "test_email", type: "textField", name: "email", label: "Email Address", value: "" },
@@ -3868,14 +3896,14 @@ async function runAllTests() {
         assert.ok(editorCss.includes('body.mode-fill .right-panel-top-bar'), "Allows right-panel-top-bar in fill mode");
     });
 
-    it("properties-panel.js exports populateFillTools and initFillToolsEvents", async () => {
-        const propsMod = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+    await asyncIt("properties-panel.js exports populateFillTools and initFillToolsEvents", async () => {
+        const propsMod = await importModule(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
         assert.equal(typeof propsMod.populateFillTools, 'function', "Exports populateFillTools");
         assert.equal(typeof propsMod.initFillToolsEvents, 'function', "Exports initFillToolsEvents");
     });
 
-    it("state.js exports getSampleValueForField generating realistic test data", async () => {
-        const { getSampleValueForField } = await import(path.join(WEB_DIR, 'js', 'core', 'state.js'));
+    await asyncIt("state.js exports getSampleValueForField generating realistic test data", async () => {
+        const { getSampleValueForField } = await importModule(path.join(WEB_DIR, 'js', 'core', 'state.js'));
         assert.equal(typeof getSampleValueForField, 'function', "Exports getSampleValueForField");
         assert.equal(getSampleValueForField({ type: "checkBox" }), true, "Checkbox returns true");
         assert.ok(getSampleValueForField({ type: "textField", name: "user_email" }).includes("@"), "Email field returns email");
@@ -3956,7 +3984,7 @@ async function runAllTests() {
     });
 
     await asyncIt("font-detector.js exports SYSTEM_FONT_CATALOG, isFontAvailable, detectInstalledFonts, and loadCustomFontFile", async () => {
-        const fontDetector = await import(path.join(WEB_DIR, 'js', 'utils', 'font-detector.js'));
+        const fontDetector = await importModule(path.join(WEB_DIR, 'js', 'utils', 'font-detector.js'));
         assert.ok(Array.isArray(fontDetector.SYSTEM_FONT_CATALOG), "Exports SYSTEM_FONT_CATALOG array");
         assert.ok(fontDetector.SYSTEM_FONT_CATALOG.length >= 80, "Catalog contains 80+ curated system fonts");
         assert.ok(fontDetector.SYSTEM_FONT_CATALOG.includes("SF Pro"), "Includes Apple SF Pro");
@@ -3969,13 +3997,13 @@ async function runAllTests() {
     });
 
     await asyncIt("overlay-manager.js formats custom: font families for live canvas rendering", async () => {
-        const { getFieldCssFont } = await import(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
+        const { getFieldCssFont } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'overlay-manager.js'));
         const customFontCss = getFieldCssFont({ fontFamily: "custom:Gilroy" });
         assert.ok(customFontCss.fam.includes('"Gilroy"'), "Extracts font family name and wraps in quotes");
     });
 
     await asyncIt("loadCustomFontFile caches raw font bytes for PDF-Lib embedding", async () => {
-        const { loadCustomFontFile } = await import(path.join(WEB_DIR, 'js', 'utils', 'font-detector.js'));
+        const { loadCustomFontFile } = await importModule(path.join(WEB_DIR, 'js', 'utils', 'font-detector.js'));
         const dummyBytes = new Uint8Array([0, 1, 0, 0, 0, 12, 0, 128]);
         const mockFile = {
             name: "StudioCustom.ttf",
@@ -4013,14 +4041,14 @@ async function runAllTests() {
         assert.ok(css.includes('.fill-status-dot'), "Defines .fill-status-dot");
     });
 
-    it("properties-panel.js exports initFillFilterEvents and renderFillPanel updates DOM with correct metrics", async () => {
-        const { initFillFilterEvents, renderFillPanel } = await import(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
+    await asyncIt("properties-panel.js exports initFillFilterEvents and renderFillPanel updates DOM with correct metrics", async () => {
+        const { initFillFilterEvents, renderFillPanel } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'properties-panel.js'));
         assert.equal(typeof initFillFilterEvents, 'function', "Exports initFillFilterEvents");
         assert.equal(typeof renderFillPanel, 'function', "Exports renderFillPanel");
     });
 
-    it("layers-panel.js renderPagesList updates badges with completion progress in Fill mode", async () => {
-        const { renderPagesList, updatePagesListSelectionDOM } = await import(path.join(WEB_DIR, 'js', 'ui', 'layers-panel.js'));
+    await asyncIt("layers-panel.js renderPagesList updates badges with completion progress in Fill mode", async () => {
+        const { renderPagesList, updatePagesListSelectionDOM } = await importModule(path.join(WEB_DIR, 'js', 'ui', 'layers-panel.js'));
         assert.equal(typeof renderPagesList, 'function', "Exports renderPagesList");
         assert.equal(typeof updatePagesListSelectionDOM, 'function', "Exports updatePagesListSelectionDOM");
     });

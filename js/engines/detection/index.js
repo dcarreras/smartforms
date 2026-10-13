@@ -105,6 +105,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
     const usedNames = new Set(existingFields.map(f => f.name));
     const allDetected = [];
     const pageSummaries = [];
+    const pageErrors = [];
     const pipelineTelemetry = {
         stagesAttempted: [],
         stagesSucceeded: [],
@@ -388,6 +389,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             });
         } catch(err) {
             console.error("Auto-detect error on page " + pageNum + ":", err);
+            pageErrors.push({ pageNumber: pageNum, message: err?.message || String(err) });
         }
     }
 
@@ -420,6 +422,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
         reviewCount,
         omittedCount: finalUnique.length - returnedFields.length,
         pages: pageSummaries,
+        pageErrors,
         telemetry: pipelineTelemetry
     };
 }
@@ -428,7 +431,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
 export const detectFormFields = detectFormFieldsFromDoc;
 
 /**
- * Formblatt UI Workflow wrapper — connects pure detection results into reactive application state.
+ * SmartForms UI Workflow wrapper — connects pure detection results into reactive application state.
  */
 export async function autoDetectFields(scope = "current", options = {}) {
     if (!state.pdfDoc) {
@@ -436,7 +439,10 @@ export async function autoDetectFields(scope = "current", options = {}) {
         return 0;
     }
 
-    const pagesToScan = scope === "all"
+    const requestedPages = options.pageNumbers || options.pageNumber;
+    const pagesToScan = requestedPages
+        ? (Array.isArray(requestedPages) ? requestedPages : [requestedPages])
+        : scope === "all"
         ? Array.from({ length: state.totalPages }, (_, i) => i + 1)
         : [state.currentPageNum];
 
@@ -466,7 +472,7 @@ export async function autoDetectFields(scope = "current", options = {}) {
         options.includeLowConfidence
     );
 
-    if (acceptedFields.length > 0) {
+    if (acceptedFields.length > 0 && options.shouldCommit?.() !== false) {
         state.fields = [...preservedFields, ...acceptedFields];
         state.selectedFieldIds.clear();
         if (state.lastSelectedFieldId === null) {
@@ -486,6 +492,7 @@ export async function autoDetectFields(scope = "current", options = {}) {
         omittedCount,
         fields: acceptedFields,
         telemetry: result.telemetry,
+        pageErrors: result.pageErrors || [],
         valueOf() { return this.totalCount; },
         [Symbol.toPrimitive](hint) { return hint === "string" ? String(this.totalCount) : this.totalCount; }
     };

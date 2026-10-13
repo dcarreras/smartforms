@@ -1508,6 +1508,18 @@ button:active,
   color: var(--ink) !important;
 }
 
+.landing-page .nav-coffee-btn {
+  border-color: #b9d4ef !important;
+  background: var(--secondary) !important;
+  color: #0b0e12 !important;
+}
+
+.landing-page .nav-coffee-btn:hover {
+  border-color: #d7e7f8 !important;
+  background: #a7caf0 !important;
+  color: #0b0e12 !important;
+}
+
 #appEditorScreen .layer-item .layer-name,
 #appEditorScreen .page-tree-item .page-tree-name {
   color: var(--ink-muted) !important;
@@ -1672,6 +1684,15 @@ button:active,
 
   .landing-page .nav-about-btn span {
     display: inline;
+    font-size: 12px;
+  }
+
+  .landing-page .nav-coffee-btn {
+    min-height: 42px;
+    padding: 0 10px;
+  }
+
+  .landing-page .nav-coffee-btn span {
     font-size: 12px;
   }
 
@@ -2061,3 +2082,28 @@ button:active,
 .landing-page .video-play-badge {
   display: inline-flex !important;
 }
+
+#appEditorScreen .document-detection-status {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(460px, calc(100% - 36px));
+  padding: 9px 10px 9px 14px;
+  transform: translateX(-50%);
+  background: rgba(17, 22, 29, 0.96);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  color: var(--ink);
+  font-size: 12px;
+}
+#appEditorScreen .document-detection-copy { min-width: 0; flex: 1; }
+#appEditorScreen #documentDetectionStatusText { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#appEditorScreen .document-detection-progress-track { height: 3px; margin-top: 6px; overflow: hidden; background: #223042; }
+#appEditorScreen .document-detection-progress { height: 100%; width: 0; background: var(--secondary); transition: width 0.2s ease; }
+#appEditorScreen .document-detection-action { flex: 0 0 auto; padding: 5px 8px; border: 1px solid var(--border-strong); background: #223042; color: var(--secondary); font: inherit; cursor: pointer; }
+#appEditorScreen .document-detection-action:hover { background: #2b3d54; }
+@media (max-width: 767px) { #appEditorScreen .document-detection-status { top: 10px; } }

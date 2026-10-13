@@ -1,4 +1,4 @@
-// ── Formblatt Editor Subsystems & Controller (js/controllers/editor-app.js) ─
+// ── SmartForms Editor Subsystems & Controller (js/controllers/editor-app.js) ─
 import { state, getSelectedField, setSelectedField, setSelectedFields, getFieldsForCurrentPage, copySelectedFields, pasteClipboardFields, duplicateSelectedFields, createGroupForSelected, ungroupSelected, setEditorMode, clearAllTestValues, fillSampleTestValues, toggleGuides, setGuidesEnabled, sortFieldsByReadingOrder, copyFormulaRecipe, pasteFormulaRecipeToFields, evaluateCalculations } from "../core/state.js";
 import { renderPage, goToPage, setTransformScale, fitToWidth, fitToPage, updateTopBarDocInfo, loadPdfLibraries } from "../engines/pdf-engine.js";
 import { buildPdf, downloadAcroForm } from "../engines/acroform-builder.js";
@@ -9,6 +9,7 @@ import { initCanvasController, handleFieldMouseDown, handleResizeStart, showVern
 import { loadTemplate } from "./landing-controller.js";
 import { initSignaturePad } from "../ui/signature-pad.js";
 import { autoDetectFields } from "../engines/detection/index.js";
+import { cancelDocumentDetection, getPendingDocumentDetectionPages, startDocumentDetection } from "../engines/document-detection.js";
 import { saveHistory, undo, redo, getUndoActionName, getRedoActionName, exportProjectJson, importProjectJson } from "../core/storage-manager.js";
 import { exportFormDataAsJson, exportFormDataAsCsv, importFormData } from "../core/data-exporter.js";
 import { createTableGrid } from "../engines/text-engine.js";
@@ -38,6 +39,49 @@ function safeDocumentAddEventListener(type, listener, options) {
 }
 
 let isEditorInitialized = false;
+
+function renderDocumentDetectionStatus(job = state.documentDetection) {
+    const panel = document.getElementById("documentDetectionStatus");
+    if (!panel || !job || !job.totalPages) return;
+    const current = job.currentPage || job.completedPages.length + job.failedPages.length;
+    const finished = job.completedPages.length + job.failedPages.length;
+    const percent = Math.round((finished / job.totalPages) * 100);
+    const statusText = document.getElementById("documentDetectionStatusText");
+    const progress = document.getElementById("documentDetectionProgress");
+    const cancel = document.getElementById("cancelDocumentDetectionBtn");
+    const resume = document.getElementById("resumeDocumentDetectionBtn");
+    const hasPending = getPendingDocumentDetectionPages(job).length > 0;
+
+    panel.hidden = job.status === "idle";
+    if (statusText) statusText.textContent = job.status === "running"
+        ? (job.message || `Analyzing page ${current} of ${job.totalPages}…`)
+        : `${job.message || "Analysis ready."} ${finished}/${job.totalPages} pages · ${job.fieldsAdded} fields found.`;
+    if (progress) progress.style.width = `${percent}%`;
+    if (cancel) cancel.hidden = job.status !== "running";
+    if (resume) {
+        resume.hidden = !hasPending || job.status === "running";
+        resume.textContent = job.status === "idle" ? "Start" : "Resume";
+    }
+}
+
+export function startFullDocumentDetection({ confirmLargeDocument = false } = {}) {
+    if (!state.pdfDoc) return;
+    if (confirmLargeDocument && typeof window !== "undefined" && !window.confirm(
+        `This document has ${state.totalPages} pages. Analyze all pages locally now? You can cancel and resume at any time.`
+    )) {
+        const job = state.documentDetection;
+        job.status = "idle";
+        job.message = "Full-document analysis is ready when you are.";
+        renderDocumentDetectionStatus(job);
+        return;
+    }
+    void startDocumentDetection({
+        onUpdate(job) {
+            renderDocumentDetectionStatus(job);
+            if (job.currentPage === 0 || job.completedPages.length) refreshUI();
+        }
+    });
+}
 
 // Full UI Refresh Handler
 export function refreshUI() {
@@ -958,6 +1002,13 @@ export function initEditorSubsystems() {
         }
     });
 
+    document.getElementById("detectAllPagesBtn")?.addEventListener("click", () => startFullDocumentDetection());
+    document.getElementById("cancelDocumentDetectionBtn")?.addEventListener("click", () => {
+        cancelDocumentDetection();
+        renderDocumentDetectionStatus();
+    });
+    document.getElementById("resumeDocumentDetectionBtn")?.addEventListener("click", () => startFullDocumentDetection());
+
     // Export and Preview Buttons
     document.getElementById("generatePdfBtn")?.addEventListener("click", () => {
         triggerHaptic(12);
@@ -1132,7 +1183,7 @@ export function initEditorSubsystems() {
 
     function openSaveProjectModal() {
         if (!saveProjectModal) return;
-        const currentBase = (state.fileName || "interactive_form").replace(/\.pdf$/i, "").replace(/\.smartform\.json$/i, "").replace(/\.formblatt$/i, "").replace(/\.fblatt$/i, "").replace(/\.jform$/i, "").replace(/\.justforms$/i, "");
+        const currentBase = (state.fileName || "interactive_form").replace(/\.pdf$/i, "").replace(/\.smartform\.json$/i, "");
         
         if (saveReplaceNameDisplay) {
             saveReplaceNameDisplay.textContent = `${currentBase}.smartform.json`;
@@ -1806,7 +1857,7 @@ function initPanelResizers() {
     };
 
     try {
-        const savedLeft = localStorage.getItem("justforms_left_panel_width");
+        const savedLeft = localStorage.getItem("smartforms_left_panel_width");
         if (savedLeft && leftPanel) {
             const val = parseInt(savedLeft, 10);
             if (!isNaN(val) && val >= 200 && val <= 700) {
@@ -1818,7 +1869,7 @@ function initPanelResizers() {
             applyLeftWidth(300);
         }
 
-        const savedRight = localStorage.getItem("justforms_right_panel_width");
+        const savedRight = localStorage.getItem("smartforms_right_panel_width");
         if (savedRight && rightPanel) {
             const val = parseInt(savedRight, 10);
             if (!isNaN(val) && val >= 220 && val <= 700) {
@@ -1837,7 +1888,7 @@ function initPanelResizers() {
             const currentW = leftPanel.getBoundingClientRect().width;
             const targetW = currentW < 380 ? 440 : 300;
             applyLeftWidth(targetW);
-            try { localStorage.setItem("justforms_left_panel_width", targetW.toString()); } catch (e) {}
+            try { localStorage.setItem("smartforms_left_panel_width", targetW.toString()); } catch (e) {}
         });
     }
 
@@ -1883,7 +1934,7 @@ function initPanelResizers() {
 
                 const finalW = parseInt(leftPanel.style.width, 10);
                 if (!isNaN(finalW)) {
-                    try { localStorage.setItem("justforms_left_panel_width", finalW.toString()); } catch (e) {}
+                    try { localStorage.setItem("smartforms_left_panel_width", finalW.toString()); } catch (e) {}
                 }
             };
 
@@ -1918,7 +1969,7 @@ function initPanelResizers() {
                 e.preventDefault();
                 e.stopPropagation();
                 applyLeftWidth(300);
-                try { localStorage.setItem("justforms_left_panel_width", "300px"); } catch (e) {}
+                try { localStorage.setItem("smartforms_left_panel_width", "300px"); } catch (e) {}
             });
         }
 
@@ -1975,7 +2026,7 @@ function initPanelResizers() {
 
                 const finalW = parseInt(rightPanel.style.width, 10);
                 if (!isNaN(finalW)) {
-                    try { localStorage.setItem("justforms_right_panel_width", finalW.toString()); } catch (e) {}
+                    try { localStorage.setItem("smartforms_right_panel_width", finalW.toString()); } catch (e) {}
                 }
             };
 
@@ -2010,7 +2061,7 @@ function initPanelResizers() {
                 e.preventDefault();
                 e.stopPropagation();
                 applyRightWidth(300);
-                try { localStorage.setItem("justforms_right_panel_width", "300px"); } catch (e) {}
+                try { localStorage.setItem("smartforms_right_panel_width", "300px"); } catch (e) {}
             });
         }
 

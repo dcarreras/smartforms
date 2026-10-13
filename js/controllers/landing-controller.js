@@ -372,7 +372,7 @@ export function renderLandingReviews() {
 
     let savedReviews = [];
     try {
-        savedReviews = JSON.parse(localStorage.getItem("justforms_reviews") || "[]");
+        savedReviews = JSON.parse(localStorage.getItem("smartforms_reviews") || "[]");
     } catch(e) {}
 
     // Only genuine, user-submitted reviews are sortable/countable/paginated
@@ -476,7 +476,7 @@ export function renderLandingReviews() {
 // Renders the example testimonials in their own dedicated section, fully
 // separate from the sortable/countable real-reviews grid above — created
 // once and inserted just before it, so examples read as illustrative
-// ("why people use JustForms") rather than as part of the user-generated
+// ("why people use SmartForms") rather than as part of the user-generated
 // review count or ranking.
 function renderExampleReviewsSection() {
     const grid = document.getElementById("userReviewsGrid");
@@ -605,14 +605,14 @@ export async function showEditorScreen(onReady, skipPush = false) {
 export function isSupportedUploadFile(file) {
     if (!file) return false;
     const isImage = (file.type && file.type.startsWith("image/")) || /\.(jpe?g|png|webp|bmp)$/i.test(file.name || "");
-    const isPdfOrProject = file.type === "application/pdf" || /\.(pdf|json|formblatt|fblatt|jform|justforms)$/i.test(file.name || "");
+    const isPdfOrProject = file.type === "application/pdf" || /\.(pdf|json)$/i.test(file.name || "");
     return isImage || isPdfOrProject;
 }
 
 export async function loadPdfFile(file, onLoaded) {
     if (!file) return;
 
-    if (file.name.endsWith(".json") || file.name.endsWith(".jform") || file.name.endsWith(".justforms") || file.name.endsWith(".formblatt") || file.name.endsWith(".fblatt")) {
+    if (file.name.endsWith(".json")) {
         const { importProjectJson } = await import("../core/storage-manager.js");
         importProjectJson(file, onLoaded);
         return;
@@ -622,8 +622,8 @@ export async function loadPdfFile(file, onLoaded) {
 
     try {
         const { loadPdfLibraries, analyzePdfDocument, goToPage } = await import("../engines/pdf-engine.js");
-        const { importExistingAcroFormFields } = await import("../engines/detection/index.js");
         const { saveHistory } = await import("../core/storage-manager.js");
+        const { cancelDocumentDetection, resetDocumentDetection } = await import("../engines/document-detection.js");
 
         await loadPdfLibraries();
         const pdfjs = typeof window !== "undefined" ? (window.pdfjsLib || globalThis.pdfjsLib) : (typeof pdfjsLib !== "undefined" ? pdfjsLib : null);
@@ -655,22 +655,19 @@ export async function loadPdfFile(file, onLoaded) {
 
         const loadingTask = pdfjs.getDocument({ data: bytes.slice() });
         const loadedDoc = await loadingTask.promise;
+        cancelDocumentDetection();
         state.originalPdfBytes = bytes;
         state.pdfDoc = loadedDoc;
         state.totalPages = state.pdfDoc.numPages;
         state.currentPageNum = 1;
         state.fields.length = 0;
         state.selectedFieldIds.clear();
+        state.fieldCounter = 1;
         state.fileName = file.name ? (file.name.replace(/\.[^/.]+$/, "") + ".pdf") : "interactive_form.pdf";
+        resetDocumentDetection(state.totalPages);
 
         await analyzePdfDocument();
-        try {
-            await importExistingAcroFormFields("all");
-        } catch(importErr) {
-            console.warn("Could not import existing acroform widgets:", importErr);
-        }
-
-        state.lastSelectedFieldId = state.fields[0]?.id || null;
+        state.lastSelectedFieldId = null;
 
         const es = document.getElementById("emptyState");
         if (es) es.style.display = "none";
@@ -680,6 +677,8 @@ export async function loadPdfFile(file, onLoaded) {
                 await goToPage(1);
                 saveHistory();
                 pulseAutoDetectButton();
+                const { startFullDocumentDetection } = await import("./editor-app.js");
+                startFullDocumentDetection({ confirmLargeDocument: state.totalPages > 20 });
             } finally {
                 dismissCurtain();
                 if (onLoaded) onLoaded();
@@ -1016,7 +1015,7 @@ export function initLandingController(onLoaded) {
 
     function getUserPreferredLang() {
         try {
-            const saved = localStorage.getItem("formblatt_caption_lang");
+            const saved = localStorage.getItem("smartforms_caption_lang");
             if (saved && (UI_CAPTIONS[saved] || saved === "off")) return saved;
         } catch (e) {}
 
@@ -1093,7 +1092,7 @@ export function initLandingController(onLoaded) {
         captionSelect.value = activeLang;
         captionSelect.addEventListener("change", e => {
             const chosen = e.target.value;
-            try { localStorage.setItem("formblatt_caption_lang", chosen); } catch(e){}
+            try { localStorage.setItem("smartforms_caption_lang", chosen); } catch(e){}
             if (chosen !== "off") {
                 localizeUiCaptions(chosen);
             }

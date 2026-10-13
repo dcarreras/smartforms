@@ -1,4 +1,4 @@
-// ── Formblatt Command Palette Controller (js/ui/command-palette.js) ─────────────
+// ── SmartForms Command Palette Controller (js/ui/command-palette.js) ─────────────
 // Fast keyboard-first search and action runner (⌘K / Ctrl+K / ⌘⇧P)
 // Active strictly inside the Editor Workbench (not on landing page).
 

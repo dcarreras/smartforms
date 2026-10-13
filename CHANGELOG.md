@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Formblatt are documented in this file.
+All notable changes to SmartForms are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Relicensed to AGPLv3**: Changed license to GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`).
 - **Node.js LTS Requirement**: Added `"engines": { "node": ">=20.0.0" }` in `package.json` for native `node --test` support.
-- **Sidecar CORS Configuration**: Locked down the optional Python LayoutLMv3 sidecar (`server.py`) from wildcard `*` to `formblatt.dpdns.org` and local addresses (`localhost`, `127.0.0.1`).
+- **Sidecar CORS Configuration**: Locked down the optional Python LayoutLMv3 sidecar (`server.py`) from wildcard `*` to `smartforms-cons.app` and local addresses (`localhost`, `127.0.0.1`).
 
 ---
 
@@ -46,5 +46,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Initial Public Release**: Browser-based PDF form editor.
 - Support for AcroForm field types: Text Field, Checkbox, Radio Button, Dropdown, Date Field, Signature.
 - Client-side PDF reading and writing using vendored PDF.js and pdf-lib.
-- Local project save and load using `.jform` JSON files.
+- Local project save and load using `.smartform.json` files.
 - Keyboard shortcuts, undo/redo history, and selection overlays.

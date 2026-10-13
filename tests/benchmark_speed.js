@@ -1,5 +1,5 @@
 /**
- * ⚡ Formblatt Speed & Performance Benchmark Suite
+ * ⚡ SmartForms Speed & Performance Benchmark Suite
  * Measures latency, throughput, compilation speed, and memory usage across core subsystems.
  */
 
@@ -48,7 +48,7 @@ globalThis.fetch = async (url, ...args) => {
 
 async function runBenchmarks() {
     console.log("=================================================");
-    console.log("⚡ FORMBLATT SPEED & PERFORMANCE BENCHMARK SUITE");
+    console.log("⚡ SMARTFORMS SPEED & PERFORMANCE BENCHMARK SUITE");
     console.log("=================================================\n");
 
     // ── 1. AcroForm Compilation Latency (Small to Large Documents) ──

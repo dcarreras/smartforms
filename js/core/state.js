@@ -9,6 +9,18 @@ export const state = {
     fileName: "interactive_form.pdf",
     docCategory: "General Form",
     pdfHash: "",
+    // Ephemeral full-document detection work. This is intentionally not saved in projects.
+    documentDetection: {
+        status: "idle",
+        totalPages: 0,
+        currentPage: 0,
+        completedPages: [],
+        failedPages: [],
+        fieldsAdded: 0,
+        cancelRequested: false,
+        runId: 0,
+        message: ""
+    },
 
     // Viewport & Zoom
     currentScale: 1.0,
@@ -54,7 +66,7 @@ export const state = {
     currentPreviewUrl: null,
 
     // Smart Alignment & Snapping Guides
-    guidesEnabled: localStorage.getItem("justforms_guides_enabled") !== "false"
+    guidesEnabled: typeof localStorage === "undefined" || localStorage.getItem("smartforms_guides_enabled") !== "false"
 };
 
 export function getSelectedField() {
@@ -437,7 +449,9 @@ export function fillSampleTestValues() {
 
 export function setGuidesEnabled(enabled) {
     state.guidesEnabled = !!enabled;
-    localStorage.setItem("justforms_guides_enabled", state.guidesEnabled ? "true" : "false");
+    if (typeof localStorage !== "undefined") {
+        localStorage.setItem("smartforms_guides_enabled", state.guidesEnabled ? "true" : "false");
+    }
 }
 
 export function toggleGuides() {

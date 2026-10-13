@@ -17,8 +17,8 @@
 ### Running locally
 
 ```sh
-git clone https://github.com/sshrestha-design/formblatt.git
-cd formblatt
+git clone https://github.com/dcarreras/smartforms.git
+cd smartforms
 npm install
 npm start
 ```

@@ -1,5 +1,5 @@
 // ── Local Python LayoutLMv3 & Vision Sidecar Bridge (js/engines/sidecar-detector.js) ──
-// Connects Formblatt to optional localhost Python server (uvicorn server:app --port 8000).
+// Connects SmartForms to optional localhost Python server (uvicorn server:app --port 8000).
 // 100% private: all inference runs locally on user's machine (CPU or Apple Silicon MPS).
 
 import { generateFieldId } from "../core/state.js";
@@ -58,7 +58,7 @@ export async function isSidecarAvailable(forceRefresh = false) {
 
 /**
  * Calls the local sidecar to detect form fields on a PDF page.
- * Returns mapped Formblatt field objects if successful, or empty array if sidecar is offline.
+ * Returns mapped SmartForms field objects if successful, or empty array if sidecar is offline.
  */
 export async function detectFieldsViaSidecar(page, viewport, rawBlocks = [], pageNum = 1, usedNames = new Set()) {
     try {
@@ -124,7 +124,7 @@ export async function detectFieldsViaSidecar(page, viewport, rawBlocks = [], pag
             return [];
         }
 
-        // Map sidecar fields to Formblatt schema and bind accurate text labels
+        // Map sidecar fields to SmartForms schema and bind accurate text labels
         const mappedFields = [];
         for (const f of data.fields) {
             const box = {

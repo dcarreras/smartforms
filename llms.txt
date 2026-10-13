@@ -1,12 +1,12 @@
-# Formblatt
+# SmartForms
 
-Formblatt is a browser-based PDF editor for creating fillable forms and AcroForms. It runs in the browser using PDF.js and PDF-Lib, without sending files or form data to external servers.
+SmartForms is a browser-based PDF editor for creating fillable forms and AcroForms. It runs in the browser using PDF.js and PDF-Lib, without sending files or form data to external servers.
 
 ## Links
 
-- Production: https://formblatt.dpdns.org
-- Source Code: https://github.com/sshrestha-design/formblatt
-- Full Context: https://formblatt.dpdns.org/llms-full.txt
+- Production: https://smartforms-cons.app
+- Source Code: https://github.com/dcarreras/smartforms
+- Full Context: https://smartforms-cons.app/llms-full.txt
 - License: GNU AGPLv3
 
 ## Core Features

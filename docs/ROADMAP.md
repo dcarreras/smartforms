@@ -1,4 +1,4 @@
-# JustForms Product & Engineering Roadmap
+# SmartForms Product & Engineering Roadmap
 
 > **Target Timeline**: 2026 – 2027  
 > **Repository**: [github.com/dcarreras/smartforms](https://github.com/dcarreras/smartforms)<br>
@@ -9,7 +9,7 @@
 
 ## 🎯 Strategic Vision & Core Pillars
 
-JustForms is committed to being the **fastest, cleanest, and most private interactive PDF AcroForm editor** on the web. Everything runs **100% client-side in browser memory** with **zero server telemetry or cloud storage of user documents**.
+SmartForms is committed to being the **fastest, cleanest, and most private interactive PDF AcroForm editor** on the web. Everything runs **100% client-side in browser memory** with **zero server telemetry or cloud storage of user documents**.
 
 ```mermaid
 graph TD
@@ -25,7 +25,7 @@ graph TD
 
 ```mermaid
 gantt
-    title JustForms Development Roadmap
+    title SmartForms Development Roadmap
     dateFormat  YYYY-MM
     section v1.1 (Current)
     RC v1.1 Release & Smart Guides Toggle :done, 2026-08, 2026-09
@@ -61,7 +61,7 @@ gantt
   - Residential Rental Lease Application.
 - [x] **Navigation & Unsaved Changes Guard**:
   - History state management (`history.pushState` on `#editor`).
-  - Back-button interception (`popstate`) with **Leave Form Editor?** confirmation modal (Save `.jform`, Discard, Cancel).
+  - Back-button interception (`popstate`) with **Leave Form Editor?** confirmation modal (Save `.smartform.json`, Discard, Cancel).
   - `beforeunload` window protection.
 
 ---
@@ -134,9 +134,9 @@ gantt
   - Download all populated PDFs as a single `.zip` archive using JSZip.
 
 #### 3. Developer SDK & Web Component
-- [ ] **Embeddable JustForms Component**:
+- [ ] **Embeddable SmartForms Component**:
   - `<just-forms-editor>` custom element for embedding inside internal React / Vue / Angular portals.
-  - Type-safe TypeScript definition package (`@justforms/core`).
+  - Type-safe TypeScript definition package (`@smartforms/core`).
 
 ---
 
