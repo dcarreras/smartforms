@@ -14,6 +14,7 @@
     "test:commonforms": "node tests/evaluate_commonforms.js",
     "bench": "node tests/benchmark_speed.js",
     "build:pages": "node scripts/build-pages.cjs",
+    "dev": "node server.cjs",
     "start": "node server.cjs",
     "start:sidecar": ".venv/bin/uvicorn server:app --port 8000"
   },

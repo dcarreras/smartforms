@@ -88,7 +88,7 @@ export function renderLayers(onSelect, onRerender) {
         pageHeader.type = "button";
         pageHeader.className = "layer-page-header";
         pageHeader.setAttribute("aria-expanded", String(!collapsedLayerPages.has(pageNumber)));
-        pageHeader.innerHTML = `<i data-pixel-icon="${collapsedLayerPages.has(pageNumber) ? 'chevron-right' : 'chevron-down'}"></i><span>Page ${pageNumber}</span><span class="layer-page-count">${pageFields.length}</span>`;
+        pageHeader.innerHTML = `<i class="layer-chevron${collapsedLayerPages.has(pageNumber) ? "" : " is-expanded"}" data-pixel-icon="chevron-right"></i><span>Page ${pageNumber}</span><span class="layer-page-count">${pageFields.length}</span>`;
         pageHeader.addEventListener("click", () => {
             if (collapsedLayerPages.has(pageNumber)) collapsedLayerPages.delete(pageNumber);
             else collapsedLayerPages.add(pageNumber);
@@ -172,7 +172,7 @@ function createLayerGroup(g, groupFields, onSelect, onRerender) {
     const header = document.createElement("div");
     header.className = "layer-group-header" + (isGroupAllSelected ? " selected" : "");
     header.innerHTML = `
-        <button type="button" class="group-toggle-btn" title="${isCollapsed ? 'Expand Group' : 'Collapse Group'}"><i data-pixel-icon="${isCollapsed ? 'chevron-right' : 'chevron-down'}"></i></button>
+        <button type="button" class="group-toggle-btn" title="${isCollapsed ? 'Expand Group' : 'Collapse Group'}"><i class="layer-chevron${isCollapsed ? "" : " is-expanded"}" data-pixel-icon="chevron-right"></i></button>
         <i data-pixel-icon="${isCollapsed ? 'folder' : 'folder-open'}" class="group-folder-icon"></i>
         <span class="group-name" title="${escapeHtml(g.name || 'Group')}">${escapeHtml(g.name || 'Group')}</span>
         <span class="layer-page-count">${groupFields.length}</span>

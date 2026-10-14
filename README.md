@@ -13,12 +13,36 @@ The project is designed to work directly in the browser: PDFs are processed loca
 ## Privacy
 SmartForms is designed to keep PDF content on the user's device during normal processing. The application does not need to upload a document to create form fields.
 ## Local development
-Run the static application from the project root:
-~~~sh
+Run the frontend server from the project root:
+
+```sh
 npm install
-npm start
-~~~
-Then open the local address provided by the server.
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). To use another port, set the `PORT` environment variable before running `npm run dev`.
+
+### Optional local vision sidecar
+
+The document-detection sidecar runs entirely on your machine at `http://localhost:8000`:
+
+```sh
+python -m venv .venv
+# Windows PowerShell: .\.venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
+python -m pip install -r docs/sidecar-requirements.txt
+python server.py
+```
+
+### Docker
+
+Run the frontend in Docker:
+
+```sh
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000). Stop the container with `docker compose down`.
 ## Cloudflare Pages deployment
 The Cloudflare Pages configuration is:
 - Root directory: `.`

@@ -9,7 +9,7 @@ import { initCanvasController, handleFieldMouseDown, handleResizeStart, showVern
 import { loadTemplate } from "./landing-controller.js";
 import { initSignaturePad } from "../ui/signature-pad.js";
 import { autoDetectFields } from "../engines/detection/index.js";
-import { cancelDocumentDetection, getPendingDocumentDetectionPages, startDocumentDetection } from "../engines/document-detection.js";
+import { cancelDocumentDetection, getPendingDocumentDetectionPages, resetDocumentDetection, startDocumentDetection } from "../engines/document-detection.js";
 import { saveHistory, undo, redo, getUndoActionName, getRedoActionName, exportProjectJson, importProjectJson } from "../core/storage-manager.js";
 import { exportFormDataAsJson, exportFormDataAsCsv, importFormData } from "../core/data-exporter.js";
 import { createTableGrid } from "../engines/text-engine.js";
@@ -39,19 +39,26 @@ function safeDocumentAddEventListener(type, listener, options) {
 }
 
 let isEditorInitialized = false;
+let documentDetectionStatusHideTimer = null;
 
 function renderDocumentDetectionStatus(job = state.documentDetection) {
     const panel = document.getElementById("documentDetectionStatus");
     if (!panel || !job || !job.totalPages) return;
     const current = job.currentPage || job.completedPages.length + job.failedPages.length;
     const finished = job.completedPages.length + job.failedPages.length;
-    const percent = Math.round((finished / job.totalPages) * 100);
+    const pageProgress = job.status === "running" ? (job.pageProgress || 0) / 100 : 0;
+    const percent = Math.round(((finished + pageProgress) / job.totalPages) * 100);
     const statusText = document.getElementById("documentDetectionStatusText");
     const progress = document.getElementById("documentDetectionProgress");
     const cancel = document.getElementById("cancelDocumentDetectionBtn");
     const resume = document.getElementById("resumeDocumentDetectionBtn");
     const hasPending = getPendingDocumentDetectionPages(job).length > 0;
 
+    const shouldAutoHide = job.status === "complete";
+    if (documentDetectionStatusHideTimer) {
+        clearTimeout(documentDetectionStatusHideTimer);
+        documentDetectionStatusHideTimer = null;
+    }
     panel.hidden = job.status === "idle";
     if (statusText) statusText.textContent = job.status === "running"
         ? (job.message || `Analyzing page ${current} of ${job.totalPages}…`)
@@ -61,6 +68,11 @@ function renderDocumentDetectionStatus(job = state.documentDetection) {
     if (resume) {
         resume.hidden = !hasPending || job.status === "running";
         resume.textContent = job.status === "idle" ? "Start" : "Resume";
+    }
+    if (shouldAutoHide) {
+        documentDetectionStatusHideTimer = setTimeout(() => {
+            if (state.documentDetection === job && job.status === "complete") panel.hidden = true;
+        }, 3500);
     }
 }
 
@@ -245,6 +257,26 @@ export async function deleteSelectedFieldsWithPoof() {
     saveHistory();
     refreshUI();
     showUndoToast(deletedCount > 1 ? `${deletedCount} fields removed` : "Field removed");
+}
+
+export function clearDetectedFields() {
+    cancelDocumentDetection();
+    resetDocumentDetection(state.totalPages);
+    const detectedFieldIds = new Set(state.fields.filter(field => field.detectedBy || field.sourcedFrom === "acroform").map(field => field.id));
+    if (detectedFieldIds.size === 0) {
+        renderDocumentDetectionStatus();
+        showToast("No detected fields to clear.", "info");
+        return;
+    }
+
+    state.fields = state.fields.filter(field => !detectedFieldIds.has(field.id));
+    state.groups = (state.groups || []).filter(group => state.fields.some(field => field.groupId === group.id));
+    setSelectedFields(Array.from(state.selectedFieldIds).filter(id => !detectedFieldIds.has(id)));
+    if (!state.selectedFieldIds.size) state.lastSelectedFieldId = null;
+    saveHistory(true, "Clear Detected Fields");
+    renderDocumentDetectionStatus();
+    refreshUI();
+    showUndoToast(`${detectedFieldIds.size} detected field${detectedFieldIds.size === 1 ? "" : "s"} removed`);
 }
 
 export function switchEditorMode(mode = "design") {
@@ -1003,6 +1035,7 @@ export function initEditorSubsystems() {
     });
 
     document.getElementById("detectAllPagesBtn")?.addEventListener("click", () => startFullDocumentDetection());
+    document.getElementById("clearDetectedFieldsBtn")?.addEventListener("click", clearDetectedFields);
     document.getElementById("cancelDocumentDetectionBtn")?.addEventListener("click", () => {
         cancelDocumentDetection();
         renderDocumentDetectionStatus();

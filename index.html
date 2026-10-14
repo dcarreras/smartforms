@@ -1709,8 +1709,8 @@
             <div class="toolbar-center">
                 <div class="mode-segmented-toggle" id="modeSegmentedToggle">
                     <div class="mode-segmented-indicator" id="modeIndicator" style="display: none;"></div>
-                    <button id="modeDesignBtn" type="button" class="mode-toggle-btn active" aria-label="Design Mode">Design</button>
-                    <button id="modeFillBtn" type="button" class="mode-toggle-btn" aria-label="Fill Mode">Fill</button>
+                    <button id="modeDesignBtn" type="button" class="mode-toggle-btn active" data-tooltip="Design Mode" aria-label="Design Mode"><i data-pixel-icon="edit-3"></i></button>
+                    <button id="modeFillBtn" type="button" class="mode-toggle-btn" data-tooltip="Fill Mode" aria-label="Fill Mode"><i data-pixel-icon="play"></i></button>
                 </div>
             </div>
             
@@ -1744,11 +1744,16 @@
                     <i data-pixel-icon="sparkles" style="width: 14px; height: 14px;"></i>
                     <span>Convert all pages</span>
                 </button>
+                <button id="clearDetectedFieldsBtn" class="btn-outline-pill" data-tooltip="Clear all detected fields" aria-label="Clear all detected fields">
+                    <i data-pixel-icon="trash-2" style="width: 14px; height: 14px;"></i>
+                    <span>Clear all</span>
+                </button>
                 <button id="previewBtn" class="btn-outline-pill" data-tooltip="Preview Fillable Form" aria-label="Preview Form">
                     <svg class="ico-svg" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     <span>Preview</span>
                 </button>
                 <button id="generatePdfBtn" class="btn-export-pill" data-tooltip="Export Fillable PDF" data-kbd="⌘E" aria-label="Export PDF">
+                    <i data-pixel-icon="download-cloud" style="width: 14px; height: 14px;"></i>
                     <span>Export PDF</span>
                 </button>
 
@@ -1759,14 +1764,6 @@
         </header>
 
     <div class="workspace">
-        <section id="documentDetectionStatus" class="document-detection-status" role="status" aria-live="polite" hidden>
-            <div class="document-detection-copy">
-                <span id="documentDetectionStatusText">Preparing document analysis…</span>
-                <div class="document-detection-progress-track" aria-hidden="true"><div id="documentDetectionProgress" class="document-detection-progress"></div></div>
-            </div>
-            <button id="cancelDocumentDetectionBtn" type="button" class="document-detection-action">Cancel</button>
-            <button id="resumeDocumentDetectionBtn" type="button" class="document-detection-action" hidden>Resume</button>
-        </section>
         <aside class="left-panel" id="leftPanel">
             <div class="left-panel-top-bar">
                 <!-- Penpot Segmented Tab Bar (Pages / Layers) -->
@@ -1825,6 +1822,14 @@
         </div>
         
         <div class="canvas-workspace-area" style="flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%; position: relative; background: var(--canvas-bg); overflow: hidden;">
+            <section id="documentDetectionStatus" class="document-detection-status" role="status" aria-live="polite" hidden>
+                <div class="document-detection-copy">
+                    <span id="documentDetectionStatusText">Preparing document analysis…</span>
+                    <div class="document-detection-progress-track" aria-hidden="true"><div id="documentDetectionProgress" class="document-detection-progress"></div></div>
+                </div>
+                <button id="cancelDocumentDetectionBtn" type="button" class="document-detection-action">Cancel</button>
+                <button id="resumeDocumentDetectionBtn" type="button" class="document-detection-action" hidden>Resume</button>
+            </section>
             <main class="center-canvas" id="centerCanvas">
                 <div id="emptyState" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #5b6270; display: flex; flex-direction: column; align-items: center; gap: 14px; z-index: 10; pointer-events: none; background: #ffffff; padding: 36px 48px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px dashed #cbd5e1; max-width: 420px;">
                     <div style="width: 56px; height: 56px; border-radius: 12px; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #2563eb;">

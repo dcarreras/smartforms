@@ -231,14 +231,14 @@ export function renderReturningUserHeroCard() {
                     <span>Continue recent document</span>
                 </button>
                 <div class="returning-user-secondary-row">
-                    <label for="heroPdfUpload" class="btn-secondary returning-user-btn-secondary" style="cursor: pointer;" id="returningUserNewPdfLabel">
+                    <button type="button" class="btn-secondary returning-user-btn-secondary" id="returningUserNewPdfBtn">
                         <i data-pixel-icon="plus"></i>
                         <span>New PDF or image</span>
-                    </label>
-                    <label for="heroOpenProjectUpload" class="btn-secondary returning-user-btn-secondary" style="cursor: pointer;" id="returningUserOpenProjLabel">
+                    </button>
+                    <button type="button" class="btn-secondary returning-user-btn-secondary" id="returningUserOpenProjBtn">
                         <i data-pixel-icon="file"></i>
                         <span>Open SmartForms Project</span>
-                    </label>
+                    </button>
                 </div>
             </div>
             <div class="returning-user-footer-row">
@@ -313,11 +313,12 @@ export function renderReturningUserHeroCard() {
         });
     }
 
-    const newPdfLabel = document.getElementById("returningUserNewPdfLabel");
-    if (newPdfLabel) newPdfLabel.addEventListener("click", closeReturningUserModal);
-
-    const openProjLabel = document.getElementById("returningUserOpenProjLabel");
-    if (openProjLabel) openProjLabel.addEventListener("click", closeReturningUserModal);
+    const openFilePicker = inputId => {
+        closeReturningUserModal();
+        document.getElementById(inputId)?.click();
+    };
+    document.getElementById("returningUserNewPdfBtn")?.addEventListener("click", () => openFilePicker("heroPdfUpload"));
+    document.getElementById("returningUserOpenProjBtn")?.addEventListener("click", () => openFilePicker("heroOpenProjectUpload"));
 }
 
 let currentReviewPageSize = 6;

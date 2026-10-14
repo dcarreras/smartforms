@@ -83,6 +83,30 @@ test('Pipeline Stages: detectFormFieldsFromDoc executes STAGES and produces tele
     assert(result.telemetry.stagesSucceeded.includes('vector_geometry'), 'vector_geometry must succeed');
 });
 
+test('Pipeline Stages: browser detection keeps local geometry stages enabled', async () => {
+    const previousWindow = globalThis.window;
+    globalThis.window = {};
+    const mockPage = {
+        getAnnotations: async () => [],
+        getOperatorList: async () => ({ fnArray: [], argsArray: [] }),
+        getTextContent: async () => ({ items: [{ str: 'Name:', x: 50, y: 700, width: 40, height: 12 }] }),
+        getViewport: () => ({ width: 612, height: 792 })
+    };
+
+    try {
+        const result = await detectFormFieldsFromDoc({ numPages: 1, getPage: async () => mockPage }, {
+            pageNumber: 1,
+            enableOcr: false,
+            useNeural: false,
+            useSidecar: false
+        });
+        assert(result.telemetry.stagesAttempted.includes('vector_geometry'));
+        assert(result.telemetry.stagesAttempted.includes('lattice_tables'));
+    } finally {
+        globalThis.window = previousWindow;
+    }
+});
+
 test('Pipeline Stages: partially fillable PDFs do not skip detection on pages with widgets', async () => {
     const mockPage = {
         getAnnotations: async () => [

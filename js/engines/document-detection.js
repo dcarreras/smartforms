@@ -12,6 +12,7 @@ export function resetDocumentDetection(totalPages = state.totalPages) {
         completedPages: [],
         failedPages: [],
         fieldsAdded: 0,
+        pageProgress: 0,
         cancelRequested: false,
         runId,
         message: ""
@@ -59,9 +60,10 @@ export async function startDocumentDetection({ onUpdate, detectPage } = {}) {
         mode: "hybrid",
         useNeural: true,
         shouldCommit: isCurrentRun,
-        onProgress: (message) => {
+        onProgress: (message, progress) => {
             if (!isCurrentRun()) return;
-            job.message = message;
+            job.pageProgress = Number.isFinite(progress) ? Math.max(0, Math.min(99, progress)) : job.pageProgress;
+            job.message = `Analyzing page ${pageNum} of ${job.totalPages}: ${message}`;
             onUpdate?.(job);
         }
     }));
@@ -69,6 +71,7 @@ export async function startDocumentDetection({ onUpdate, detectPage } = {}) {
     for (const pageNum of pages) {
         if (!isCurrentRun() || job.cancelRequested) break;
         job.currentPage = pageNum;
+        job.pageProgress = 0;
         job.message = `Analyzing page ${pageNum} of ${job.totalPages}…`;
         onUpdate?.(job);
 
@@ -83,12 +86,14 @@ export async function startDocumentDetection({ onUpdate, detectPage } = {}) {
             job.failedPages.push({ pageNumber: pageNum, message: error?.message || String(error) });
             console.error(`Document detection failed on page ${pageNum}:`, error);
         }
+        job.pageProgress = 0;
         onUpdate?.(job);
         await nextTick();
     }
 
     if (state.documentDetection?.runId === runId) {
         job.currentPage = 0;
+        job.pageProgress = 0;
         job.status = job.cancelRequested
             ? "cancelled"
             : job.failedPages.length ? "complete-with-errors" : "complete";

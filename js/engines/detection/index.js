@@ -259,9 +259,8 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                 }
             }
 
-            // 2.5 Heuristic Detection Stages (Blocked in browser runtime to test pure FFDNet-L vision model)
-            const isNodeTestEnv = typeof process !== "undefined" && Boolean(process?.versions?.node) && (typeof window === "undefined" || !globalThis.window);
-            const shouldRunHeuristics = isNodeTestEnv ? !options.disableHeuristics : Boolean(options.enableHeuristics);
+            // 2.5 Local geometric detection provides the reliable baseline for born-digital forms.
+            const shouldRunHeuristics = options.enableHeuristics !== false && options.disableHeuristics !== true;
             if (shouldRunHeuristics) {
                 for (const stage of STAGES) {
                     if (stage.condition && !stage.condition(context)) {
@@ -282,14 +281,11 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
                         console.warn(`Detection stage '${stage.name}' failed:`, stageErr);
                     }
                 }
-            } else {
-                pipelineTelemetry.stagesSkipped.push("heuristics_blocked");
-                console.log("[Detection] Heuristic detection pipeline is BLOCKED. Running FFDNet-L vision model only.");
-            }
+            } else pipelineTelemetry.stagesSkipped.push("heuristics_disabled");
 
             // 3. In-Browser FFDNet-L Neural Vision Detector (WASM / WebGPU via ONNX Runtime Web)
             // Activates automatically when local Python sidecar is offline (e.g. on Vercel deployment)
-            const shouldRunOnnx = !sidecarRan && typeof document !== "undefined" && options.useNeural !== false;
+            const shouldRunOnnx = !sidecarRan && rawPageCandidates.length === 0 && typeof document !== "undefined" && options.useNeural !== false;
             if (shouldRunOnnx) {
                 pipelineTelemetry.stagesAttempted.push("ffdnet_onnx");
                 if (typeof options.onProgress === "function") {
@@ -455,7 +451,6 @@ export async function autoDetectFields(scope = "current", options = {}) {
     const minConfidence = typeof options.minConfidence === "number" ? options.minConfidence : CONFIDENCE.ACCEPT;
 
     const result = await detectFormFieldsFromDoc(state.pdfDoc, {
-        disableHeuristics: true,
         ...options,
         minConfidence,
         pageNumber: pagesToScan,
