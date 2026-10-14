@@ -2,7 +2,7 @@
 // Template metadata and static PDF asset loader
 
 let baselineData = null;
-if (typeof window === "undefined" && typeof process !== "undefined" && process.versions?.node) {
+if (typeof process !== "undefined" && process.versions?.node) {
     try {
         const fs = await import("fs");
         const path = await import("path");

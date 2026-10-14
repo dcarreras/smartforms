@@ -79,15 +79,19 @@ function bootstrapApp() {
         };
         const triggers = Array.isArray(triggerIds) ? triggerIds : [triggerIds];
         triggers.forEach(id => {
-            document.getElementById(id)?.addEventListener("click", openModal);
+            const trigger = document.getElementById(id);
+            if (typeof trigger?.addEventListener === "function") trigger.addEventListener("click", openModal);
         });
         const closeBtns = Array.isArray(closeBtnIds) ? closeBtnIds : [closeBtnIds];
         closeBtns.forEach(id => {
-            document.getElementById(id)?.addEventListener("click", closeModal);
+            const closeButton = document.getElementById(id);
+            if (typeof closeButton?.addEventListener === "function") closeButton.addEventListener("click", closeModal);
         });
-        modal.addEventListener("click", e => {
-            if (e.target === modal) closeModal();
-        });
+        if (typeof modal.addEventListener === "function") {
+            modal.addEventListener("click", e => {
+                if (e.target === modal) closeModal();
+            });
+        }
     };
 
     bindModal(
@@ -225,9 +229,12 @@ if (typeof window !== "undefined") {
         }
     };
 
-    document.getElementById("menuInstallAppBtn")?.addEventListener("click", () => {
-        window.installPwaApp?.();
-    });
+    const installButton = document.getElementById("menuInstallAppBtn");
+    if (typeof installButton?.addEventListener === "function") {
+        installButton.addEventListener("click", () => {
+            window.installPwaApp?.();
+        });
+    }
 }
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator && typeof window !== "undefined") {
