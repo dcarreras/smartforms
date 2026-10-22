@@ -7,11 +7,6 @@ import { showToast } from "./utils/toast.js";
 import { triggerHaptic } from "./utils/haptics.js";
 import { initCommandPalette } from "./ui/command-palette.js";
 
-// Initialize Vercel Analytics event queue
-if (typeof window !== "undefined") {
-    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-}
-
 // ── UI Zoom Guard ──────────────────────────────────────────────────
 function initUiZoomGuard() {
     let lastTouchEnd = 0;
@@ -102,7 +97,7 @@ function bootstrapApp() {
     bindModal(
         ["feedbackBtn", "landingFeedbackBtn", "footerFeedbackBtn", "feedbackMenuBtn"],
         "feedbackModal",
-        ["closeFeedbackModalBtn", "feedbackModalCloseIcon", "closeFeedbackBtn", "dismissFeedbackModalBtn"]
+        ["closeFeedbackModalBtn", "feedbackModalCloseIcon", "closeFeedbackBtn", "dismissFeedbackModalBtn", "cancelFeedbackBtn"]
     );
 
     // Global Hotkey for Keyboard Shortcuts Modal (? or Shift+/ or F1)
@@ -141,34 +136,24 @@ function bootstrapApp() {
             e.preventDefault();
             const senderInput = document.getElementById("feedbackSender") || document.getElementById("feedbackEmail");
             const msgInput = document.getElementById("feedbackMessage");
-            const sender = senderInput?.value.trim() || "";
             const msg = msgInput?.value.trim() || "";
+            const sender = senderInput?.value.trim() || "";
+            const category = document.getElementById("feedbackCategory")?.value || "Feedback";
+            const rating = document.querySelector('#starRatingBox [aria-checked="true"]')?.dataset.rating || "Not provided";
 
             if (!msg) {
                 showToast("Please enter your feedback message.", "warning");
                 return;
             }
 
-            try {
-                if (window.va) {
-                    window.va("event", {
-                        name: "user_feedback",
-                        data: {
-                            sender: sender || "anonymous",
-                            feedback: msg,
-                            timestamp: new Date().toISOString()
-                        }
-                    });
-                }
-            } catch (err) {
-                console.warn("[Analytics] Feedback track error:", err);
-            }
-
+            const body = `${msg}\n\n---\nCategory: ${category}\nRating: ${rating}\nContact: ${sender || "Not provided"}`;
+            const issueUrl = `https://github.com/dcarreras/smartforms/issues/new?title=${encodeURIComponent(`[${category}] Feedback`)}&body=${encodeURIComponent(body)}`;
+            window.open(issueUrl, "_blank", "noopener,noreferrer");
             const feedbackModal = document.getElementById("feedbackModal");
             if (feedbackModal) feedbackModal.style.display = "none";
             if (senderInput) senderInput.value = "";
             if (msgInput) msgInput.value = "";
-            showToast("Thank you for your feedback! We review every message.", "success");
+            showToast("A GitHub issue draft was opened. Review it and submit when ready.", "success");
         });
     }
 

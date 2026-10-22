@@ -3060,7 +3060,7 @@ export function alignSelectedFields(direction, onUpdated) {
 
 export function distributeSelectedFields(axis, onUpdated) {
     const sel = state.fields.filter(f => state.selectedFieldIds.has(f.id));
-    if (sel.length < 3) return;
+    if (sel.length < 3 || !["vertical", "horizontal"].includes(axis)) return;
     if (axis === "vertical") {
         sel.sort((a, b) => a.y - b.y);
         const first = sel[0];
@@ -3094,7 +3094,7 @@ export function distributeSelectedFields(axis, onUpdated) {
             }
         }
     }
-    saveHistory();
+    saveHistory(true, `Distribute fields ${axis}`);
     if (onUpdated) onUpdated();
 }
 

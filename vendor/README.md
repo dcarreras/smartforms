@@ -1,6 +1,6 @@
 # Vendored Third-Party Assets (`vendor/`)
 
-This directory contains standalone, client-side JavaScript libraries bundled with Formblatt to enable zero-telemetry, 100% offline document editing and ISO 32000 AcroForm generation.
+This directory contains standalone, client-side JavaScript libraries bundled with SmartForms to enable zero-telemetry, 100% offline document editing and ISO 32000 AcroForm generation.
 
 ## Included Core Vendor Assets
 
@@ -18,7 +18,7 @@ These assets are committed to the repository and cached by the service worker (`
 
 ## Optional Offline AI & OCR Assets (Self-Hosting)
 
-Formblatt includes optional client-side augmentations (Tesseract.js for scanned bitmap OCR and ONNX Runtime Web for neural vision). When running online, these load dynamically on demand via CDN. 
+SmartForms includes optional client-side augmentations (Tesseract.js for scanned bitmap OCR and ONNX Runtime Web for neural vision). When running online, these load dynamically on demand via CDN.
 
 If you require **100% air-gapped / offline operation without CDN requests**, place the following binary assets in their respective directories:
 

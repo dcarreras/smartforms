@@ -214,10 +214,19 @@ export function renderOverlays(handlers) {
                 if (safeSig) {
                     div.innerHTML = `
                         <div style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
-                            <img src="${safeSig}" alt="Signature preview" style="width:100%; height:100%; object-fit:contain; pointer-events:none;">
+                            <button type="button" class="fill-edit-sig-btn" title="Replace signature" aria-label="Replace signature" style="width:100%; height:100%; border:0; padding:0; background:transparent; cursor:pointer;">
+                                <img src="${safeSig}" alt="Signature preview" style="width:100%; height:100%; object-fit:contain; pointer-events:none;">
+                            </button>
                             <button class="fill-clear-sig-btn" title="Clear signature" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:#ef4444; color:#fff; border:none; font-size:9px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
                         </div>
                     `;
+                    div.querySelector(".fill-edit-sig-btn")?.addEventListener("click", e => {
+                        e.stopPropagation();
+                        openSignatureModal(f, () => {
+                            renderOverlays(handlers);
+                            saveHistory();
+                        });
+                    });
                     div.querySelector(".fill-clear-sig-btn")?.addEventListener("click", e => {
                         e.stopPropagation();
                         f.signatureImage = null;
@@ -411,23 +420,11 @@ export function renderOverlays(handlers) {
                 `;
             } else {
                 div.innerHTML = `
-                    <div class="sig-prompt-badge" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:#2563eb; cursor:pointer;">
-                        <span style="font-size:10.5px; font-weight:600; font-family:'Inter', sans-serif; background:rgba(224,242,254,0.65); padding:2px 7px; border-radius:3px; border:1px dashed #60a5fa; box-shadow:0 1px 2px rgba(0,0,0,0.05);">Sign</span>
+                    <div class="sig-prompt-badge" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:#2563eb;">
+                        <span style="font-size:10.5px; font-weight:600; font-family:'Inter', sans-serif; background:rgba(224,242,254,0.65); padding:2px 7px; border-radius:3px; border:1px dashed #60a5fa; box-shadow:0 1px 2px rgba(0,0,0,0.05); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">Sign in Fill mode</span>
                     </div>
                 `;
             }
-
-            const triggerSign = e => {
-                e.stopPropagation();
-                openSignatureModal(f, () => {
-                    renderOverlays(handlers);
-                    if (handlers.onUpdated) handlers.onUpdated(f);
-                });
-            };
-
-            div.addEventListener("dblclick", triggerSign);
-            const badge = div.querySelector(".sig-prompt-badge");
-            if (badge) badge.addEventListener("click", triggerSign);
         } else if (f.type === "checkBox") {
             if (f.defaultChecked) {
                 if (f.checkboxMark === "x") {
@@ -612,7 +609,7 @@ export function renderOverlays(handlers) {
         // Accessibility & Keyboard Navigation
         div.tabIndex = 0;
         div.setAttribute("role", f.type === "checkBox" ? "checkbox" : (f.type === "radioGroup" ? "radio" : (f.type === "dropdown" ? "combobox" : "textbox")));
-        div.setAttribute("aria-label", f.name || "Form field");
+        div.setAttribute("aria-label", f.type === "signature" ? `${f.name || "Signature field"}. Sign in Fill mode.` : (f.name || "Form field"));
         if (f.type === "checkBox") {
             div.setAttribute("aria-checked", f.defaultChecked ? "true" : "false");
         }
@@ -639,12 +636,7 @@ export function renderOverlays(handlers) {
         div.addEventListener("dblclick", e => {
             e.stopPropagation();
             if (f.locked || f.hidden) return;
-            if (f.type === "signature" && !f.signatureImage) {
-                openSignatureModal(f, () => {
-                    renderOverlays(handlers);
-                    if (handlers.onUpdated) handlers.onUpdated(f);
-                });
-            } else {
+            if (f.type !== "signature") {
                 startInlineTextEdit(f.id, handlers);
             }
         });
@@ -679,12 +671,7 @@ export function renderOverlays(handlers) {
                 }
             } else if (e.key === "Enter" && !f.locked && !f.hidden) {
                 e.preventDefault();
-                if (f.type === "signature" && !f.signatureImage) {
-                    openSignatureModal(f, () => {
-                        renderOverlays(handlers);
-                        if (handlers.onUpdated) handlers.onUpdated(f);
-                    });
-                } else {
+                if (f.type !== "signature") {
                     startInlineTextEdit(f.id, handlers);
                 }
             } else if (e.key === " ") {

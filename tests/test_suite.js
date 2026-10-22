@@ -1172,6 +1172,13 @@ async function runAllTests() {
         assert.ok(indexHtml.includes('id="footerShortcutsBtn"'), 'index.html must include #footerShortcutsBtn');
     });
 
+    it("feedback dialog is unique and opens a reviewable GitHub issue draft", () => {
+        const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
+        const mainJs = fs.readFileSync(path.join(WEB_DIR, 'js', 'main.js'), 'utf8');
+        assert.equal((indexHtml.match(/id="feedbackModal"/g) || []).length, 1, 'index.html must define only one feedback modal');
+        assert.ok(mainJs.includes('https://github.com/dcarreras/smartforms/issues/new'), 'Feedback must open a GitHub issue draft rather than report a false submission');
+    });
+
     await asyncIt("main.js exports openShortcutsModal and closeShortcutsModal helpers", async () => {
         global.window = { addEventListener() {} };
         const mainModule = await importModule(path.join(WEB_DIR, 'js', 'main.js'));
@@ -1190,19 +1197,19 @@ async function runAllTests() {
     console.log("\n🖼️ Suite 16: OpenGraph & Social Sharing Image Metadata");
     it("index.html defines standard OpenGraph and Twitter card image metadata", () => {
         const indexHtml = fs.readFileSync(path.join(WEB_DIR, 'index.html'), 'utf8');
-        assert.ok(indexHtml.includes('property="og:image" content="https://smartforms-cons.app/assets/og-image.png"'), 'index.html must define og:image pointing to high-res PNG');
+        assert.ok(indexHtml.includes('property="og:image" content="https://smartforms-cons.app/assets/og-image-smartforms-v2.png"'), 'index.html must define og:image pointing to the current SmartForms image');
         assert.ok(indexHtml.includes('name="twitter:card" content="summary_large_image"'), 'index.html must define summary_large_image twitter card');
-        assert.ok(indexHtml.includes('name="twitter:image" content="https://smartforms-cons.app/assets/og-image.png"'), 'index.html must define twitter:image');
-        assert.ok(indexHtml.includes('property="og:image:width" content="1024"'), 'index.html must define 1024 width');
-        assert.ok(indexHtml.includes('property="og:image:height" content="742"'), 'index.html must define 742 height');
+        assert.ok(indexHtml.includes('name="twitter:image" content="https://smartforms-cons.app/assets/og-image-smartforms-v2.png"'), 'index.html must define twitter:image');
+        assert.ok(indexHtml.includes('property="og:image:width" content="1200"'), 'index.html must define 1200 width');
+        assert.ok(indexHtml.includes('property="og:image:height" content="630"'), 'index.html must define 630 height');
         assert.ok(!indexHtml.includes('property="og:image" content="https://smartforms-cons.app/favicon.svg"'), 'og:image must not point to favicon.svg');
     });
 
-    it("assets/og-image.png exists and conforms to 1200x630 OpenGraph dimensions", () => {
-        const ogImgPath = path.join(WEB_DIR, 'assets', 'og-image.png');
-        assert.ok(fs.existsSync(ogImgPath), 'assets/og-image.png must exist on disk');
+    it("assets/og-image-smartforms-v2.png exists and conforms to 1200x630 OpenGraph dimensions", () => {
+        const ogImgPath = path.join(WEB_DIR, 'assets', 'og-image-smartforms-v2.png');
+        assert.ok(fs.existsSync(ogImgPath), 'assets/og-image-smartforms-v2.png must exist on disk');
         const stats = fs.statSync(ogImgPath);
-        assert.ok(stats.size > 50000 && stats.size < 1500000, `og-image.png size (${stats.size} bytes) should be optimized`);
+        assert.ok(stats.size > 50000 && stats.size < 1500000, `og-image-smartforms-v2.png size (${stats.size} bytes) should be optimized`);
         const header = fs.readFileSync(ogImgPath).subarray(0, 8);
         assert.equal(header[0], 0x89, 'og-image.png must be a valid PNG');
     });
@@ -1615,6 +1622,7 @@ async function runAllTests() {
         assert.equal(state.fields[0].y, 0);
         assert.equal(state.fields[1].y, 50);
         assert.equal(state.fields[2].y, 100);
+        assert.deepEqual(state.fields.map(f => [f.x, f.width, f.height]), [[10, 100, 20], [10, 100, 20], [10, 100, 20]], "Vertical distribution must not resize or move fields horizontally");
 
         state.fields = [
             { id: "h1", x: 0, y: 10, width: 40, height: 20 },
@@ -1627,6 +1635,7 @@ async function runAllTests() {
         assert.equal(state.fields[0].x, 0);
         assert.equal(state.fields[1].x, 70);
         assert.equal(state.fields[2].x, 140);
+        assert.deepEqual(state.fields.map(f => [f.y, f.width, f.height]), [[10, 40, 20], [10, 40, 20], [10, 40, 20]], "Horizontal distribution must not resize or move fields vertically");
     });
 
     await asyncIt("renderContextualQuickBar creates floating action buttons for selection", async () => {

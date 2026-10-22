@@ -1013,9 +1013,6 @@ export function initEditorSubsystems() {
                 } else {
                     showNoticeToast(`Detected & added ${count} form field${count > 1 ? "s" : ""}`);
                 }
-                if (window.va) {
-                    window.va("event", { name: "auto_detect_completed", data: { count, omittedCount } });
-                }
             } else {
                 if (omittedCount > 0) {
                     showNoticeToast(`No high-confidence fields found (${omittedCount} low-confidence candidate${omittedCount > 1 ? "s" : ""} omitted)`);

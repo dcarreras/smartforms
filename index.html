@@ -28,12 +28,12 @@
     <meta property="og:url" content="https://smartforms-cons.app/">
     <meta property="og:title" content="SmartForms: Free Interactive PDF Form Creator &amp; AcroForm Editor">
     <meta property="og:description" content="No sign-up, no upload. Turn any PDF into a fillable form directly in your browser. 100% private, client-side PDF form builder.">
-    <meta property="og:image" content="https://smartforms-cons.app/assets/og-image.png">
-    <meta property="og:image:secure_url" content="https://smartforms-cons.app/assets/og-image.png">
+    <meta property="og:image" content="https://smartforms-cons.app/assets/og-image-smartforms-v2.png">
+    <meta property="og:image:secure_url" content="https://smartforms-cons.app/assets/og-image-smartforms-v2.png">
     <meta property="og:image:type" content="image/png">
-    <meta property="og:image:width" content="1024">
-    <meta property="og:image:height" content="742">
-    <meta property="og:image:alt" content="SmartForms - Browser-based PDF Form Creator and AcroForm Editor">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SmartForms - Construction PDF form builder">
     <meta property="og:site_name" content="SmartForms">
     <meta property="og:locale" content="en_US">
 
@@ -42,8 +42,8 @@
     <meta name="twitter:url" content="https://smartforms-cons.app/">
     <meta name="twitter:title" content="SmartForms: Free Interactive PDF Form Creator &amp; AcroForm Editor">
     <meta name="twitter:description" content="No sign-up, no upload. Turn any PDF into a fillable form directly in your browser. 100% private, client-side.">
-    <meta name="twitter:image" content="https://smartforms-cons.app/assets/og-image.png">
-    <meta name="twitter:image:alt" content="SmartForms - Free Interactive PDF Form Creator &amp; AcroForm Editor">
+    <meta name="twitter:image" content="https://smartforms-cons.app/assets/og-image-smartforms-v2.png">
+    <meta name="twitter:image:alt" content="SmartForms - Construction PDF form builder">
 
     <!-- WebApplication Structured Data (JSON-LD) -->
     <script type="application/ld+json">
@@ -52,8 +52,8 @@
       "@type": "WebApplication",
       "name": "SmartForms",
       "url": "https://smartforms-cons.app/",
-      "image": "https://smartforms-cons.app/assets/og-image.png",
-      "screenshot": "https://smartforms-cons.app/assets/og-image.png",
+      "image": "https://smartforms-cons.app/assets/og-image-smartforms-v2.png",
+      "screenshot": "https://smartforms-cons.app/assets/og-image-smartforms-v2.png",
       "description": "Free, browser-based PDF Form Creator and AcroForm Editor. Transform any static PDF into an interactive fillable form with text fields, checkboxes, dropdowns, and digital signatures.",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "All (Web Browser)",
@@ -174,7 +174,12 @@
             <div class="header-inner">
                 <nav class="landing-nav-bar">
                     <a href="#hero" class="brand" id="landingLogoBtn" onclick="document.getElementById('landingScreen')?.scrollTo({top:0,behavior:'smooth'}); window.scrollTo({top:0,behavior:'smooth'}); return false;" style="cursor: pointer; text-decoration: none;">
-                        <span class="brand-mark brand-mark-logo" title="SmartForms" aria-hidden="true"></span>
+                        <span class="brand-mark" title="SmartForms" aria-hidden="true">
+                            <svg viewBox="0 0 100 100" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="100" height="100" rx="22" fill="#0B63CE"/>
+                                <path d="M22 18 H78 V36 H42 V47 H70 V63 H42 V82 H22 Z" fill="#FFFFFF"/>
+                            </svg>
+                        </span>
                         <span class="brand-text"><span class="brand-name-primary">Smart</span><span class="brand-name-accent">Forms</span></span>
                     </a>
                     <div class="nav-links">
@@ -607,7 +612,7 @@
                     </div>
                     <div class="tile">
                         <h3>Static &amp; Self-Hostable</h3>
-                        <p>No backend server needed. Deploy on Vercel, GitHub Pages, or internal air-gapped networks.</p>
+                        <p>No backend server needed. Deploy on Cloudflare Pages, GitHub Pages, or internal air-gapped networks.</p>
                     </div>
                     <div class="tile">
                         <h3>Public Codebase</h3>
@@ -2385,14 +2390,14 @@
 
                     <!-- Specialized: Pre-sign Signature Actions -->
                     <div class="prop-group" id="accSignature" style="display: none;">
-                        <div class="prop-section-heading">
-                            <span>Signature Actions</span>
+                    <div class="prop-section-heading">
+                            <span>Template Signature (optional)</span>
                             <svg class="prop-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m6 9 6 6 6-6"></path></svg>
                         </div>
                         <div class="prop-field" id="signatureActionsGroup">
                             <button id="propOpenSignatureBtn" type="button" class="btn-secondary prop-sig-btn">
                                 <i data-pixel-icon="pen-tool" style="width: 13px; height: 13px; color: #2563eb;"></i>
-                                <span>Pre-sign Document</span>
+                                <span>Add Template Signature</span>
                             </button>
                             <button id="propClearSignatureBtn" type="button" class="btn-secondary prop-clear-sig-btn" style="display: none; margin-top: 6px;">
                                 Remove Pre-signed Signature
@@ -3301,48 +3306,6 @@
         </div>
     </div>
 
-    <!-- Feedback Modal -->
-    <div id="feedbackModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="feedbackModalHeading" style="display: none;">
-        <div class="modal-card">
-            <div class="modal-header">
-                <div class="modal-header-icon" style="background:#eff6ff; color:#2563eb;">
-                    <i data-pixel-icon="message-square" style="width: 18px; height: 18px;"></i>
-                </div>
-                <div style="flex:1;">
-                    <h3 id="feedbackModalHeading" style="margin:0; font-size:16px; font-weight:600; color:#1c1f26;">Send Feedback</h3>
-                    <p style="margin:0; font-size:12px; color:#5b6270;">Help us make SmartForms even better</p>
-                </div>
-                <button id="closeFeedbackModalBtn" aria-label="Close feedback modal" style="background:none; border:none; font-size:22px; cursor:pointer; color:#5b6270; line-height:1;">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group" style="margin-bottom: 14px;">
-                    <label class="modal-label" for="feedbackCategory">Feedback Type</label>
-                    <select id="feedbackCategory" class="prop-select">
-                        <option value="feature">Feature Request</option>
-                        <option value="bug">Bug Report</option>
-                        <option value="usability">Usability / Design Suggestion</option>
-                        <option value="other">General Feedback</option>
-                    </select>
-                </div>
-                <div class="form-group" style="margin-bottom: 14px;">
-                    <label class="modal-label" for="feedbackText">Your Thoughts</label>
-                    <textarea id="feedbackText" class="prop-textarea" rows="4" placeholder="What's working well? What could be improved?"></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="modal-label" for="feedbackEmail">Email (optional)</label>
-                    <input type="email" id="feedbackEmail" class="prop-input" placeholder="you@example.com (if you'd like a response)">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="cancelFeedbackBtn" class="btn-secondary">Cancel</button>
-                <button id="submitFeedbackBtn" class="btn-primary">
-                    <i data-pixel-icon="send" style="width: 13px; height: 13px;"></i>
-                    <span>Submit Feedback</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- AI Feature Showcase Modal -->
     <div id="aiShowcaseModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="aiShowcaseHeading" style="display: none;">
         <div class="modal-card" style="max-width: 520px;">
@@ -3603,7 +3566,7 @@
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px; padding-top:12px; border-top:1px solid #f1f5f9;">
                     <button type="button" id="cancelFeedbackBtn" class="btn-secondary" style="padding:8px 16px; font-size:12.5px; border-radius:8px;">Cancel</button>
                     <button type="submit" class="btn-primary" style="padding:8px 20px; font-size:12.5px; border-radius:8px; font-weight:600; display:flex; align-items:center; gap:6px;">
-                        <i data-pixel-icon="send" style="width:14px; height:14px;"></i> Send Feedback
+                        <i data-pixel-icon="arrow-up-right" style="width:14px; height:14px;"></i> Open GitHub Issue
                     </button>
                 </div>
             </form>
@@ -3768,7 +3731,7 @@
                 </div>
 
                 <!-- Modal Actions -->
-                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                <div class="export-modal-actions" style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
                     <button type="button" id="cancelExportBtn" class="btn-secondary" style="padding: 9px 16px; font-size: 13px; font-weight: 600; border-radius: 8px;">Cancel</button>
                     <button type="submit" id="confirmExportBtn" class="btn-primary" style="padding: 9px 20px; font-size: 13px; font-weight: 700; border-radius: 8px; background: #1d4ed8; border-color: #1d4ed8; display: flex; align-items: center; gap: 8px;">
                         <i data-pixel-icon="download" style="width: 15px; height: 15px;"></i>
@@ -3932,14 +3895,14 @@
 
                 <p style="margin: 0;"><strong style="color: #1c1f26;">Your documents.</strong> When you open or drop in a PDF, it's parsed and edited locally using pdf.js and pdf-lib. No file data is sent to a server - you can confirm this yourself in your browser's Network tab (see the Security section on the homepage).</p>
 
-                <p style="margin: 0;"><strong style="color: #1c1f26;">Hosting.</strong> The app itself (HTML, CSS, JS, and WebAssembly files) is served as static assets via Vercel. This is the same as any website - it's how you receive the app, not how your documents are handled.</p>
+                <p style="margin: 0;"><strong style="color: #1c1f26;">Hosting.</strong> The app itself (HTML, CSS, JS, and WebAssembly files) is served as static assets via Cloudflare Pages. This is how you receive the app; it does not process your documents.</p>
 
-                <p style="margin: 0;"><strong style="color: #1c1f26;">Analytics.</strong> We use Vercel Analytics to see aggregate metrics like page load speed. This doesn't include your name, IP address tied to identity, or anything about the documents you work with.</p>
+                <p style="margin: 0;"><strong style="color: #1c1f26;">Analytics.</strong> SmartForms does not include application analytics or document telemetry. Cloudflare may process standard request data required to deliver the static site.</p>
 
-                <p style="margin: 0;"><strong style="color: #1c1f26;">Third parties.</strong> We don't use ad networks, trackers, or data brokers. Vercel is our only infrastructure provider.</p>
+                <p style="margin: 0;"><strong style="color: #1c1f26;">Third parties.</strong> We do not use ad networks, trackers, or data brokers in the application.</p>
 
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-top: 6px; font-size: 13.5px;">
-                    <strong style="color: #1c1f26;">Questions:</strong> <a href="mailto:sagar.shrestha23@gmail.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">sagar.shrestha23@gmail.com</a>
+                    <strong style="color: #1c1f26;">Questions:</strong> <a href="https://github.com/dcarreras/smartforms/issues" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: none; font-weight: 600;">Open an issue on GitHub</a>
                 </div>
             </div>
 

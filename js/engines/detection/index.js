@@ -284,7 +284,7 @@ export async function detectFormFieldsFromDoc(pdfDoc, options = {}) {
             } else pipelineTelemetry.stagesSkipped.push("heuristics_disabled");
 
             // 3. In-Browser FFDNet-L Neural Vision Detector (WASM / WebGPU via ONNX Runtime Web)
-            // Activates automatically when local Python sidecar is offline (e.g. on Vercel deployment)
+            // Activates automatically when the local Python sidecar is offline (for example, on Cloudflare Pages).
             const shouldRunOnnx = !sidecarRan && rawPageCandidates.length === 0 && typeof document !== "undefined" && options.useNeural !== false;
             if (shouldRunOnnx) {
                 pipelineTelemetry.stagesAttempted.push("ffdnet_onnx");

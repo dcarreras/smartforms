@@ -872,7 +872,7 @@ export function initLandingController(onLoaded) {
     bindModal(["footerComplianceBtn", "complianceNoticeBtn"], "complianceModal", ["closeComplianceModalBtn", "dismissComplianceModalBtn"]);
     bindModal(["navAboutBtn", "footerAboutBtn"], "aboutModal", ["closeAboutModalBtn", "dismissAboutModalBtn"]);
     bindModal(["landingShortcutsBtn", "footerShortcutsBtn", "shortcutsMenuBtn", "shortcutsHelpBtn", "shortcutsBtn"], "shortcutsModal", ["closeShortcutsBtn", "shortcutsDoneBtn", "closeShortcutsModalBtn"]);
-    bindModal(["landingFeedbackBtn", "footerFeedbackBtn", "feedbackMenuBtn", "feedbackBtn"], "feedbackModal", ["closeFeedbackModalBtn", "dismissFeedbackModalBtn", "closeFeedbackBtn"]);
+    bindModal(["landingFeedbackBtn", "footerFeedbackBtn", "feedbackMenuBtn", "feedbackBtn"], "feedbackModal", ["closeFeedbackModalBtn", "dismissFeedbackModalBtn", "closeFeedbackBtn", "cancelFeedbackBtn"]);
 
     // Smooth Scroll for Landing Anchor Links with Sticky Header Offset
     // Smooth Scroll for Landing Anchor Links

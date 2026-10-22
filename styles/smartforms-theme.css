@@ -1833,33 +1833,41 @@ button:active,
     max-height: 22px !important;
   }
 }
-}
 
 #canvasContextMenu.context-menu {
-  border: 1px solid var(--border-strong) !important;
+  border: 1px solid #53677d !important;
   background: #18212b !important;
-  color: var(--ink) !important;
+  color: #f1f5f9 !important;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35) !important;
 }
 
 #canvasContextMenu .ctx-header,
 #canvasContextMenu .ctx-label,
 #canvasContextMenu .ctx-item {
-  color: var(--ink) !important;
+  color: #f1f5f9 !important;
+}
+
+#canvasContextMenu .ctx-header {
+  color: #b9c9da !important;
 }
 
 #canvasContextMenu .ctx-item:hover {
   background: #263442 !important;
-  color: var(--secondary) !important;
+  color: #ffffff !important;
+}
+
+#canvasContextMenu .ctx-item:disabled {
+  color: #7f90a3 !important;
+  cursor: not-allowed;
 }
 
 #canvasContextMenu .ctx-kbd {
   background: #0b0e12 !important;
-  color: var(--ink-muted) !important;
+  color: #c5d4e3 !important;
 }
 
 #canvasContextMenu .ctx-divider {
-  background: var(--border-strong) !important;
+  background: #53677d !important;
 }
 
 .tool-more-wrapper {
