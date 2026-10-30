@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0b0e12">
+    <title>SmartForms Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+    <main class="shell">
+        <a class="brand" href="/" aria-label="Back to SmartForms"><span aria-hidden="true">S</span> SmartForms</a>
+        <section id="loginView" class="card login-card" aria-labelledby="loginTitle">
+            <p class="eyebrow">PRIVATE AREA</p>
+            <h1 id="loginTitle">Usage dashboard</h1>
+            <p>Sign in to see anonymous daily visits. No document data is collected.</p>
+            <form id="loginForm">
+                <label>Username<input id="username" name="username" autocomplete="username" required></label>
+                <label>Password<input id="password" name="password" type="password" autocomplete="current-password" required></label>
+                <p id="loginError" class="error" role="alert"></p>
+                <button type="submit">Sign in</button>
+            </form>
+        </section>
+        <section id="dashboardView" class="dashboard" hidden aria-labelledby="dashboardTitle">
+            <header class="dashboard-header">
+                <div><p class="eyebrow">PRIVATE AREA</p><h1 id="dashboardTitle">Anonymous usage</h1></div>
+                <button id="logoutButton" class="secondary" type="button">Sign out</button>
+            </header>
+            <p class="intro">Daily unique browser visits. The count uses a new random token every day and does not include PDFs, names, email addresses, or IP addresses.</p>
+            <div class="metrics" aria-live="polite">
+                <article class="card"><span>Today</span><strong id="todayValue">—</strong><small>unique browsers</small></article>
+                <article class="card"><span>Last 7 days</span><strong id="last7Value">—</strong><small>daily visits</small></article>
+                <article class="card"><span>Last 30 days</span><strong id="last30Value">—</strong><small>daily visits</small></article>
+            </div>
+            <section class="card chart-card" aria-labelledby="chartTitle">
+                <div class="chart-heading"><div><h2 id="chartTitle">Last 30 days</h2><p id="lastSeenValue">Loading…</p></div><button id="refreshButton" class="secondary" type="button">Refresh</button></div>
+                <ol id="dailyChart" class="daily-chart" aria-label="Anonymous daily visits over the last 30 days"></ol>
+            </section>
+            <p id="dashboardError" class="error" role="alert"></p>
+        </section>
+    </main>
+    <script type="module" src="/admin/admin.js"></script>
+</body>
+</html>

@@ -1179,6 +1179,65 @@ async function runAllTests() {
         assert.ok(mainJs.includes('https://github.com/dcarreras/smartforms/issues/new'), 'Feedback must open a GitHub issue draft rather than report a false submission');
     });
 
+    await asyncIt("anonymous analytics only stores a daily hash and the admin assets stay private", async () => {
+        const analyticsJs = fs.readFileSync(path.join(WEB_DIR, 'js', 'analytics.js'), 'utf8');
+        const visitHandler = fs.readFileSync(path.join(WEB_DIR, 'functions', 'api', 'analytics', 'visit.js'), 'utf8');
+        const adminHtml = fs.readFileSync(path.join(WEB_DIR, 'admin', 'index.html'), 'utf8');
+        const adminCss = fs.readFileSync(path.join(WEB_DIR, 'admin', 'admin.css'), 'utf8');
+        const buildScript = fs.readFileSync(path.join(WEB_DIR, 'scripts', 'build-pages.cjs'), 'utf8');
+        assert.ok(analyticsJs.includes('smartforms-anonymous-daily-visit'), 'daily analytics must use an anonymous browser token');
+        assert.ok(visitHandler.includes('visitor_hash') && visitHandler.includes('INSERT OR IGNORE'), 'visit endpoint must store one hash per day');
+        assert.ok(!visitHandler.includes('cf-connecting-ip'), 'visit endpoint must not collect IP addresses');
+        assert.ok(adminHtml.includes('content="noindex, nofollow"'), 'admin page must not be indexed');
+        assert.ok(adminCss.includes('.dashboard[hidden]'), 'dashboard must remain hidden until the session is authenticated');
+        assert.ok(buildScript.includes('"admin"'), 'Pages build must include the admin page');
+
+        const module = await importModule(path.join(WEB_DIR, 'functions', 'api', 'analytics', 'visit.js'));
+        const calls = [];
+        const env = {
+            ANALYTICS_DB: {
+                prepare(query) {
+                    return { bind(...params) { return { run: async () => { calls.push({ query, params }); return { meta: { changes: 1 } }; } }; } };
+                }
+            }
+        };
+        const response = await module.onRequestPost({
+            request: new Request('https://smartforms-cons.app/api/analytics/visit', { method: 'POST', headers: { Origin: 'https://smartforms-cons.app', 'content-type': 'application/json' }, body: JSON.stringify({ visitorId: 'abcdefghijklmnopqrstuv' }) }),
+            env
+        });
+        assert.equal(response.status, 201, 'valid anonymous visit must be accepted');
+        assert.equal(calls.length, 1, 'valid visit must make one database write');
+        assert.equal(calls[0].params.length, 2, 'database write must contain only the day and a hash');
+        assert.notEqual(calls[0].params[1], 'abcdefghijklmnopqrstuv', 'database must not store the raw visitor token');
+
+        const login = await importModule(path.join(WEB_DIR, 'functions', 'api', 'admin', 'login.js'));
+        const metrics = await importModule(path.join(WEB_DIR, 'functions', 'api', 'admin', 'metrics.js'));
+        const session = await importModule(path.join(WEB_DIR, 'functions', 'api', 'admin', 'session.js'));
+        const adminEnv = {
+            ADMIN_USERNAME: 'admin-user',
+            ADMIN_PASSWORD: 'admin-password',
+            ADMIN_SESSION_SECRET: 'a-private-session-secret-that-is-long-enough',
+            ANALYTICS_DB: {
+                prepare(query) {
+                    return {
+                        bind() { return { all: async () => ({ results: [{ day: new Date().toISOString().slice(0, 10), visits: 3 }] }) }; },
+                        first: async () => ({ lastSeenAt: '2026-10-28 10:00:00' })
+                    };
+                }
+            }
+        };
+        const loginResponse = await login.onRequestPost({ request: new Request('https://smartforms-cons.app/api/admin/login', { method: 'POST', headers: { Origin: 'https://smartforms-cons.app', 'content-type': 'application/json' }, body: JSON.stringify({ username: 'admin-user', password: 'admin-password' }) }), env: adminEnv });
+        assert.equal(loginResponse.status, 200, 'configured credentials must create an admin session');
+        const rejectedLogin = await login.onRequestPost({ request: new Request('https://smartforms-cons.app/api/admin/login', { method: 'POST', headers: { Origin: 'https://smartforms-cons.app', 'content-type': 'application/json' }, body: JSON.stringify({ username: 'admin-user', password: 'incorrect-password' }) }), env: adminEnv });
+        assert.equal(rejectedLogin.status, 401, 'incorrect credentials must not create an admin session');
+        const anonymousSession = await session.onRequestGet({ request: new Request('https://smartforms-cons.app/api/admin/session'), env: adminEnv });
+        assert.deepEqual(await anonymousSession.json(), { authenticated: false }, 'anonymous admin page loads must not expose metrics or emit an authorization error');
+        const cookie = loginResponse.headers.get('set-cookie').split(';')[0];
+        const metricsResponse = await metrics.onRequestGet({ request: new Request('https://smartforms-cons.app/api/admin/metrics', { headers: { Cookie: cookie } }), env: adminEnv });
+        assert.equal(metricsResponse.status, 200, 'a signed session must protect admin metrics');
+        assert.equal((await metricsResponse.json()).today, 3, 'admin metrics must report today\'s anonymous visit total');
+    });
+
     await asyncIt("main.js exports openShortcutsModal and closeShortcutsModal helpers", async () => {
         global.window = { addEventListener() {} };
         const mainModule = await importModule(path.join(WEB_DIR, 'js', 'main.js'));

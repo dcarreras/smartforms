@@ -1,0 +1,8 @@
+name = "smartforms-cons"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-09"
+
+[[d1_databases]]
+binding = "ANALYTICS_DB"
+database_name = "smartforms-analytics"
+database_id = "480bf765-b129-41b0-9b58-20d4cface789"

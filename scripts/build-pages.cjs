@@ -4,7 +4,7 @@ const { buildPixelIcons } = require("./build-pixel-icons.cjs");
 
 const root = join(__dirname, "..");
 const output = join(root, "dist");
-const directories = [".well-known", "assets", "fonts", "js", "styles", "vendor"];
+const directories = [".well-known", "admin", "assets", "fonts", "js", "styles", "vendor"];
 const files = ["favicon.svg", "google6c725a899ef3c23d.html", "index.html", "robots.txt", "site.webmanifest", "sitemap.xml", "sw.js"];
 const modelFiles = ["models/FFDNet-L.quant.onnx"];
 

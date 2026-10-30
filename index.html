@@ -800,7 +800,7 @@
                     <button type="button" id="footerTermsBtn">Terms of Service</button>
                     <button type="button" id="footerCookieBtn">Cookie Policy</button>
                     <button type="button" id="footerAboutBtn">About SmartForms</button>
-                    <button type="button" id="footerFeedbackBtn">Feedback &amp; Review</button>
+                    <button type="button" id="footerFeedbackBtn">Report a bug or feedback</button>
                     <a href="https://ko-fi.com/davidcarrerasalbacete" target="_blank" rel="noopener noreferrer" title="Optional support for domain and maintenance">Buy me a coffee</a>
                 </div>
             </div>
@@ -1149,7 +1149,7 @@
                             </button>
                             <div class="menu-divider"></div>
                             <button type="button" class="menu-bar-dropdown-item" id="feedbackMenuBtn" role="menuitem">
-                                <span class="menu-item-left"><i data-pixel-icon="message-square-plus" class="menu-item-icon" style="color:#2563eb;"></i> Feedback &amp; Review</span>
+                                <span class="menu-item-left"><i data-pixel-icon="message-square-plus" class="menu-item-icon" style="color:#2563eb;"></i> Report a bug or feedback</span>
                             </button>
                             <button type="button" class="menu-bar-dropdown-item" id="menuInstallAppBtn" role="menuitem" style="display: none;">
                                 <span class="menu-item-left"><i data-pixel-icon="download-cloud" class="menu-item-icon"></i> Install Offline App (PWA)</span>
@@ -1357,7 +1357,7 @@
                                     </button>
                                     <div class="menu-divider"></div>
                                     <button type="button" class="menu-bar-dropdown-item" data-proxy-click="feedbackMenuBtn" role="menuitem">
-                                        <span class="menu-item-left"><i data-pixel-icon="message-square-plus" class="menu-item-icon" style="color:#2563eb;"></i> Feedback &amp; Review</span>
+                                        <span class="menu-item-left"><i data-pixel-icon="message-square-plus" class="menu-item-icon" style="color:#2563eb;"></i> Report a bug or feedback</span>
                                     </button>
                                     <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAboutBtn" role="menuitem">
                                         <span class="menu-item-left"><i data-pixel-icon="info" class="menu-item-icon"></i> About SmartForms</span>
@@ -1687,7 +1687,7 @@
                                     </button>
                                     <div class="menu-divider"></div>
                                     <button type="button" class="menu-bar-dropdown-item" data-proxy-click="feedbackMenuBtn" role="menuitem">
-                                        <span class="menu-item-left"><i data-pixel-icon="message-square-plus" class="menu-item-icon" style="color:#2563eb;"></i> Feedback &amp; Review</span>
+                                        <span class="menu-item-left"><i data-pixel-icon="message-square-plus" class="menu-item-icon" style="color:#2563eb;"></i> Report a bug or feedback</span>
                                     </button>
                                     <button type="button" class="menu-bar-dropdown-item" data-proxy-click="menuAboutBtn" role="menuitem">
                                         <span class="menu-item-left"><i data-pixel-icon="info" class="menu-item-icon"></i> About SmartForms</span>
@@ -3521,8 +3521,8 @@
                         <i data-pixel-icon="message-square-plus" style="width:18px; height:18px; color:#2563eb;"></i>
                     </div>
                     <div>
-                        <h3 id="feedbackModalHeading" style="margin:0; font-size:16px; font-weight:600; color:#1c1f26;">Suggestions & Review</h3>
-                        <p style="margin:2px 0 0; font-size:12px; color:#5b6270;">Share your opinion or feature request with the SmartForms project</p>
+                        <h3 id="feedbackModalHeading" style="margin:0; font-size:16px; font-weight:600; color:#1c1f26;">Report a bug or share feedback</h3>
+                        <p style="margin:2px 0 0; font-size:12px; color:#5b6270;">Open a reviewable GitHub issue for the SmartForms project</p>
                     </div>
                 </div>
                 <button type="button" id="closeFeedbackBtn" aria-label="Close suggestions and review dialog" style="background:none; border:none; cursor:pointer; padding:4px; color:#8a909c;">
@@ -3545,10 +3545,10 @@
                 <div>
                     <label for="feedbackCategory" style="display:block; font-size:12px; font-weight:600; color:#1c1f26; margin-bottom:6px;">Category</label>
                     <select id="feedbackCategory" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; color:#1c1f26; background:#f8fafc; outline:none;">
+                        <option value="Bug Report">Bug Report</option>
                         <option value="Feature Suggestion">Feature Suggestion</option>
                         <option value="General Review">General Review / Opinion</option>
                         <option value="Auto-Detect Improvement">Auto-Detect Feedback</option>
-                        <option value="Bug Report">Bug Report</option>
                         <option value="Other">Other</option>
                     </select>
                 </div>
@@ -3897,7 +3897,7 @@
 
                 <p style="margin: 0;"><strong style="color: #1c1f26;">Hosting.</strong> The app itself (HTML, CSS, JS, and WebAssembly files) is served as static assets via Cloudflare Pages. This is how you receive the app; it does not process your documents.</p>
 
-                <p style="margin: 0;"><strong style="color: #1c1f26;">Analytics.</strong> SmartForms does not include application analytics or document telemetry. Cloudflare may process standard request data required to deliver the static site.</p>
+                <p style="margin: 0;"><strong style="color: #1c1f26;">Analytics.</strong> SmartForms records an anonymous, daily browser-use count to understand whether the app is being used. It does not collect PDF content, names, emails, IP addresses, or an identifier that follows a browser across days. Cloudflare may process standard request data required to deliver the site.</p>
 
                 <p style="margin: 0;"><strong style="color: #1c1f26;">Third parties.</strong> We do not use ad networks, trackers, or data brokers in the application.</p>
 
@@ -4090,5 +4090,6 @@
     <script defer src="/vendor/ort.all.min.js"></script>
 
     <script type="module" src="/js/main.js?v=22.0"></script>
+    <script type="module" src="/js/analytics.js?v=1.0"></script>
 </body>
 </html>

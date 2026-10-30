@@ -41,7 +41,7 @@ function createServerOnPort(port) {
         let reqPath = decodeURIComponent(parsedUrl.pathname);
         if (reqPath === "/") reqPath = "/index.html";
 
-        const filePath = path.normalize(path.join(ROOT, reqPath));
+        let filePath = path.normalize(path.join(ROOT, reqPath));
 
         if (!filePath.startsWith(ROOT)) {
             res.writeHead(403, { "Content-Type": "text/plain" });
@@ -50,6 +50,15 @@ function createServerOnPort(port) {
         }
 
         fs.stat(filePath, (err, stats) => {
+            if (!err && stats.isDirectory()) {
+                filePath = path.join(filePath, "index.html");
+                fs.stat(filePath, serveFile);
+                return;
+            }
+            serveFile(err, stats);
+        });
+
+        function serveFile(err, stats) {
             if (err || !stats.isFile()) {
                 res.writeHead(404, { "Content-Type": "text/plain" });
                 res.end("404 Not Found");
@@ -86,7 +95,7 @@ function createServerOnPort(port) {
 
             const stream = fs.createReadStream(filePath);
             stream.pipe(res);
-        });
+        }
     });
 
     server.on("error", (e) => {

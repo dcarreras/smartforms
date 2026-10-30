@@ -1,7 +1,7 @@
 // ── SmartForms Offline Service Worker (sw.js) ─────────────────────────
 // Enables 100% client-side offline execution (PWA) — works in Airplane Mode.
 
-const CACHE_NAME = "smartforms-cache-v5.0";
+const CACHE_NAME = "smartforms-cache-v5.1";
 const STATIC_ASSETS = [
     "/",
     "/index.html",
@@ -31,6 +31,7 @@ const STATIC_ASSETS = [
     "/assets/templates/rental.pdf",
     "/assets/templates/invoice.pdf",
     "/js/main.js",
+    "/js/analytics.js",
     "/js/core/state.js",
     "/js/core/constants.js",
     "/js/core/storage-manager.js",
@@ -104,7 +105,7 @@ self.addEventListener("fetch", event => {
     const url = new URL(event.request.url);
 
     // Skip non-GET, chrome-extension, or heavy model weights (handled by IndexedDB)
-    if (event.request.method !== "GET" || url.protocol.startsWith("chrome-extension") || url.pathname.startsWith("/models/")) {
+    if (event.request.method !== "GET" || url.protocol.startsWith("chrome-extension") || url.pathname.startsWith("/models/") || url.pathname.startsWith("/api/") || url.pathname.startsWith("/admin/")) {
         return;
     }
 
